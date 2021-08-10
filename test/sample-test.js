@@ -2,9 +2,7 @@ const { expect } = require("chai");
 
 describe("PredictionMarket Contract", function () {
   const marketName = "FirstMarket";
-  const firstChoice = "FirstChoice";
-  const secondChoice = "SecondChoice";
-  const choice = 0;
+  const choice = "yes";
   const valueDeposited = "0.1"; // in ether
 
 
@@ -15,14 +13,12 @@ describe("PredictionMarket Contract", function () {
 
     [creator, signer, receiver, ...address] = await ethers.getSigners();
   
-    hardhatPredictionMarket = await PredictionMarket.deploy(marketName, firstChoice, secondChoice);
+    hardhatPredictionMarket = await PredictionMarket.deploy(marketName, 46465465465456);
   });
 
   describe("Deployment", function() {
-    it("Should set up market and choice names correctly", async function() {
+    it("Should set up market name correctly", async function() {
         expect(await hardhatPredictionMarket.marketName()).to.equal(marketName);
-        expect(await hardhatPredictionMarket.firstChoice()).to.equal(firstChoice);
-        expect(await hardhatPredictionMarket.secondChoice()).to.equal(secondChoice);
     });
   });
 
@@ -31,6 +27,11 @@ describe("PredictionMarket Contract", function () {
         await hardhatPredictionMarket.betOnMarket(choice, {value: ethers.utils.parseEther(valueDeposited)});
         expect(await hardhatPredictionMarket.getBalance()).to.equal(ethers.utils.parseEther(valueDeposited));
     });
+    it("Should be able to calculate ratio", async function() {
+      await hardhatPredictionMarket.betOnMarket(choice, {value: ethers.utils.parseEther(valueDeposited)});
+      await hardhatPredictionMarket.getBettingRatio();
+      //expect(await hardhatPredictionMarket.getBalance()).to.equal(ethers.utils.parseEther(valueDeposited));
+  });
   });
 
 });
