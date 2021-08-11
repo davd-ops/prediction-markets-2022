@@ -28,7 +28,7 @@ describe("PredictionMarket Contract", function () {
         expect(await hardhatPredictionMarket.getBalance()).to.equal(ethers.utils.parseEther(valueDeposited));
     });
     it("Should be able to calculate ratio", async function() {
-      await hardhatPredictionMarket.betOnMarket(choice, {value: ethers.utils.parseEther(valueDeposited)});
+      //await hardhatPredictionMarket.betOnMarket(choice, {value: ethers.utils.parseEther(valueDeposited)});
       await hardhatPredictionMarket.getBettingRatio();
       //expect(await hardhatPredictionMarket.getBalance()).to.equal(ethers.utils.parseEther(valueDeposited));
   });
