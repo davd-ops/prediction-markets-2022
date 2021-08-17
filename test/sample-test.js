@@ -7,31 +7,46 @@ describe("PredictionMarket Contract", function () {
 
 
   beforeEach(async function () {
-    PredictionMarket = await ethers.getContractFactory("PredictionMarket");
+    usdToken = await ethers.getContractFactory("UsdToken");
+    predictionMarket = await ethers.getContractFactory("PredictionMarket");
 
     provider = ethers.getDefaultProvider();
 
     [creator, signer, receiver, ...address] = await ethers.getSigners();
   
-    hardhatPredictionMarket = await PredictionMarket.deploy(marketName, 46465465465456);
+    usdToken = await usdToken.deploy(1);
+    
+    predictionMarket = await predictionMarket.deploy(marketName, 46465465465456, usdToken.address, usdToken.decimals());
+    
   });
 
   describe("Deployment", function() {
     it("Should set up market name correctly", async function() {
-        expect(await hardhatPredictionMarket.marketName()).to.equal(marketName);
+      expect(await predictionMarket.marketName()).to.equal(marketName);
     });
   });
 
   describe("Betting", function() {
+    it("Should be able to implement erc-20 token", async function() {
+      usdToken.mint(creator.address, "50000000000000000000");
+      expect(ethers.utils.formatEther(await usdToken.balanceOf(creator.address))).to.equal("50.0");
+    });
+    it("Should be able to approve erc-20 token", async function() {
+      usdToken.approve(predictionMarket.address, "10000000000000000000");
+      expect(ethers.utils.formatEther(await usdToken.allowance(creator.address, predictionMarket.address))).to.equal("10.0");
+    });
     it("Should be able to bet on market", async function() {
-        await hardhatPredictionMarket.betOnMarket(choice, {value: ethers.utils.parseEther(valueDeposited)});
-        expect(await hardhatPredictionMarket.getBalance()).to.equal(ethers.utils.parseEther(valueDeposited));
+      usdToken.mint(creator.address, "50000000000000000000");
+      usdToken.approve(predictionMarket.address, "10000000000000000000");
+      await predictionMarket.buyShares(choice, 5, {value: ethers.utils.parseEther(valueDeposited)});
+      //expect(await predictionMarket.getBalance()).to.equal(ethers.utils.parseEther(valueDeposited));
     });
     it("Should be able to calculate ratio", async function() {
-      //await hardhatPredictionMarket.betOnMarket(choice, {value: ethers.utils.parseEther(valueDeposited)});
-      await hardhatPredictionMarket.getBettingRatio();
-      //expect(await hardhatPredictionMarket.getBalance()).to.equal(ethers.utils.parseEther(valueDeposited));
-  });
+      //await predictionMarket.betOnMarket(choice, {value: ethers.utils.parseEther(valueDeposited)});
+      //await predictionMarket.getBettingRatio();
+      //expect(await predictionMarket.getBalance()).to.equal(ethers.utils.parseEther(valueDeposited));
+    });
+    
   });
 
 });

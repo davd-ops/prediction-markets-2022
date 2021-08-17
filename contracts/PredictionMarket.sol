@@ -1,10 +1,32 @@
 //SPDX-License-Identifier: Unlicense
-pragma solidity ^0.8.0;
+pragma solidity >=0.8.0;
 
 import "./Ownable.sol";
 import "./SafeMath.sol";
 import "hardhat/console.sol";
 
+interface IERC20 {
+
+    function totalSupply() external view returns (uint256);
+
+    function balanceOf(address account) external view returns (uint256);
+
+    function transfer(address recipient, uint256 amount) external returns (bool);
+
+    function allowance(address owner, address spender) external view returns (uint256);
+
+    function approve(address spender, uint256 amount) external returns (bool);
+
+    function transferFrom(
+        address sender,
+        address recipient,
+        uint256 amount
+    ) external returns (bool);
+
+    event Transfer(address indexed from, address indexed to, uint256 value);
+
+    event Approval(address indexed owner, address indexed spender, uint256 value);
+}
 
 contract PredictionMarket is Ownable {
     using SafeMath for uint;
@@ -12,40 +34,49 @@ contract PredictionMarket is Ownable {
     string public marketName;
     uint public startingBlock;
     uint public endingBlock;
-    uint public yesWeiBalance;
-    uint public noWeiBalance;
+    //uint public yesWeiBalance;
+    //uint public noWeiBalance;
     uint public yesSharesEmitted;
     uint public noSharesEmitted;
+    address public erc20TokenAddress;
+    IERC20 internal usd; //should be usd stablecoin
+    uint internal tenToPowerOfTokenDigits;
     
-    mapping(address => uint) public yesAddressesBalanceMapping;
-    mapping(address => uint) public noAddressesBalanceMapping;
+    //mapping(address => uint) public yesAddressesBalanceMapping;
+    //mapping(address => uint) public noAddressesBalanceMapping;
 
     modifier onlyIfIsCorrectChoice(string memory _choice) {
         require(keccak256(abi.encodePacked(_choice)) == keccak256(abi.encodePacked("yes")) || keccak256(abi.encodePacked(_choice)) == keccak256(abi.encodePacked("no")), "Incorrect choice. Insert yes/no.");
         _;
     }
 
-    constructor(string memory _name, uint _endingBlock) {
+    constructor(string memory _name, uint _endingBlock, address _erc20TokenAddress, uint _erc20TokenDigits) {
         marketName = _name;
         startingBlock = block.timestamp;
         endingBlock = _endingBlock;
         yesSharesEmitted = 1;
         noSharesEmitted = 1;
+        usd = IERC20(address(_erc20TokenAddress)); //should be usd stablecoin
+        tenToPowerOfTokenDigits = 10 ** _erc20TokenDigits;
         //console.log("Start: ", startingBlock);
         //console.log("End: ", endingBlock);
     }
 
-    function betOnMarket(string memory _choice) external payable onlyIfIsCorrectChoice(_choice) {
+    function buyShares(string memory _choice, uint _wantedShares) external payable onlyIfIsCorrectChoice(_choice) {
+        require(_wantedShares > 0 , "You need to buy atleast 1 share.");
+        uint pricePerShare = calculateAveragePriceForShare(_wantedShares, _choice);
         require(msg.value >= 0.1 ether, "You need to bet atleast 0.1 ETH.");
 
         if (keccak256(abi.encodePacked(_choice)) == keccak256(abi.encodePacked("yes"))){
-            yesWeiBalance = yesWeiBalance.add(msg.value);
-            yesAddressesBalanceMapping[msg.sender] = yesAddressesBalanceMapping[msg.sender].add(msg.value);
-            ++yesSharesEmitted;
-        } else if (keccak256(abi.encodePacked(_choice)) == keccak256(abi.encodePacked("no"))) {
-            noWeiBalance = noWeiBalance.add(msg.value);
-            noAddressesBalanceMapping[msg.sender] = noAddressesBalanceMapping[msg.sender].add(msg.value);
-            ++noSharesEmitted;
+            executionOfTheTransaction(_wantedShares, pricePerShare);
+            yesSharesEmitted = yesSharesEmitted.add(_wantedShares);
+            //yesWeiBalance = yesWeiBalance.add(msg.value);
+            //yesAddressesBalanceMapping[msg.sender] = yesAddressesBalanceMapping[msg.sender].add(msg.value);
+        } else {
+            executionOfTheTransaction(_wantedShares, pricePerShare);
+            noSharesEmitted = noSharesEmitted.add(_wantedShares);
+            //noWeiBalance = noWeiBalance.add(msg.value);
+            //noAddressesBalanceMapping[msg.sender] = noAddressesBalanceMapping[msg.sender].add(msg.value);
         }
     }
 
@@ -58,8 +89,8 @@ contract PredictionMarket is Ownable {
         //numberOfShares = 10;
         //yesSharesEmitted = 9;
         //noSharesEmitted = 1;
-        uint yesRatio = yesSharesEmitted.mul(10000000).div(numberOfShares);
-        uint noRatio = noSharesEmitted.mul(10000000).div(numberOfShares);
+        uint yesRatio = yesSharesEmitted.mul(tenToPowerOfTokenDigits).div(numberOfShares);
+        uint noRatio = noSharesEmitted.mul(tenToPowerOfTokenDigits).div(numberOfShares);
         console.log("number of shares: ", numberOfShares);
         console.log("yes ratio: 0, ", yesRatio);
         console.log("no ratio: 0, ", noRatio);
@@ -67,7 +98,7 @@ contract PredictionMarket is Ownable {
         calculateAveragePriceForShare(5, "yes");
     }
 
-    function calculateAveragePriceForShare(uint _numberOfWantedShares, string memory _choice) public view onlyIfIsCorrectChoice(_choice) {
+    function calculateAveragePriceForShare(uint _numberOfWantedShares, string memory _choice) public view onlyIfIsCorrectChoice(_choice) returns (uint) {
         uint numberOfShares;
         uint yesRatio;
         uint noRatio;
@@ -75,21 +106,28 @@ contract PredictionMarket is Ownable {
 
         if (keccak256(abi.encodePacked(_choice)) == keccak256(abi.encodePacked("yes"))){
             numberOfShares = yesSharesEmitted.add(_numberOfWantedShares).add(noSharesEmitted);
-            yesRatio = yesSharesEmitted.add(_numberOfWantedShares).mul(10000000).div(numberOfShares);
-            noRatio = noSharesEmitted.mul(10000000).div(numberOfShares);
+            yesRatio = yesSharesEmitted.add(_numberOfWantedShares).mul(tenToPowerOfTokenDigits).div(numberOfShares);
+            noRatio = noSharesEmitted.mul(tenToPowerOfTokenDigits).div(numberOfShares);
             averagePriceForShare = yesRatio.div(_numberOfWantedShares);
-        } else if (keccak256(abi.encodePacked(_choice)) == keccak256(abi.encodePacked("no"))) {
+        } else {
             numberOfShares = yesSharesEmitted.add(noSharesEmitted.add(_numberOfWantedShares));
-            yesRatio = yesSharesEmitted.mul(10000000).div(numberOfShares);
-            noRatio = noSharesEmitted.add(_numberOfWantedShares).mul(10000000).div(numberOfShares);
+            yesRatio = yesSharesEmitted.mul(tenToPowerOfTokenDigits).div(numberOfShares);
+            noRatio = noSharesEmitted.add(_numberOfWantedShares).mul(tenToPowerOfTokenDigits).div(numberOfShares);
             averagePriceForShare = noRatio.div(_numberOfWantedShares);
         }
         
         console.log("NEW number of shares: ", numberOfShares);
         console.log("NEW yes ratio: 0, ", yesRatio);
         console.log("NEW no ratio: 0, ", noRatio);
-        console.log("Average price for share: ", averagePriceForShare);
+        console.log("Average price for share: 0, ", averagePriceForShare);
         
+        return averagePriceForShare;
+    }
+
+    function executionOfTheTransaction(uint _amount, uint _pricePerShare) internal {
+        uint userWillPay = _amount.mul(_pricePerShare);
+        usd.transferFrom(msg.sender, address(this), _amount);
+        console.log("Celkove to bude stat: ", userWillPay);
     }
 
 }
