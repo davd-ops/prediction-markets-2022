@@ -108,32 +108,39 @@ contract PredictionMarket is Ownable {
 
         if (keccak256(abi.encodePacked(_choice)) == keccak256(abi.encodePacked("yes"))){
             numberOfShares = yesSharesEmitted.add(_numberOfWantedShares).add(noSharesEmitted);
-            yesRatio = yesSharesEmitted.add(_numberOfWantedShares.sub(1)).mul(tenToPowerOfTokenDigits).div(numberOfShares.sub(1));
-            noRatio = noSharesEmitted.mul(tenToPowerOfTokenDigits).div(numberOfShares.sub(1));
+            //yesRatio = yesSharesEmitted.add(_numberOfWantedShares.sub(1)).mul(tenToPowerOfTokenDigits).div(numberOfShares.sub(1));
+            //noRatio = noSharesEmitted.mul(tenToPowerOfTokenDigits).div(numberOfShares.sub(1));
 
-            for(uint i = 0; i < numberOfShares; i++){
-                
+            for(uint i = 1; i <= _numberOfWantedShares; i++){
+                numberOfShares = yesSharesEmitted.add(i).add(noSharesEmitted);
+                yesRatio = yesRatio.add(yesSharesEmitted.add(i.sub(1)).mul(tenToPowerOfTokenDigits).div(numberOfShares.sub(1)));
             }
 
             averagePriceForShare = yesRatio.div(_numberOfWantedShares);
         } else {
-            numberOfShares = yesSharesEmitted.add(noSharesEmitted.add(_numberOfWantedShares));
-            yesRatio = yesSharesEmitted.mul(tenToPowerOfTokenDigits).div(numberOfShares.sub(1));
-            noRatio = noSharesEmitted.add(_numberOfWantedShares.sub(1)).mul(tenToPowerOfTokenDigits).div(numberOfShares.sub(1));
+            numberOfShares = yesSharesEmitted.add(_numberOfWantedShares).add(noSharesEmitted);
+            //yesRatio = yesSharesEmitted.mul(tenToPowerOfTokenDigits).div(numberOfShares.sub(1));
+            //noRatio = noSharesEmitted.add(_numberOfWantedShares.sub(1)).mul(tenToPowerOfTokenDigits).div(numberOfShares.sub(1));
+
+            for(uint i = 1; i <= _numberOfWantedShares; i++){
+                numberOfShares = yesSharesEmitted.add(noSharesEmitted).add(i);
+                noRatio = noRatio.add(noSharesEmitted.add(i.sub(1)).mul(tenToPowerOfTokenDigits).div(numberOfShares.sub(1)));
+            }
+
             averagePriceForShare = noRatio.div(_numberOfWantedShares);
         }
         
-        console.log("POD TIMTO SE ZOBRAZUJI CENY ZA KTERE SE KOUPILA:", numberOfShares, "SHARE, cena ted bude jina");
-        console.log("NEW yes ratio: 0, ", yesRatio);
-        console.log("NEW no ratio: 0, ", noRatio);
-        console.log("Average price for share: 0, ", averagePriceForShare);
+        //console.log("POD TIMTO SE ZOBRAZUJI CENY ZA KTERE SE KOUPILA:", numberOfShares, "SHARE, cena ted bude jina");
+        //console.log("NEW yes ratio: 0, ", yesRatio);
+        //console.log("NEW no ratio: 0, ", noRatio);
+        console.log("Average price for share: 0,", averagePriceForShare);
         
         return averagePriceForShare;
     }
 
     function executionOfTheTransaction(uint _amount, uint _pricePerShare) internal {
         uint userWillPay = _amount.mul(_pricePerShare);
-        usd.transferFrom(msg.sender, address(this), _amount);
+        usd.transferFrom(msg.sender, address(this), userWillPay);
         console.log("Celkove to bude stat: ", userWillPay);
     }
 

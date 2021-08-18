@@ -3,7 +3,7 @@ const { expect } = require("chai");
 describe("PredictionMarket Contract", function () {
   const marketName = "FirstMarket";
   const choice = "yes";
-  const wantedShares = 3;
+  const wantedShares = 12;
   const valueDeposited = "0.1"; // in ether
 
 
@@ -47,7 +47,7 @@ describe("PredictionMarket Contract", function () {
         expect(await predictionMarket.noSharesPerAddress(creator.address)).to.equal(wantedShares);
       }
       
-      expect(ethers.utils.formatEther(await usdToken.balanceOf(creator.address))).to.equal("40.0");
+      expect(ethers.utils.formatEther(await usdToken.balanceOf(creator.address))).to.equal("40.180133755133755148");
       
       //expect(await predictionMarket.getBalance()).to.equal(ethers.utils.parseEther(valueDeposited));
     });
