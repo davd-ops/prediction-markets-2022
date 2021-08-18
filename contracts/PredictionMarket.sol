@@ -42,8 +42,8 @@ contract PredictionMarket is Ownable {
     IERC20 internal usd; //should be usd stablecoin
     uint internal tenToPowerOfTokenDigits;
     
-    //mapping(address => uint) public yesAddressesBalanceMapping;
-    //mapping(address => uint) public noAddressesBalanceMapping;
+    mapping(address => uint) public yesSharesPerAddress;
+    mapping(address => uint) public noSharesPerAddress;
 
     modifier onlyIfIsCorrectChoice(string memory _choice) {
         require(keccak256(abi.encodePacked(_choice)) == keccak256(abi.encodePacked("yes")) || keccak256(abi.encodePacked(_choice)) == keccak256(abi.encodePacked("no")), "Incorrect choice. Insert yes/no.");
@@ -70,11 +70,13 @@ contract PredictionMarket is Ownable {
         if (keccak256(abi.encodePacked(_choice)) == keccak256(abi.encodePacked("yes"))){
             executionOfTheTransaction(_wantedShares, pricePerShare);
             yesSharesEmitted = yesSharesEmitted.add(_wantedShares);
+            yesSharesPerAddress[msg.sender] = yesSharesPerAddress[msg.sender].add(_wantedShares);
             //yesWeiBalance = yesWeiBalance.add(msg.value);
             //yesAddressesBalanceMapping[msg.sender] = yesAddressesBalanceMapping[msg.sender].add(msg.value);
         } else {
             executionOfTheTransaction(_wantedShares, pricePerShare);
             noSharesEmitted = noSharesEmitted.add(_wantedShares);
+            noSharesPerAddress[msg.sender] = noSharesPerAddress[msg.sender].add(_wantedShares);
             //noWeiBalance = noWeiBalance.add(msg.value);
             //noAddressesBalanceMapping[msg.sender] = noAddressesBalanceMapping[msg.sender].add(msg.value);
         }
@@ -106,17 +108,22 @@ contract PredictionMarket is Ownable {
 
         if (keccak256(abi.encodePacked(_choice)) == keccak256(abi.encodePacked("yes"))){
             numberOfShares = yesSharesEmitted.add(_numberOfWantedShares).add(noSharesEmitted);
-            yesRatio = yesSharesEmitted.add(_numberOfWantedShares).mul(tenToPowerOfTokenDigits).div(numberOfShares);
-            noRatio = noSharesEmitted.mul(tenToPowerOfTokenDigits).div(numberOfShares);
+            yesRatio = yesSharesEmitted.add(_numberOfWantedShares.sub(1)).mul(tenToPowerOfTokenDigits).div(numberOfShares.sub(1));
+            noRatio = noSharesEmitted.mul(tenToPowerOfTokenDigits).div(numberOfShares.sub(1));
+
+            for(uint i = 0; i < numberOfShares; i++){
+                
+            }
+
             averagePriceForShare = yesRatio.div(_numberOfWantedShares);
         } else {
             numberOfShares = yesSharesEmitted.add(noSharesEmitted.add(_numberOfWantedShares));
-            yesRatio = yesSharesEmitted.mul(tenToPowerOfTokenDigits).div(numberOfShares);
-            noRatio = noSharesEmitted.add(_numberOfWantedShares).mul(tenToPowerOfTokenDigits).div(numberOfShares);
+            yesRatio = yesSharesEmitted.mul(tenToPowerOfTokenDigits).div(numberOfShares.sub(1));
+            noRatio = noSharesEmitted.add(_numberOfWantedShares.sub(1)).mul(tenToPowerOfTokenDigits).div(numberOfShares.sub(1));
             averagePriceForShare = noRatio.div(_numberOfWantedShares);
         }
         
-        console.log("NEW number of shares: ", numberOfShares);
+        console.log("POD TIMTO SE ZOBRAZUJI CENY ZA KTERE SE KOUPILA:", numberOfShares, "SHARE, cena ted bude jina");
         console.log("NEW yes ratio: 0, ", yesRatio);
         console.log("NEW no ratio: 0, ", noRatio);
         console.log("Average price for share: 0, ", averagePriceForShare);
