@@ -9,13 +9,18 @@ describe("PredictionMarket Contract", function () {
     usdToken = await ethers.getContractFactory("UsdToken");
     predictionMarket = await ethers.getContractFactory("PredictionMarket");
 
-    provider = ethers.getDefaultProvider();
+    const network = "homestead"; // The mainnet
+    provider = ethers.getDefaultProvider(network, {
+      infura: 'b51a92ba9a4f4092aa548938d47cb402',
+    });
+
+    const endingDate = new Date('2021-08-19T23:59:59Z').getTime() / 1000;
 
     [creator, signer, receiver, ...address] = await ethers.getSigners();
   
     usdToken = await usdToken.deploy(1);
     
-    predictionMarket = await predictionMarket.deploy(marketName, 46465465465456, usdToken.address, usdToken.decimals());
+    predictionMarket = await predictionMarket.deploy(marketName, endingDate, usdToken.address, usdToken.decimals());
     
   });
 
@@ -64,6 +69,7 @@ describe("PredictionMarket Contract", function () {
       expect(ethers.utils.formatEther(await usdToken.balanceOf(creator.address))).to.equal("50.0");
     });
     it("Should be able to calculate ratio", async function() {
+
       //await predictionMarket.betOnMarket(choice, {value: ethers.utils.parseEther(valueDeposited)});
       //await predictionMarket.getBettingRatio();
       //expect(await predictionMarket.getBalance()).to.equal(ethers.utils.parseEther(valueDeposited));

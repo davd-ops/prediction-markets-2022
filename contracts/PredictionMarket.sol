@@ -51,15 +51,14 @@ contract PredictionMarket is Ownable {
     }
 
     constructor(string memory _name, uint _endingBlock, address _erc20TokenAddress, uint _erc20TokenDigits) {
-        marketName = _name;
         startingBlock = block.timestamp;
         endingBlock = _endingBlock;
+        require(startingBlock < _endingBlock);
+        marketName = _name;
         yesSharesEmitted = 1;
         noSharesEmitted = 1;
         usd = IERC20(address(_erc20TokenAddress)); //should be usd stablecoin
         tenToPowerOfTokenDigits = 10 ** _erc20TokenDigits;
-        //console.log("Start: ", startingBlock);
-        //console.log("End: ", endingBlock);
     }
 
     function buyShares(string memory _choice, uint _wantedShares) external onlyIfIsCorrectChoice(_choice) {
@@ -134,7 +133,7 @@ contract PredictionMarket is Ownable {
             averagePriceForShare = noRatio.div(_numberOfWantedShares);
         }
 
-        console.log("Average price for share: 0,", averagePriceForShare);
+        //console.log("Average price for share: 0,", averagePriceForShare);
         
         return averagePriceForShare;
     }
@@ -145,10 +144,12 @@ contract PredictionMarket is Ownable {
         uint noRatio;
         uint averagePriceForShare;
 
+        numberOfShares = yesSharesEmitted.add(noSharesEmitted).sub(_sharesToSell);
+
         if (keccak256(abi.encodePacked(_choice)) == keccak256(abi.encodePacked("yes"))){
             require(_sharesToSell <= yesSharesPerAddress[msg.sender], "You don't have enough shares");
-            numberOfShares = yesSharesEmitted.add(noSharesEmitted).sub(_sharesToSell);
             uint theRestOfTheShares = yesSharesEmitted.sub(_sharesToSell);
+            
             for(uint i = yesSharesEmitted; i > theRestOfTheShares; i--){
                 numberOfShares++;
                 yesRatio = yesRatio.add(yesSharesEmitted.sub(i.sub(1)).mul(tenToPowerOfTokenDigits).div(numberOfShares.sub(1)));
@@ -157,17 +158,17 @@ contract PredictionMarket is Ownable {
             averagePriceForShare = yesRatio.div(_sharesToSell);
         } else {
             require(_sharesToSell <= noSharesPerAddress[msg.sender], "You don't have enough shares");
-            numberOfShares = yesSharesEmitted.add(_sharesToSell).add(noSharesEmitted);
+            uint theRestOfTheShares = noSharesEmitted.sub(_sharesToSell);
 
-            for(uint i = 1; i <= _sharesToSell; i++){
-                numberOfShares = yesSharesEmitted.add(noSharesEmitted).add(i);
-                noRatio = noRatio.add(noSharesEmitted.add(i.sub(1)).mul(tenToPowerOfTokenDigits).div(numberOfShares.sub(1)));
+            for(uint i = noSharesEmitted; i > theRestOfTheShares; i--){
+                numberOfShares++;
+                noRatio = noRatio.add(noSharesEmitted.sub(i.sub(1)).mul(tenToPowerOfTokenDigits).div(numberOfShares.sub(1)));
             }
 
             averagePriceForShare = noRatio.div(_sharesToSell);
         }
         
-        console.log("Average price for share: 0,", averagePriceForShare);
+        //console.log("Average price for share: 0,", averagePriceForShare);
         
         return averagePriceForShare;
     }
@@ -175,13 +176,13 @@ contract PredictionMarket is Ownable {
     function executionOfTheBuy(uint _amount, uint _pricePerShare) internal {
         uint userWillPay = _amount.mul(_pricePerShare);
         usd.transferFrom(msg.sender, address(this), userWillPay);
-        console.log("Celkove to bude stat: ", userWillPay);
+        //console.log("Celkove to bude stat: ", userWillPay);
     }
 
     function executionOfTheSell(uint _amount, uint _pricePerShare) internal {
         uint userWillGet = _amount.mul(_pricePerShare);
         usd.transfer(msg.sender, userWillGet);
-        console.log("Celkove dostanes: ", userWillGet);
+        //console.log("Celkove dostanes: ", userWillGet);
     }
 
 }
