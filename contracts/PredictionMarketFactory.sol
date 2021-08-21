@@ -1,6 +1,7 @@
 //SPDX-License-Identifier: Unlicense
 pragma solidity >=0.8.0;
 
+//import "./PredictionMarketOps.sol";
 import "./Ownable.sol";
 import "./SafeMath.sol";
 import "hardhat/console.sol";
@@ -28,7 +29,7 @@ interface IERC20 {
     event Approval(address indexed owner, address indexed spender, uint256 value);
 }
 
-contract PredictionMarket is Ownable {
+contract PredictionMarketFactory is Ownable {
     using SafeMath for uint;
 
     string public marketName;
@@ -38,7 +39,7 @@ contract PredictionMarket is Ownable {
     uint public yesSharesEmitted;
     uint public noSharesEmitted;
     address public erc20TokenAddress;
-    IERC20 internal usd; //should be usd stablecoin
+    IERC20 internal usd; 
     uint internal tenToPowerOfTokenDigits;
     
     mapping(address => uint) public yesSharesPerAddress;
@@ -47,57 +48,6 @@ contract PredictionMarket is Ownable {
     modifier onlyIfIsCorrectChoice(string memory _choice) {
         require(keccak256(abi.encodePacked(_choice)) == keccak256(abi.encodePacked("yes")) || keccak256(abi.encodePacked(_choice)) == keccak256(abi.encodePacked("no")), "Incorrect choice. Insert yes/no.");
         _;
-    }
-
-    modifier isLive() {
-        require(endingBlock >= block.timestamp, "This market is already closed.");
-        _;
-    }
-
-    constructor(string memory _name, uint _endingBlock, address _erc20TokenAddress, uint _erc20TokenDigits) {
-        startingBlock = block.timestamp;
-        endingBlock = _endingBlock;
-        require(startingBlock < _endingBlock, "The market has to end in the future");
-        marketName = _name;
-        yesSharesEmitted = 1;
-        noSharesEmitted = 1;
-        usd = IERC20(address(_erc20TokenAddress)); //should be usd stablecoin
-        tenToPowerOfTokenDigits = 10 ** _erc20TokenDigits;
-    }
-
-    function buyShares(string memory _choice, uint _wantedShares) external onlyIfIsCorrectChoice(_choice) isLive {
-        require(_wantedShares > 0 , "You need to buy atleast 1 share.");
-        uint pricePerShare = calculateAveragePriceForBuying(_wantedShares, _choice);
-
-        if (keccak256(abi.encodePacked(_choice)) == keccak256(abi.encodePacked("yes"))){
-            executionOfTheBuy(_wantedShares, pricePerShare);
-            yesSharesEmitted = yesSharesEmitted.add(_wantedShares);
-            yesSharesPerAddress[msg.sender] = yesSharesPerAddress[msg.sender].add(_wantedShares);
-        } else {
-            executionOfTheBuy(_wantedShares, pricePerShare);
-            noSharesEmitted = noSharesEmitted.add(_wantedShares);
-            noSharesPerAddress[msg.sender] = noSharesPerAddress[msg.sender].add(_wantedShares);
-        }
-    }
-
-    function sellShares(string memory _choice, uint _sharesToSell) external onlyIfIsCorrectChoice(_choice) isLive {
-        require(_sharesToSell > 0 , "You need to sell atleast 1 share.");
-        
-        uint pricePerShare = calculateAveragePriceForSelling(_sharesToSell, _choice);
-
-        if (keccak256(abi.encodePacked(_choice)) == keccak256(abi.encodePacked("yes"))){
-            executionOfTheSell(_sharesToSell, pricePerShare);
-            yesSharesEmitted = yesSharesEmitted.sub(_sharesToSell);
-            yesSharesPerAddress[msg.sender] = yesSharesPerAddress[msg.sender].sub(_sharesToSell);
-        } else {
-            executionOfTheSell(_sharesToSell, pricePerShare);
-            noSharesEmitted = noSharesEmitted.sub(_sharesToSell);
-            noSharesPerAddress[msg.sender] = noSharesPerAddress[msg.sender].sub(_sharesToSell);
-        }
-    }
-
-    function getBalance() external view returns (uint) {
-        return address(this).balance;
     }
 
     function getBettingRatio() public view {
@@ -175,18 +125,6 @@ contract PredictionMarket is Ownable {
         //console.log("Average price for share: 0,", averagePriceForShare);
         
         return averagePriceForShare;
-    }
-
-    function executionOfTheBuy(uint _amount, uint _pricePerShare) internal {
-        uint userWillPay = _amount.mul(_pricePerShare);
-        usd.transferFrom(msg.sender, address(this), userWillPay);
-        //console.log("Celkove to bude stat: ", userWillPay);
-    }
-
-    function executionOfTheSell(uint _amount, uint _pricePerShare) internal {
-        uint userWillGet = _amount.mul(_pricePerShare);
-        usd.transfer(msg.sender, userWillGet);
-        //console.log("Celkove dostanes: ", userWillGet);
     }
 
 }

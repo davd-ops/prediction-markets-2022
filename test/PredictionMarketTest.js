@@ -2,12 +2,12 @@ const { expect } = require("chai");
 
 describe("PredictionMarket Contract", function () {
   const marketName = "FirstMarket";
-  const choice = "yes";
+  const choice = "no";
   const wantedShares = 12;
 
   beforeEach(async function () {
     usdToken = await ethers.getContractFactory("UsdToken");
-    predictionMarket = await ethers.getContractFactory("PredictionMarket");
+    predictionMarket = await ethers.getContractFactory("PredictionMarketOps");
 
     const network = "homestead"; // The mainnet
     provider = ethers.getDefaultProvider(network, {
