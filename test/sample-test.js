@@ -14,7 +14,7 @@ describe("PredictionMarket Contract", function () {
       infura: 'b51a92ba9a4f4092aa548938d47cb402',
     });
 
-    const endingDate = new Date('2021-08-19T23:59:59Z').getTime() / 1000;
+    const endingDate = new Date('2021-08-31T23:59:59Z').getTime() / 1000;
 
     [creator, signer, receiver, ...address] = await ethers.getSigners();
   
