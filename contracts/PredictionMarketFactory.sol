@@ -6,6 +6,8 @@ import "./Ownable.sol";
 import "./SafeMath.sol";
 import "hardhat/console.sol";
 
+//ADD EVENTS!!
+
 interface IERC20 {
 
     function totalSupply() external view returns (uint256);
@@ -24,6 +26,10 @@ interface IERC20 {
         uint256 amount
     ) external returns (bool);
 
+    function mint(address usr, uint wad) external;
+
+    function burn(address usr, uint wad) external;
+
     event Transfer(address indexed from, address indexed to, uint256 value);
 
     event Approval(address indexed owner, address indexed spender, uint256 value);
@@ -36,18 +42,48 @@ contract PredictionMarketFactory is Ownable {
     uint public startingBlock;
     uint public endingBlock;
     //bool public isClosed = false;
-    uint public yesSharesEmitted;
-    uint public noSharesEmitted;
+    uint public yesSharesEmitted = 0; //18 decimals, might want to change it later
+    uint public noSharesEmitted = 0; //18 decimals, might want to change it later
+    uint providerFee;
     address public erc20TokenAddress;
+    string public winningSide;
     IERC20 internal usd; 
+    IERC20 internal pToken; 
     uint internal tenToPowerOfTokenDigits;
     
+    liquidityProvider[] public liquidityProviders;
+
     mapping(address => uint) public yesSharesPerAddress;
     mapping(address => uint) public noSharesPerAddress;
+
+    struct liquidityProvider {
+        uint128 providedLiquidity;
+        uint128 earnedProvision;
+        address lpAddress;
+    }
 
     modifier onlyIfIsCorrectChoice(string memory _choice) {
         require(keccak256(abi.encodePacked(_choice)) == keccak256(abi.encodePacked("yes")) || keccak256(abi.encodePacked(_choice)) == keccak256(abi.encodePacked("no")), "Incorrect choice. Insert yes/no.");
         _;
+    }
+    
+    modifier isLive() {
+        //TOHLE ODMAZAT KOMENT, JEN TESTUJU
+        //require(!checkIfTheMarketIsClosed(), "This market is already closed.");
+        _;
+    }
+
+    modifier isClosed() {
+        require(checkIfTheMarketIsClosed(), "This market is not closed yet.");
+        _;
+    }
+
+    function checkIfTheMarketIsClosed() public view returns(bool) {
+        if(endingBlock >= block.timestamp){
+            return false;
+        } else {
+            return true;
+        }
     }
 
     function getBettingRatio() public view {
@@ -72,23 +108,24 @@ contract PredictionMarketFactory is Ownable {
 
             for(uint i = 1; i <= _numberOfWantedShares; i++){
                 numberOfShares = yesSharesEmitted.add(i).add(noSharesEmitted);
-                yesRatio = yesRatio.add(yesSharesEmitted.add(i.sub(1)).mul(tenToPowerOfTokenDigits).div(numberOfShares.sub(1)));
+                yesRatio = yesRatio.add(yesSharesEmitted.add(i).mul(tenToPowerOfTokenDigits).div(numberOfShares));
             }
-
+            
             averagePriceForShare = yesRatio.div(_numberOfWantedShares);
         } else {
             numberOfShares = yesSharesEmitted.add(_numberOfWantedShares).add(noSharesEmitted);
 
             for(uint i = 1; i <= _numberOfWantedShares; i++){
                 numberOfShares = yesSharesEmitted.add(noSharesEmitted).add(i);
-                noRatio = noRatio.add(noSharesEmitted.add(i.sub(1)).mul(tenToPowerOfTokenDigits).div(numberOfShares.sub(1)));
+                noRatio = noRatio.add(noSharesEmitted.add(i).mul(tenToPowerOfTokenDigits).div(numberOfShares));
             }
 
             averagePriceForShare = noRatio.div(_numberOfWantedShares);
+            
         }
 
         //console.log("Average price for share: 0,", averagePriceForShare);
-        
+        averagePriceForShare = averagePriceForShare.add(averagePriceForShare.div(100).mul(providerFee));
         return averagePriceForShare;
     }
 
@@ -106,7 +143,7 @@ contract PredictionMarketFactory is Ownable {
 
             for(uint i = yesSharesEmitted; i > theRestOfTheShares; i--){
                 numberOfShares++;
-                yesRatio = yesRatio.add(yesSharesEmitted.sub(i.sub(1)).mul(tenToPowerOfTokenDigits).div(numberOfShares.sub(1)));
+                yesRatio = yesRatio.add(yesSharesEmitted.sub(i).mul(tenToPowerOfTokenDigits).div(numberOfShares));
             }
 
             averagePriceForShare = yesRatio.div(_sharesToSell);
@@ -116,7 +153,7 @@ contract PredictionMarketFactory is Ownable {
 
             for(uint i = noSharesEmitted; i > theRestOfTheShares; i--){
                 numberOfShares++;
-                noRatio = noRatio.add(noSharesEmitted.sub(i.sub(1)).mul(tenToPowerOfTokenDigits).div(numberOfShares.sub(1)));
+                noRatio = noRatio.add(noSharesEmitted.sub(i).mul(tenToPowerOfTokenDigits).div(numberOfShares));
             }
 
             averagePriceForShare = noRatio.div(_sharesToSell);
@@ -125,6 +162,19 @@ contract PredictionMarketFactory is Ownable {
         //console.log("Average price for share: 0,", averagePriceForShare);
         
         return averagePriceForShare;
+    }
+
+    function calculateMarketRatio() internal view returns(uint, string memory) {
+        if (yesSharesEmitted > noSharesEmitted){
+            uint marketRatio = yesSharesEmitted.mul(10**18).div(noSharesEmitted);
+            return (marketRatio, "yes");
+        } else if (yesSharesEmitted < noSharesEmitted) {
+            uint marketRatio = noSharesEmitted.mul(10**18).div(yesSharesEmitted);
+            return (marketRatio, "no");
+        } else {
+            uint marketRatio = yesSharesEmitted.mul(10**18).div(noSharesEmitted);
+            return (marketRatio, "yes");
+        }
     }
 
 }
