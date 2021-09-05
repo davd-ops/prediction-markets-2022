@@ -109,14 +109,14 @@ contract PredictionMarketOps is PredictionMarketFactory {
             yesSharesEmitted = originalNumberOfYesShares.mul(originalNumberOfNoShares).div(noSharesEmitted);
             (marketRatio, dominantShare) = calculateMarketRatio();
             uint newShares = originalNumberOfYesShares.sub(yesSharesEmitted).add(_amount);
-            yesSharesPerAddress[msg.sender] = newShares;
+            yesSharesPerAddress[msg.sender] = newShares.sub(providerFee);
             console.log( yesSharesPerAddress[msg.sender]);
         } else {
             yesSharesEmitted = yesSharesEmitted.add(_amount);
             noSharesEmitted = originalNumberOfYesShares.mul(originalNumberOfNoShares).div(yesSharesEmitted);
             (marketRatio, dominantShare) = calculateMarketRatio();
             uint newShares = originalNumberOfNoShares.sub(noSharesEmitted).add(_amount);
-            noSharesPerAddress[msg.sender] = newShares;
+            noSharesPerAddress[msg.sender] = newShares.sub(providerFee);
             console.log(noSharesPerAddress[msg.sender]);
         }
         
@@ -124,12 +124,7 @@ contract PredictionMarketOps is PredictionMarketFactory {
         console.log(noSharesEmitted);
         
         console.log("market ratio je", marketRatio, "pro", dominantShare);
-
-        if (keccak256(abi.encodePacked(dominantShare)) == keccak256(abi.encodePacked("yes"))){
-            //zebrat jim pak feecko jeste
-        } else {
-            
-        }
+        //market ratio k nicemu zatim nepouzivam, mby smazat?
     }
 
 
