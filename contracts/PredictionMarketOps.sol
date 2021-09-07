@@ -10,7 +10,7 @@ contract PredictionMarketOps is PredictionMarketFactory {
 
     
 
-    constructor(string memory _name, uint _endingBlock, address _erc20TokenAddress, address _poolTokenAddress,uint _erc20TokenDigits, uint _providerFee) {
+    constructor(string memory _name, uint _endingBlock, address _erc20TokenAddress, address _poolTokenAddress, uint _erc20TokenDigits, uint _providerFee) {
         startingBlock = block.timestamp;
         endingBlock = _endingBlock;
         //TOHLE ODMAZAT KOMENT, JEN TESTUJU
@@ -20,6 +20,7 @@ contract PredictionMarketOps is PredictionMarketFactory {
         usd = IERC20(address(_erc20TokenAddress)); //should be a stablecoin
         pToken = IERC20(address(_poolTokenAddress)); //should be a stablecoin
         tenToPowerOfTokenDigits = 10 ** _erc20TokenDigits;
+        require(_erc20TokenDigits >= 6, "The token must have more than 6 decimals.");
     }
 
     function addLiquidity(uint _amount) external isLive {
@@ -41,8 +42,9 @@ contract PredictionMarketOps is PredictionMarketFactory {
 
         if (!thisUserExists) {
             liquidityProvider memory lp;
-            lp.providedLiquidity = uint128(_amount);
             lp.lpAddress = msg.sender;
+            lp.providedLiquidity = uint128(_amount);
+            lp.earnedProvision = 0;
             liquidityProviders.push(lp);
         }
 
@@ -75,7 +77,7 @@ contract PredictionMarketOps is PredictionMarketFactory {
     //change the name later
     function buySharesNew(string memory _choice, uint _amount) external onlyIfIsCorrectChoice(_choice) isLive {
         require(_amount >= tenToPowerOfTokenDigits , "You need to buy shares for at least 1 USD.");
-        require(_amount <= uint(1000000000000000000).mul(tenToPowerOfTokenDigits), "You cannot bit more than 1000000000000000000 USD");
+        require(_amount <= uint(1000000000000000000).mul(tenToPowerOfTokenDigits), "You cannot bid more than 1000000000000000000 USD");
 
         if (keccak256(abi.encodePacked(_choice)) == keccak256(abi.encodePacked("yes"))){
             require(_amount <= yesSharesEmitted, "There is not enough liquidity in this market.");
@@ -83,7 +85,6 @@ contract PredictionMarketOps is PredictionMarketFactory {
             require(_amount <= noSharesEmitted, "There is not enough liquidity in this market.");
         }
         
-
         uint liquidity;
         uint originalNumberOfYesShares = yesSharesEmitted;
         uint originalNumberOfNoShares = noSharesEmitted;
@@ -91,39 +92,48 @@ contract PredictionMarketOps is PredictionMarketFactory {
         uint marketRatio;
         string memory dominantShare;
 
+        usd.transferFrom(msg.sender, address(this), _amount.add(providerFee));
+
         for (uint i = 0; i < liquidityProviders.length; i++) {
             liquidity = liquidity.add(liquidityProviders[i].providedLiquidity);
         }
 
-        usd.transferFrom(msg.sender, address(this), _amount);
-
         for (uint i = 0; i < liquidityProviders.length; i++) {
             if(liquidityProviders[i].providedLiquidity != 0) {
-                uint percentageOfLiquidityProviders = liquidity.mul(10**18).div(liquidityProviders[i].providedLiquidity);
-                liquidityProviders[i].earnedProvision = uint128(liquidityProviders[i].earnedProvision.add(providerFee.mul(10**18).div(percentageOfLiquidityProviders)));
+                uint percentageOfLiquidityProviders = liquidity.mul(tenToPowerOfTokenDigits).div(liquidityProviders[i].providedLiquidity);
+                liquidityProviders[i].earnedProvision = uint128(liquidityProviders[i].earnedProvision.add(providerFee.mul(tenToPowerOfTokenDigits).div(percentageOfLiquidityProviders)));
             }
         }
         
         if (keccak256(abi.encodePacked(_choice)) == keccak256(abi.encodePacked("yes"))){
+            yesSharesEmitted = yesSharesEmitted.add(_amount);
             noSharesEmitted = noSharesEmitted.add(_amount);
             yesSharesEmitted = originalNumberOfYesShares.mul(originalNumberOfNoShares).div(noSharesEmitted);
-            (marketRatio, dominantShare) = calculateMarketRatio();
+
             uint newShares = originalNumberOfYesShares.sub(yesSharesEmitted).add(_amount);
-            yesSharesPerAddress[msg.sender] = newShares.sub(providerFee);
-            console.log( yesSharesPerAddress[msg.sender]);
+            yesSharesPerAddress[msg.sender] = newShares;
+            //console.log( yesSharesPerAddress[msg.sender]);
+
+            //console.log("yesshares", yesSharesEmitted);
+            //console.log("noshares", noSharesEmitted);
+
+            (marketRatio, dominantShare) = calculateMarketRatio();
         } else {
             yesSharesEmitted = yesSharesEmitted.add(_amount);
+            noSharesEmitted = noSharesEmitted.add(_amount);
             noSharesEmitted = originalNumberOfYesShares.mul(originalNumberOfNoShares).div(yesSharesEmitted);
-            (marketRatio, dominantShare) = calculateMarketRatio();
+
             uint newShares = originalNumberOfNoShares.sub(noSharesEmitted).add(_amount);
-            noSharesPerAddress[msg.sender] = newShares.sub(providerFee);
-            console.log(noSharesPerAddress[msg.sender]);
+            noSharesPerAddress[msg.sender] = newShares;
+            //console.log(noSharesPerAddress[msg.sender]);
+
+            //console.log("yesshares", yesSharesEmitted);
+            //console.log("noshares", noSharesEmitted);
+
+            (marketRatio, dominantShare) = calculateMarketRatio();
         }
         
-        console.log(yesSharesEmitted);
-        console.log(noSharesEmitted);
-        
-        console.log("market ratio je", marketRatio, "pro", dominantShare);
+        //console.log("market ratio je", marketRatio, "pro", dominantShare);
         //market ratio k nicemu zatim nepouzivam, mby smazat?
     }
 

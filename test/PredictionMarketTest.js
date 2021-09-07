@@ -4,6 +4,7 @@ describe("PredictionMarket Contract", function () {
   const marketName = "FirstMarket";
   const choice = "yes";
   const wantedShares = 12;
+  const providerFee = 2;
 
   beforeEach(async function () {
     usdToken = await ethers.getContractFactory("UsdToken");
@@ -23,7 +24,7 @@ describe("PredictionMarket Contract", function () {
 
     poolToken = await poolToken.deploy(1);
     
-    predictionMarket = await predictionMarket.deploy(marketName, endingDate, usdToken.address, poolToken.address, usdToken.decimals(), 2);
+    predictionMarket = await predictionMarket.deploy(marketName, endingDate, usdToken.address, poolToken.address, usdToken.decimals(), providerFee);
     poolToken.rely(predictionMarket.address);
     
   });
@@ -74,7 +75,11 @@ describe("PredictionMarket Contract", function () {
       await predictionMarket.connect(userOne).addLiquidity("10000000000000000000");
       await predictionMarket.addLiquidity("5000000000000000000");  
       await predictionMarket.connect(userTwo).buySharesNew(choice, "2500000000000000000");
-      
+      const lpStruct = await predictionMarket.liquidityProviders(0);
+      expect(ethers.utils.formatEther(lpStruct.earnedProvision)).to.equal("0.033333333333333333");
+      expect(ethers.utils.formatEther(await predictionMarket.yesSharesPerAddress(userTwo.address))).to.equal("4.5");
+      expect(ethers.utils.formatEther(await predictionMarket.yesSharesEmitted())).to.equal("8.0");
+      expect(ethers.utils.formatEther(await predictionMarket.noSharesEmitted())).to.equal("12.5");
     });
     it("Should be able to buy shares", async function() {
       usdToken.mint(marketOwner.address, "50000000000000000000");

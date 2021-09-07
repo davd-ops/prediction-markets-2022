@@ -166,13 +166,13 @@ contract PredictionMarketFactory is Ownable {
 
     function calculateMarketRatio() internal view returns(uint, string memory) {
         if (yesSharesEmitted > noSharesEmitted){
-            uint marketRatio = yesSharesEmitted.mul(10**18).div(noSharesEmitted);
+            uint marketRatio = yesSharesEmitted.mul(tenToPowerOfTokenDigits).div(noSharesEmitted);
             return (marketRatio, "yes");
         } else if (yesSharesEmitted < noSharesEmitted) {
-            uint marketRatio = noSharesEmitted.mul(10**18).div(yesSharesEmitted);
+            uint marketRatio = noSharesEmitted.mul(tenToPowerOfTokenDigits).div(yesSharesEmitted);
             return (marketRatio, "no");
         } else {
-            uint marketRatio = yesSharesEmitted.mul(10**18).div(noSharesEmitted);
+            uint marketRatio = yesSharesEmitted.mul(tenToPowerOfTokenDigits).div(noSharesEmitted);
             return (marketRatio, "yes");
         }
     }
