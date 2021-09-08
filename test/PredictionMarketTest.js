@@ -73,28 +73,28 @@ describe("PredictionMarket Contract", function () {
       usdToken.connect(userOne).approve(predictionMarket.address, "10000000000000000000");
       usdToken.connect(userTwo).approve(predictionMarket.address, "10000000000000000000");
       await predictionMarket.connect(userOne).addLiquidity("10000000000000000000");
-      await predictionMarket.addLiquidity("5000000000000000000");  
       await predictionMarket.connect(userTwo).buySharesNew(choice, "2500000000000000000");
       const lpStruct = await predictionMarket.liquidityProviders(0);
-      expect(ethers.utils.formatEther(lpStruct.earnedProvision)).to.equal("0.033333333333333333");
+      expect(ethers.utils.formatEther(lpStruct.earnedProvision)).to.equal("0.05");
       expect(ethers.utils.formatEther(await predictionMarket.yesSharesPerAddress(userTwo.address))).to.equal("4.5");
       expect(ethers.utils.formatEther(await predictionMarket.yesSharesEmitted())).to.equal("8.0");
       expect(ethers.utils.formatEther(await predictionMarket.noSharesEmitted())).to.equal("12.5");
     });
-    it("Should be able to buy shares", async function() {
+    it("NEW Should be able to add liquidity based on new market ratio", async function() {
       usdToken.mint(marketOwner.address, "50000000000000000000");
-      usdToken.approve(predictionMarket.address, "20000000000000000000");
-      await predictionMarket.buyShares(choice, wantedShares);
-      
-      if (choice == "yes") {
-        expect(await predictionMarket.yesSharesPerAddress(marketOwner.address)).to.equal(wantedShares);
-      } else if (choice == "no") {
-        expect(await predictionMarket.noSharesPerAddress(marketOwner.address)).to.equal(wantedShares);
-      }
-      
-      //TOHLE ODMAZAT KOMENT, JEN TESTUJU
-      //expect(ethers.utils.formatEther(await usdToken.balanceOf(predictionMarket.address))).to.equal("9.819866244866244852");
-      //expect(ethers.utils.formatEther(await usdToken.balanceOf(marketOwner.address))).to.equal("40.180133755133755148");
+      usdToken.mint(userOne.address, "10000000000000000000");
+      usdToken.mint(userTwo.address, "100000000000000000001");
+      usdToken.approve(predictionMarket.address, "50000000000000000000");
+      usdToken.connect(userOne).approve(predictionMarket.address, "10000000000000000000");
+      usdToken.connect(userTwo).approve(predictionMarket.address, "10000000000000000000");
+      await predictionMarket.connect(userOne).addLiquidity("10000000000000000000");
+      await predictionMarket.connect(userTwo).buySharesNew(choice, "2500000000000000000");
+      await predictionMarket.addLiquidity("10000000000000000000");  
+      const lpStruct = await predictionMarket.liquidityProviders(1);
+      expect(ethers.utils.formatEther(lpStruct.earnedProvision)).to.equal("0.0");
+      expect(ethers.utils.formatEther(await predictionMarket.yesSharesEmitted())).to.equal("14.4");
+      expect(ethers.utils.formatEther(await predictionMarket.noSharesEmitted())).to.equal("22.5");
+      expect(ethers.utils.formatEther(await predictionMarket.yesSharesPerAddress(userTwo.address))).to.equal("4.5");
     });
     it("Should be able to sell shares", async function() {
       usdToken.mint(marketOwner.address, "50000000000000000000");

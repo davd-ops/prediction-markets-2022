@@ -31,6 +31,19 @@ contract PredictionMarketOps is PredictionMarketFactory {
             yesSharesEmitted = _amount;
             noSharesEmitted = _amount;
             pToken.mint(msg.sender, _amount);
+        } else {
+            uint marketRatio;
+            string memory dominantShare;
+            (marketRatio, dominantShare) = calculateMarketRatio();
+            if(keccak256(abi.encodePacked(dominantShare)) == keccak256(abi.encodePacked("yes"))) {
+                yesSharesEmitted = yesSharesEmitted.add(_amount);
+                noSharesEmitted = noSharesEmitted.add(_amount.mul(tenToPowerOfTokenDigits).div(marketRatio));
+                pToken.mint(msg.sender, _amount);
+            } else {
+                noSharesEmitted = noSharesEmitted.add(_amount);
+                yesSharesEmitted = yesSharesEmitted.add(_amount.mul(tenToPowerOfTokenDigits).div(marketRatio));
+                pToken.mint(msg.sender, _amount);
+            }
         }
 
         for (uint i = 0; i < liquidityProviders.length; i++) {
@@ -75,6 +88,7 @@ contract PredictionMarketOps is PredictionMarketFactory {
     }
 
     //change the name later
+    //TODO: SELL SHARES
     function buySharesNew(string memory _choice, uint _amount) external onlyIfIsCorrectChoice(_choice) isLive {
         require(_amount >= tenToPowerOfTokenDigits , "You need to buy shares for at least 1 USD.");
         require(_amount <= uint(1000000000000000000).mul(tenToPowerOfTokenDigits), "You cannot bid more than 1000000000000000000 USD");
@@ -89,9 +103,6 @@ contract PredictionMarketOps is PredictionMarketFactory {
         uint originalNumberOfYesShares = yesSharesEmitted;
         uint originalNumberOfNoShares = noSharesEmitted;
         uint providerFee = _amount.div(100).mul(providerFee);
-        uint marketRatio;
-        string memory dominantShare;
-
         usd.transferFrom(msg.sender, address(this), _amount.add(providerFee));
 
         for (uint i = 0; i < liquidityProviders.length; i++) {
@@ -112,12 +123,6 @@ contract PredictionMarketOps is PredictionMarketFactory {
 
             uint newShares = originalNumberOfYesShares.sub(yesSharesEmitted).add(_amount);
             yesSharesPerAddress[msg.sender] = newShares;
-            //console.log( yesSharesPerAddress[msg.sender]);
-
-            //console.log("yesshares", yesSharesEmitted);
-            //console.log("noshares", noSharesEmitted);
-
-            (marketRatio, dominantShare) = calculateMarketRatio();
         } else {
             yesSharesEmitted = yesSharesEmitted.add(_amount);
             noSharesEmitted = noSharesEmitted.add(_amount);
@@ -125,31 +130,6 @@ contract PredictionMarketOps is PredictionMarketFactory {
 
             uint newShares = originalNumberOfNoShares.sub(noSharesEmitted).add(_amount);
             noSharesPerAddress[msg.sender] = newShares;
-            //console.log(noSharesPerAddress[msg.sender]);
-
-            //console.log("yesshares", yesSharesEmitted);
-            //console.log("noshares", noSharesEmitted);
-
-            (marketRatio, dominantShare) = calculateMarketRatio();
-        }
-        
-        //console.log("market ratio je", marketRatio, "pro", dominantShare);
-        //market ratio k nicemu zatim nepouzivam, mby smazat?
-    }
-
-
-    function buyShares(string memory _choice, uint _wantedShares) external onlyIfIsCorrectChoice(_choice) isLive {
-        require(_wantedShares > 0 , "You need to buy at least 1 share.");
-        uint pricePerShare = calculateAveragePriceForBuying(_wantedShares, _choice);
-
-        if (keccak256(abi.encodePacked(_choice)) == keccak256(abi.encodePacked("yes"))){
-            _executionOfTheBuy(_wantedShares, pricePerShare);
-            yesSharesEmitted = yesSharesEmitted.add(_wantedShares);
-            yesSharesPerAddress[msg.sender] = yesSharesPerAddress[msg.sender].add(_wantedShares);
-        } else {
-            _executionOfTheBuy(_wantedShares, pricePerShare);
-            noSharesEmitted = noSharesEmitted.add(_wantedShares);
-            noSharesPerAddress[msg.sender] = noSharesPerAddress[msg.sender].add(_wantedShares);
         }
     }
 
