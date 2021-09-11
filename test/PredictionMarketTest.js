@@ -65,7 +65,7 @@ describe("PredictionMarket Contract", function () {
       expect(ethers.utils.formatEther(lpStruct.providedLiquidity)).to.equal("10.0");
       expect(lpStruct.lpAddress).to.equal(userOne.address);
     });
-    it("NEW Should be able to buy shares", async function() {
+    it("Should be able to buy shares", async function() {
       usdToken.mint(marketOwner.address, "50000000000000000000");
       usdToken.mint(userOne.address, "10000000000000000000");
       usdToken.mint(userTwo.address, "100000000000000000001");
@@ -86,7 +86,7 @@ describe("PredictionMarket Contract", function () {
         expect(ethers.utils.formatEther(await predictionMarket.noSharesEmitted())).to.equal("8.0");
       }
     });
-    it("NEW Should be able to sell shares", async function() {
+    it("Should be able to sell shares", async function() {
       usdToken.mint(marketOwner.address, "50000000000000000000");
       usdToken.mint(userOne.address, "100000000000000000000");
       usdToken.mint(userTwo.address, "100000000000000000001");
@@ -109,7 +109,7 @@ describe("PredictionMarket Contract", function () {
       }
       
     });
-    it("NEW Should be able to add liquidity based on new market ratio", async function() {
+    it("Should be able to add liquidity based on new market ratio", async function() {
       usdToken.mint(marketOwner.address, "50000000000000000000");
       usdToken.mint(userOne.address, "10000000000000000000");
       usdToken.mint(userTwo.address, "100000000000000000001");
@@ -131,27 +131,30 @@ describe("PredictionMarket Contract", function () {
         expect(ethers.utils.formatEther(await predictionMarket.noSharesPerAddress(userTwo.address))).to.equal("4.5");
       }
     });
-    /*
-    it("Should be able to ...", async function() {
+    it("Should be able to withdraw your liquidity position", async function() {
       usdToken.mint(marketOwner.address, "50000000000000000000");
-      usdToken.mint(userOne.address, "50000000000000000000");
+      usdToken.mint(userOne.address, "100000000000000000000");
+      usdToken.mint(userTwo.address, "100000000000000000001");
       usdToken.approve(predictionMarket.address, "50000000000000000000");
-      usdToken.connect(userOne).approve(predictionMarket.address, "50000000000000000000");
-      //console.log("v kontraktu je:",await usdToken.balanceOf(predictionMarket.address));
-      
-      console.log(ethers.utils.formatEther(await usdToken.connect(marketOwner).balanceOf(marketOwner.address)));
-      await predictionMarket.connect(marketOwner).buyShares(choice, 10);
-      console.log(ethers.utils.formatEther(await usdToken.connect(marketOwner).balanceOf(marketOwner.address)));
-      //await predictionMarket.connect(marketOwner).buyShares(choice, 25);
-      console.log(ethers.utils.formatEther(await usdToken.connect(marketOwner).balanceOf(marketOwner.address)));
-      await predictionMarket.connect(userOne).buyShares("no", 40);
-      //await predictionMarket.sellShares(choice, 13);
-      //await predictionMarket.buyShares("no", 8);
-      //console.log("v kontraktu je:",await usdToken.balanceOf(predictionMarket.address));
-      await predictionMarket.chooseWinningSide("no");
-      await predictionMarket.connect(userOne).claimUsd();
+      usdToken.connect(userOne).approve(predictionMarket.address, "100000000000000000000");
+      usdToken.connect(userTwo).approve(predictionMarket.address, "10000000000000000000");
+      await predictionMarket.connect(userOne).addLiquidity("100000000000000000000");
+      await predictionMarket.connect(userTwo).buyShares(choice, "2500000000000000000");
+      //TBD
     });
-    */
+    it("Should be able to claim your winnings", async function() {
+      usdToken.mint(marketOwner.address, "50000000000000000000");
+      usdToken.mint(userOne.address, "100000000000000000000");
+      usdToken.mint(userTwo.address, "100000000000000000001");
+      usdToken.approve(predictionMarket.address, "50000000000000000000");
+      usdToken.connect(userOne).approve(predictionMarket.address, "100000000000000000000");
+      usdToken.connect(userTwo).approve(predictionMarket.address, "10000000000000000000");
+      await predictionMarket.connect(userOne).addLiquidity("100000000000000000000");
+      await predictionMarket.connect(userTwo).buyShares(choice, "2500000000000000000");
+      await predictionMarket.chooseWinningSide(choice);
+      expect(await predictionMarket.winningSide()).to.equal(choice);
+      await predictionMarket.connect(userTwo).claimUsd();
+    });
     
   });
 

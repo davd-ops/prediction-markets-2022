@@ -27,7 +27,7 @@ contract PredictionMarketOps is PredictionMarketFactory {
         require(_amount >= uint256(10).mul(tenToPowerOfTokenDigits) , "You need to buy shares for at least 10 USD.");
 
         bool thisUserExists = false;
-    
+        
         usd.transferFrom(msg.sender, address(this), _amount);
         if(yesSharesEmitted == 0 && noSharesEmitted == 0){
             yesSharesEmitted = _amount;
@@ -62,8 +62,6 @@ contract PredictionMarketOps is PredictionMarketFactory {
             lp.earnedProvision = 0;
             liquidityProviders.push(lp);
         }
-
-        //nedodelane
     }
 
     function chooseWinningSide(string memory _choice) external onlyOwner isClosed onlyIfIsCorrectChoice(_choice) {
@@ -75,16 +73,16 @@ contract PredictionMarketOps is PredictionMarketFactory {
         
         if (keccak256(abi.encodePacked(winningSide)) == keccak256(abi.encodePacked("yes"))){
             console.log("BAlance je:", usd.balanceOf(address(this)));
-            console.log("User dostane", yesSharesPerAddress[msg.sender].mul(tenToPowerOfTokenDigits));
-            usd.transfer(msg.sender, yesSharesPerAddress[msg.sender].mul(tenToPowerOfTokenDigits));
+            console.log("User dostane", yesSharesPerAddress[msg.sender]);
+            usd.transfer(msg.sender, yesSharesPerAddress[msg.sender]);
             claimed = true;
         } else if(keccak256(abi.encodePacked(winningSide)) == keccak256(abi.encodePacked("no"))) {
             console.log("BAlance je:", usd.balanceOf(address(this)));
-            console.log("User dostane", noSharesPerAddress[msg.sender].mul(tenToPowerOfTokenDigits));
-            usd.transfer(msg.sender, noSharesPerAddress[msg.sender].mul(tenToPowerOfTokenDigits));
+            console.log("User dostane", noSharesPerAddress[msg.sender]);
+            usd.transfer(msg.sender, noSharesPerAddress[msg.sender]);
             claimed = true;
         }
-        require(claimed, "This market is not closed yet.");
+        require(claimed, "Error have occured, please try again later.");
         yesSharesPerAddress[msg.sender] = 0;
         noSharesPerAddress[msg.sender] = 0;
     }
@@ -93,7 +91,7 @@ contract PredictionMarketOps is PredictionMarketFactory {
         require(_amount >= tenToPowerOfTokenDigits , "You need to buy shares for at least 1 USD.");
 
         if (keccak256(abi.encodePacked(_choice)) == keccak256(abi.encodePacked("yes"))){
-            require(_amount <= yesSharesEmitted, "There is not enough liquidity in this market."); //this is probably not right
+            require(_amount <= yesSharesEmitted, "There is not enough liquidity in this market.");
             require(yesSharesPerAddress[msg.sender].add(_amount) <= uint(1000000000000000000).mul(tenToPowerOfTokenDigits), "You cannot bid more than 1000000000000000000 USD");
         } else {
             require(_amount <= noSharesEmitted, "There is not enough liquidity in this market.");
