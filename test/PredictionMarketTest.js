@@ -73,7 +73,7 @@ describe("PredictionMarket Contract", function () {
       usdToken.connect(userOne).approve(predictionMarket.address, "10000000000000000000");
       usdToken.connect(userTwo).approve(predictionMarket.address, "10000000000000000000");
       await predictionMarket.connect(userOne).addLiquidity("10000000000000000000");
-      await predictionMarket.connect(userTwo).buySharesNew(choice, "2500000000000000000");
+      await predictionMarket.connect(userTwo).buyShares(choice, "2500000000000000000");
       const lpStruct = await predictionMarket.liquidityProviders(0);
       expect(ethers.utils.formatEther(lpStruct.earnedProvision)).to.equal("0.05");
       if(choice == "yes"){
@@ -94,8 +94,8 @@ describe("PredictionMarket Contract", function () {
       usdToken.connect(userOne).approve(predictionMarket.address, "100000000000000000000");
       usdToken.connect(userTwo).approve(predictionMarket.address, "10000000000000000000");
       await predictionMarket.connect(userOne).addLiquidity("100000000000000000000");
-      await predictionMarket.connect(userTwo).buySharesNew(choice, "2500000000000000000");
-      await predictionMarket.connect(userTwo).sellSharesNew(choice, "4939024390243902440");
+      await predictionMarket.connect(userTwo).buyShares(choice, "2500000000000000000");
+      await predictionMarket.connect(userTwo).sellShares(choice, "4939024390243902440");
       const lpStruct = await predictionMarket.liquidityProviders(0);
       expect(ethers.utils.formatEther(lpStruct.earnedProvision)).to.equal("0.148780487804878048");
       expect(ethers.utils.formatEther(await predictionMarket.yesSharesPerAddress(userTwo.address))).to.equal("0.0");
@@ -117,7 +117,7 @@ describe("PredictionMarket Contract", function () {
       usdToken.connect(userOne).approve(predictionMarket.address, "10000000000000000000");
       usdToken.connect(userTwo).approve(predictionMarket.address, "10000000000000000000");
       await predictionMarket.connect(userOne).addLiquidity("10000000000000000000");
-      await predictionMarket.connect(userTwo).buySharesNew(choice, "2500000000000000000");
+      await predictionMarket.connect(userTwo).buyShares(choice, "2500000000000000000");
       await predictionMarket.addLiquidity("10000000000000000000");  
       const lpStruct = await predictionMarket.liquidityProviders(1);
       expect(ethers.utils.formatEther(lpStruct.earnedProvision)).to.equal("0.0");

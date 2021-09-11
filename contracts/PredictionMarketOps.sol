@@ -89,8 +89,7 @@ contract PredictionMarketOps is PredictionMarketFactory {
         noSharesPerAddress[msg.sender] = 0;
     }
 
-    //change the name later
-    function buySharesNew(string memory _choice, uint _amount) external onlyIfIsCorrectChoice(_choice) isLive {
+    function buyShares(string memory _choice, uint _amount) external onlyIfIsCorrectChoice(_choice) isLive {
         require(_amount >= tenToPowerOfTokenDigits , "You need to buy shares for at least 1 USD.");
 
         if (keccak256(abi.encodePacked(_choice)) == keccak256(abi.encodePacked("yes"))){
@@ -101,22 +100,12 @@ contract PredictionMarketOps is PredictionMarketFactory {
             require(noSharesPerAddress[msg.sender].add(_amount) <= uint(1000000000000000000).mul(tenToPowerOfTokenDigits), "You cannot bid more than 1000000000000000000 USD");
         }
         
-        uint liquidity;
         uint originalNumberOfYesShares = yesSharesEmitted;
         uint originalNumberOfNoShares = noSharesEmitted;
-        uint providerFee = _amount.div(100).mul(providerFee);
-        usd.transferFrom(msg.sender, address(this), _amount.add(providerFee));
+        uint distributedProviderFee = _amount.div(100).mul(providerFee);
+        usd.transferFrom(msg.sender, address(this), _amount.add(distributedProviderFee));
 
-        for (uint i = 0; i < liquidityProviders.length; i++) {
-            liquidity = liquidity.add(liquidityProviders[i].providedLiquidity);
-        }
-
-        for (uint i = 0; i < liquidityProviders.length; i++) {
-            if(liquidityProviders[i].providedLiquidity != 0) {
-                uint percentageOfLiquidityProviders = liquidity.mul(tenToPowerOfTokenDigits).div(liquidityProviders[i].providedLiquidity);
-                liquidityProviders[i].earnedProvision = uint128(liquidityProviders[i].earnedProvision.add(providerFee.mul(tenToPowerOfTokenDigits).div(percentageOfLiquidityProviders)));
-            }
-        }
+        distributeProviderFeeToLiquidityProviders(distributedProviderFee);
         
         if (keccak256(abi.encodePacked(_choice)) == keccak256(abi.encodePacked("yes"))){
             noSharesEmitted = noSharesEmitted.add(_amount);
@@ -133,8 +122,7 @@ contract PredictionMarketOps is PredictionMarketFactory {
         }
     }
 
-    //change the name later
-    function sellSharesNew(string memory _choice, uint _amount) external onlyIfIsCorrectChoice(_choice) isLive {
+    function sellShares(string memory _choice, uint _amount) external onlyIfIsCorrectChoice(_choice) isLive {
         require(_amount >= tenToPowerOfTokenDigits , "You need to buy shares for at least 1 USD.");
         require(_amount.div(2) <= usd.balanceOf(address(this)), "There is not enough liquidity in this smartcontract.");
 
@@ -144,24 +132,13 @@ contract PredictionMarketOps is PredictionMarketFactory {
             require(_amount <= noSharesPerAddress[msg.sender], "You don't have enough shares to sell.");
         }
         
-        uint liquidity;
         uint originalNumberOfYesShares = yesSharesEmitted;
         uint originalNumberOfNoShares = noSharesEmitted;
-        uint providerFee = _amount.div(100).mul(providerFee);
-        usd.transfer(msg.sender, _amount.div(2).sub(providerFee));
+        uint distributedProviderFee = _amount.div(100).mul(providerFee);
+        usd.transfer(msg.sender, _amount.div(2).sub(distributedProviderFee));
 
-        for (uint i = 0; i < liquidityProviders.length; i++) {
-            liquidity = liquidity.add(liquidityProviders[i].providedLiquidity);
-        }
-
-        for (uint i = 0; i < liquidityProviders.length; i++) {
-            if(liquidityProviders[i].providedLiquidity != 0) {
-                uint percentageOfLiquidityProviders = liquidity.mul(tenToPowerOfTokenDigits).div(liquidityProviders[i].providedLiquidity);
-                liquidityProviders[i].earnedProvision = uint128(liquidityProviders[i].earnedProvision.add(providerFee.mul(tenToPowerOfTokenDigits).div(percentageOfLiquidityProviders)));
-            }
-        }
+        distributeProviderFeeToLiquidityProviders(distributedProviderFee);
         
-        //change this
         if (keccak256(abi.encodePacked(_choice)) == keccak256(abi.encodePacked("yes"))){
             noSharesEmitted = noSharesEmitted.sub(_amount.div(2));
             yesSharesEmitted = originalNumberOfYesShares.mul(originalNumberOfNoShares).div(noSharesEmitted);       

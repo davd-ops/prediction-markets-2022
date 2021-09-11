@@ -37,6 +37,7 @@ interface IERC20 {
 
 contract PredictionMarketFactory is Ownable {
     using SafeMath for uint;
+    using SafeMath for uint128;
 
     string public marketName;
     uint public startingBlock;
@@ -162,6 +163,21 @@ contract PredictionMarketFactory is Ownable {
         //console.log("Average price for share: 0,", averagePriceForShare);
         
         return averagePriceForShare;
+    }
+
+    function distributeProviderFeeToLiquidityProviders(uint _providerFee) internal {
+        uint liquidity;
+
+        for (uint i = 0; i < liquidityProviders.length; i++) {
+            liquidity = liquidity.add(liquidityProviders[i].providedLiquidity);
+        }
+
+        for (uint i = 0; i < liquidityProviders.length; i++) {
+            if(liquidityProviders[i].providedLiquidity != 0) {
+                uint percentageOfLiquidityProviders = liquidity.mul(tenToPowerOfTokenDigits).div(liquidityProviders[i].providedLiquidity);
+                liquidityProviders[i].earnedProvision = uint128(liquidityProviders[i].earnedProvision.add(_providerFee.mul(tenToPowerOfTokenDigits).div(percentageOfLiquidityProviders)));
+            }
+        }
     }
 
     function calculateMarketRatio() internal view returns(uint, string memory) {
