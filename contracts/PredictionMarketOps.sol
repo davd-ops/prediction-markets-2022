@@ -24,6 +24,8 @@ contract PredictionMarketOps is PredictionMarketFactory {
     }
 
     function addLiquidity(uint _amount) external isLive {
+        require(_amount >= uint256(10).mul(tenToPowerOfTokenDigits) , "You need to buy shares for at least 10 USD.");
+
         bool thisUserExists = false;
     
         usd.transferFrom(msg.sender, address(this), _amount);
@@ -88,15 +90,15 @@ contract PredictionMarketOps is PredictionMarketFactory {
     }
 
     //change the name later
-    //TODO: SELL SHARES
     function buySharesNew(string memory _choice, uint _amount) external onlyIfIsCorrectChoice(_choice) isLive {
         require(_amount >= tenToPowerOfTokenDigits , "You need to buy shares for at least 1 USD.");
-        require(_amount <= uint(1000000000000000000).mul(tenToPowerOfTokenDigits), "You cannot bid more than 1000000000000000000 USD");
 
         if (keccak256(abi.encodePacked(_choice)) == keccak256(abi.encodePacked("yes"))){
-            require(_amount <= yesSharesEmitted, "There is not enough liquidity in this market.");
+            require(_amount <= yesSharesEmitted, "There is not enough liquidity in this market."); //this is probably not right
+            require(yesSharesPerAddress[msg.sender].add(_amount) <= uint(1000000000000000000).mul(tenToPowerOfTokenDigits), "You cannot bid more than 1000000000000000000 USD");
         } else {
             require(_amount <= noSharesEmitted, "There is not enough liquidity in this market.");
+            require(noSharesPerAddress[msg.sender].add(_amount) <= uint(1000000000000000000).mul(tenToPowerOfTokenDigits), "You cannot bid more than 1000000000000000000 USD");
         }
         
         uint liquidity;
@@ -117,48 +119,62 @@ contract PredictionMarketOps is PredictionMarketFactory {
         }
         
         if (keccak256(abi.encodePacked(_choice)) == keccak256(abi.encodePacked("yes"))){
-            yesSharesEmitted = yesSharesEmitted.add(_amount);
             noSharesEmitted = noSharesEmitted.add(_amount);
             yesSharesEmitted = originalNumberOfYesShares.mul(originalNumberOfNoShares).div(noSharesEmitted);
 
-            uint newShares = originalNumberOfYesShares.sub(yesSharesEmitted).add(_amount);
-            yesSharesPerAddress[msg.sender] = newShares;
+            uint newShares = yesSharesPerAddress[msg.sender].add(originalNumberOfYesShares.sub(yesSharesEmitted).add(_amount));
+            yesSharesPerAddress[msg.sender] = newShares; 
         } else {
             yesSharesEmitted = yesSharesEmitted.add(_amount);
-            noSharesEmitted = noSharesEmitted.add(_amount);
             noSharesEmitted = originalNumberOfYesShares.mul(originalNumberOfNoShares).div(yesSharesEmitted);
 
-            uint newShares = originalNumberOfNoShares.sub(noSharesEmitted).add(_amount);
+            uint newShares = noSharesPerAddress[msg.sender].add(originalNumberOfNoShares.sub(noSharesEmitted).add(_amount));
             noSharesPerAddress[msg.sender] = newShares;
         }
     }
 
-    function sellShares(string memory _choice, uint _sharesToSell) external onlyIfIsCorrectChoice(_choice) isLive {
-        require(_sharesToSell > 0 , "You need to sell at least 1 share.");
-        
-        uint pricePerShare = calculateAveragePriceForSelling(_sharesToSell, _choice);
+    //change the name later
+    function sellSharesNew(string memory _choice, uint _amount) external onlyIfIsCorrectChoice(_choice) isLive {
+        require(_amount >= tenToPowerOfTokenDigits , "You need to buy shares for at least 1 USD.");
+        require(_amount.div(2) <= usd.balanceOf(address(this)), "There is not enough liquidity in this smartcontract.");
 
         if (keccak256(abi.encodePacked(_choice)) == keccak256(abi.encodePacked("yes"))){
-            _executionOfTheSell(_sharesToSell, pricePerShare);
-            yesSharesEmitted = yesSharesEmitted.sub(_sharesToSell);
-            yesSharesPerAddress[msg.sender] = yesSharesPerAddress[msg.sender].sub(_sharesToSell);
+            require(_amount <= yesSharesPerAddress[msg.sender], "You don't have enough shares to sell.");
         } else {
-            _executionOfTheSell(_sharesToSell, pricePerShare);
-            noSharesEmitted = noSharesEmitted.sub(_sharesToSell);
-            noSharesPerAddress[msg.sender] = noSharesPerAddress[msg.sender].sub(_sharesToSell);
+            require(_amount <= noSharesPerAddress[msg.sender], "You don't have enough shares to sell.");
         }
-    }
+        
+        uint liquidity;
+        uint originalNumberOfYesShares = yesSharesEmitted;
+        uint originalNumberOfNoShares = noSharesEmitted;
+        uint providerFee = _amount.div(100).mul(providerFee);
+        usd.transfer(msg.sender, _amount.div(2).sub(providerFee));
 
-    function _executionOfTheBuy(uint _amount, uint _pricePerShare) private {
-        uint userWillPay = _amount.mul(_pricePerShare);
-        usd.transferFrom(msg.sender, address(this), userWillPay);
-        //console.log("Celkove to bude stat: ", userWillPay);
-    }
+        for (uint i = 0; i < liquidityProviders.length; i++) {
+            liquidity = liquidity.add(liquidityProviders[i].providedLiquidity);
+        }
 
-    function _executionOfTheSell(uint _amount, uint _pricePerShare) private {
-        uint userWillGet = _amount.mul(_pricePerShare);
-        usd.transfer(msg.sender, userWillGet);
-        //console.log("Celkove dostanes: ", userWillGet);
+        for (uint i = 0; i < liquidityProviders.length; i++) {
+            if(liquidityProviders[i].providedLiquidity != 0) {
+                uint percentageOfLiquidityProviders = liquidity.mul(tenToPowerOfTokenDigits).div(liquidityProviders[i].providedLiquidity);
+                liquidityProviders[i].earnedProvision = uint128(liquidityProviders[i].earnedProvision.add(providerFee.mul(tenToPowerOfTokenDigits).div(percentageOfLiquidityProviders)));
+            }
+        }
+        
+        //change this
+        if (keccak256(abi.encodePacked(_choice)) == keccak256(abi.encodePacked("yes"))){
+            noSharesEmitted = noSharesEmitted.sub(_amount.div(2));
+            yesSharesEmitted = originalNumberOfYesShares.mul(originalNumberOfNoShares).div(noSharesEmitted);       
+
+            uint newShares = yesSharesPerAddress[msg.sender].sub(_amount);
+            yesSharesPerAddress[msg.sender] = newShares;
+        } else {
+            yesSharesEmitted = yesSharesEmitted.sub(_amount.div(2));
+            noSharesEmitted = originalNumberOfYesShares.mul(originalNumberOfNoShares).div(yesSharesEmitted);       
+
+            uint newShares = noSharesPerAddress[msg.sender].sub(_amount);
+            noSharesPerAddress[msg.sender] = newShares;
+        }
     }
 
 }
