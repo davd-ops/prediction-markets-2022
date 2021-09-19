@@ -6,8 +6,6 @@ import "./Ownable.sol";
 import "./SafeMath.sol";
 import "hardhat/console.sol";
 
-//ADD EVENTS!!
-
 interface IERC20 {
 
     function totalSupply() external view returns (uint256);
@@ -38,6 +36,14 @@ interface IERC20 {
 contract PredictionMarketFactory is Ownable {
     using SafeMath for uint;
     using SafeMath for uint128;
+
+    event MarketCreated(address marketAddress);
+    event LiquidityProvided(uint amount, address provider);
+    event LiquidityWithdrawn(uint amount, address provider);
+    event WinningSideChosen(string chosenWinningSide);
+    event UsdClaimed(uint amount);
+    event SharesBought(uint amount);
+    event SharesSold(uint amount);
 
     string public marketName;
     uint public startingBlock;

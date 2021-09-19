@@ -9,7 +9,6 @@ describe("PredictionMarket Contract", function () {
 
   beforeEach(async function () {
     usdToken = await ethers.getContractFactory("UsdToken");
-    //poolToken = await ethers.getContractFactory("PoolToken");
     predictionMarket = await ethers.getContractFactory("PredictionMarketOps");
 
     const network = "homestead"; // The mainnet
@@ -22,18 +21,14 @@ describe("PredictionMarket Contract", function () {
     [marketOwner, userOne, userTwo, ...address] = await ethers.getSigners();
   
     usdToken = await usdToken.deploy(1);
-
-    //poolToken = await poolToken.deploy(1);
     
     predictionMarket = await predictionMarket.deploy(marketName, endingDate, usdToken.address, usdToken.decimals(), providerFee);
-    //poolToken.rely(predictionMarket.address);
-    
   });
 
   describe("Deployment", function() {
     it("Should set up market correctly", async function() {
       expect(await predictionMarket.marketName()).to.equal(marketName);
-      //expect(await predictionMarket.checkIfTheMarketIsClosed()).to.equal(false);
+      expect(await predictionMarket.checkIfTheMarketIsClosed()).to.equal(false);
     });
   });
 
@@ -41,12 +36,15 @@ describe("PredictionMarket Contract", function () {
     it("Should be able to implement stablecoin token", async function() {
       usdToken.mint(userOne.address, "50000000000000000000");
       expect(ethers.utils.formatEther(await usdToken.balanceOf(userOne.address))).to.equal("50.0");
-      //mel bych tu dodelat vsechny testy jako approve a tak
-    });
-    it("Should be able to implement pool token", async function() {
-      //poolToken.mint(userOne.address, "50000000000000000000");
-      //expect(ethers.utils.formatEther(await poolToken.balanceOf(userOne.address))).to.equal("50.0");
-      //mel bych tu dodelat vsechny testy jako approve a tak
+      await usdToken.connect(userOne).transfer(userTwo.address, "50000000000000000000");
+      expect(ethers.utils.formatEther(await usdToken.balanceOf(userOne.address))).to.equal("0.0");
+      expect(ethers.utils.formatEther(await usdToken.balanceOf(userTwo.address))).to.equal("50.0");
+      await usdToken.connect(userTwo).approve(userOne.address, "50000000000000000000");
+      await usdToken.connect(userOne).transferFrom(userTwo.address, userOne.address, "50000000000000000000");
+      expect(ethers.utils.formatEther(await usdToken.balanceOf(userTwo.address))).to.equal("0.0");
+      expect(ethers.utils.formatEther(await usdToken.balanceOf(userOne.address))).to.equal("50.0");
+      await usdToken.connect(userOne).burn(userOne.address, "50000000000000000000");
+      expect(ethers.utils.formatEther(await usdToken.totalSupply())).to.equal("0.0");
     });
     it("Should be able to approve erc-20 token", async function() {
       await usdToken.connect(userOne).approve(predictionMarket.address, "10000000000000000000");
@@ -58,8 +56,6 @@ describe("PredictionMarket Contract", function () {
       await predictionMarket.connect(userOne).addLiquidity("10000000000000000000");
       expect(ethers.utils.formatEther(await usdToken.balanceOf(userOne.address))).to.equal("0.0");
       expect(ethers.utils.formatEther(await usdToken.balanceOf(predictionMarket.address))).to.equal("10.0");
-      //expect(ethers.utils.formatEther(await poolToken.totalSupply())).to.equal("10.0");
-      //expect(ethers.utils.formatEther(await poolToken.balanceOf(userOne.address))).to.equal("10.0");
       expect(ethers.utils.formatEther(await predictionMarket.yesSharesEmitted())).to.equal("10.0");
       expect(ethers.utils.formatEther(await predictionMarket.noSharesEmitted())).to.equal("10.0");
       const lpStruct = await predictionMarket.liquidityProviders(0);
@@ -117,7 +113,6 @@ describe("PredictionMarket Contract", function () {
       usdToken.connect(userOne).approve(predictionMarket.address, "100000000000000000000");
       usdToken.connect(userTwo).approve(predictionMarket.address, "100000000000000000000");
       await predictionMarket.connect(userOne).addLiquidity("10000000000000000000");
-      //await predictionMarket.connect(userTwo).addLiquidity("10000000000000000000");
       await predictionMarket.connect(userTwo).buyShares(choice, "2500000000000000000");
       await predictionMarket.connect(userOne).withdrawLiquidity();
       const lpStruct = await predictionMarket.liquidityProviders(0);
@@ -182,5 +177,4 @@ describe("PredictionMarket Contract", function () {
       } 
     });
   });
-
 });

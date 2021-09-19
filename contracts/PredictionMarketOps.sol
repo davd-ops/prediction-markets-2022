@@ -7,8 +7,6 @@ contract PredictionMarketOps is PredictionMarketFactory {
     using SafeMath for uint;
     using SafeMath for uint128;
 
-    
-
     constructor(string memory _name, uint _endingBlock, address _erc20TokenAddress,  uint _erc20TokenDigits, uint _providerFee) {
         startingBlock = block.timestamp;
         endingBlock = _endingBlock;
@@ -18,6 +16,7 @@ contract PredictionMarketOps is PredictionMarketFactory {
         usd = IERC20(address(_erc20TokenAddress)); //should be a stablecoin
         tenToPowerOfTokenDigits = 10 ** _erc20TokenDigits;
         require(_erc20TokenDigits >= 6, "The token must have more than 6 decimals.");
+        emit MarketCreated(address(this));
     }
 
     function addLiquidity(uint _amount) external isLive {
@@ -56,6 +55,7 @@ contract PredictionMarketOps is PredictionMarketFactory {
             lp.earnedProvision = 0;
             liquidityProviders.push(lp);
         }
+        emit LiquidityProvided(_amount, msg.sender);
     }
 
     function withdrawLiquidity() external {
@@ -87,6 +87,7 @@ contract PredictionMarketOps is PredictionMarketFactory {
                     noSharesEmitted = noSharesEmitted.sub(userWillGet);
                     yesSharesEmitted = yesSharesEmitted.sub(userWillGet);
                     usd.transfer(msg.sender, userWillGet.add(liquidityProviders[i].earnedProvision));
+                    emit LiquidityWithdrawn(userWillGet.add(liquidityProviders[i].earnedProvision), msg.sender);
                     delete liquidityProviders[i];
                     yesSharesPerAddress[msg.sender] = yesSharesPerAddress[msg.sender].add(userWillGet.mul(marketRatio)).div(tenToPowerOfTokenDigits).sub(userWillGet);
                 } else {
@@ -94,10 +95,10 @@ contract PredictionMarketOps is PredictionMarketFactory {
                     yesSharesEmitted = yesSharesEmitted.sub(userWillGet);
                     noSharesEmitted = noSharesEmitted.sub(userWillGet);
                     usd.transfer(msg.sender, userWillGet.add(liquidityProviders[i].earnedProvision));
+                    emit LiquidityWithdrawn(userWillGet.add(liquidityProviders[i].earnedProvision), msg.sender);
                     delete liquidityProviders[i];
                     noSharesPerAddress[msg.sender] = noSharesPerAddress[msg.sender].add(userWillGet.mul(marketRatio)).div(tenToPowerOfTokenDigits).sub(userWillGet);
                     }
-
                 break; 
             }
         }
@@ -106,6 +107,7 @@ contract PredictionMarketOps is PredictionMarketFactory {
 
     function chooseWinningSide(string memory _choice) external onlyOwner isClosed onlyIfIsCorrectChoice(_choice) {
         winningSide = _choice;
+        emit WinningSideChosen(winningSide);
     }
 
     function claimUsd() external isClosed {
@@ -113,9 +115,11 @@ contract PredictionMarketOps is PredictionMarketFactory {
         
         if (keccak256(abi.encodePacked(winningSide)) == keccak256(abi.encodePacked("yes"))){
             usd.transfer(msg.sender, yesSharesPerAddress[msg.sender]);
+            emit UsdClaimed(yesSharesPerAddress[msg.sender]);
             claimed = true;
         } else if(keccak256(abi.encodePacked(winningSide)) == keccak256(abi.encodePacked("no"))) {
             usd.transfer(msg.sender, noSharesPerAddress[msg.sender]);
+            emit UsdClaimed(noSharesPerAddress[msg.sender]);
             claimed = true;
         }
         require(claimed, "Error have occured, please try again later.");
@@ -145,14 +149,18 @@ contract PredictionMarketOps is PredictionMarketFactory {
             noSharesEmitted = noSharesEmitted.add(_amount);
             yesSharesEmitted = originalNumberOfYesShares.mul(originalNumberOfNoShares).div(noSharesEmitted);
 
+            uint originalNumberOfShares = yesSharesPerAddress[msg.sender];
             uint newShares = yesSharesPerAddress[msg.sender].add(originalNumberOfYesShares.sub(yesSharesEmitted).add(_amount));
             yesSharesPerAddress[msg.sender] = newShares.sub(distributedProviderFee); 
+            emit SharesBought(noSharesPerAddress[msg.sender].sub(originalNumberOfShares));
         } else {
             yesSharesEmitted = yesSharesEmitted.add(_amount);
             noSharesEmitted = originalNumberOfYesShares.mul(originalNumberOfNoShares).div(yesSharesEmitted);
 
+            uint originalNumberOfShares = noSharesPerAddress[msg.sender];
             uint newShares = noSharesPerAddress[msg.sender].add(originalNumberOfNoShares.sub(noSharesEmitted).add(_amount));
             noSharesPerAddress[msg.sender] = newShares.sub(distributedProviderFee);
+            emit SharesBought(noSharesPerAddress[msg.sender].sub(originalNumberOfShares));
         }
     }
 
@@ -182,12 +190,14 @@ contract PredictionMarketOps is PredictionMarketFactory {
 
             uint newShares = yesSharesPerAddress[msg.sender].sub(_amount);
             yesSharesPerAddress[msg.sender] = newShares;
+            emit SharesSold(_amount);
         } else {
             yesSharesEmitted = yesSharesEmitted.sub(_amount.div(2));
             noSharesEmitted = originalNumberOfYesShares.mul(originalNumberOfNoShares).div(yesSharesEmitted);       
 
             uint newShares = noSharesPerAddress[msg.sender].sub(_amount);
             noSharesPerAddress[msg.sender] = newShares;
+            emit SharesSold(_amount);
         }
     }
 
