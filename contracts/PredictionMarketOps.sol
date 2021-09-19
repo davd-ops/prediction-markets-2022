@@ -1,7 +1,6 @@
 //SPDX-License-Identifier: Unlicense
 pragma solidity >=0.8.0;
 
-//import "./SafeMath.sol";
 import "./PredictionMarketFactory.sol";
 
 contract PredictionMarketOps is PredictionMarketFactory {
@@ -10,15 +9,13 @@ contract PredictionMarketOps is PredictionMarketFactory {
 
     
 
-    constructor(string memory _name, uint _endingBlock, address _erc20TokenAddress, address _poolTokenAddress, uint _erc20TokenDigits, uint _providerFee) {
+    constructor(string memory _name, uint _endingBlock, address _erc20TokenAddress,  uint _erc20TokenDigits, uint _providerFee) {
         startingBlock = block.timestamp;
         endingBlock = _endingBlock;
-        //TOHLE ODMAZAT KOMENT, JEN TESTUJU
-        //require(startingBlock < _endingBlock, "The market has to end in the future");
+        require(startingBlock < _endingBlock, "The market has to end in the future");
         marketName = _name;
         providerFee = _providerFee; //must be in %
         usd = IERC20(address(_erc20TokenAddress)); //should be a stablecoin
-        pToken = IERC20(address(_poolTokenAddress)); //should be a stablecoin
         tenToPowerOfTokenDigits = 10 ** _erc20TokenDigits;
         require(_erc20TokenDigits >= 6, "The token must have more than 6 decimals.");
     }
@@ -32,19 +29,16 @@ contract PredictionMarketOps is PredictionMarketFactory {
         if(yesSharesEmitted == 0 && noSharesEmitted == 0){
             yesSharesEmitted = _amount;
             noSharesEmitted = _amount;
-            pToken.mint(msg.sender, _amount);
         } else {
             uint marketRatio;
-            string memory dominantShare;
-            (marketRatio, dominantShare) = calculateMarketRatio();
-            if(keccak256(abi.encodePacked(dominantShare)) == keccak256(abi.encodePacked("yes"))) {
+            string memory inferiorShare;
+            (marketRatio, inferiorShare) = calculateMarketRatio();
+            if(keccak256(abi.encodePacked(inferiorShare)) == keccak256(abi.encodePacked("yes"))) {
                 yesSharesEmitted = yesSharesEmitted.add(_amount);
                 noSharesEmitted = noSharesEmitted.add(_amount.mul(tenToPowerOfTokenDigits).div(marketRatio));
-                pToken.mint(msg.sender, _amount);
             } else {
                 noSharesEmitted = noSharesEmitted.add(_amount);
                 yesSharesEmitted = yesSharesEmitted.add(_amount.mul(tenToPowerOfTokenDigits).div(marketRatio));
-                pToken.mint(msg.sender, _amount);
             }
         }
 
@@ -64,6 +58,52 @@ contract PredictionMarketOps is PredictionMarketFactory {
         }
     }
 
+    function withdrawLiquidity() external {
+        bool exists = false;
+        for (uint i = 0; i < liquidityProviders.length; i++) {
+            if(liquidityProviders[i].lpAddress == msg.sender) {
+                uint liquidity;
+                uint usersLiquidity;
+                uint percentageOfLPs;
+                uint userWillGet;
+                uint marketRatio;
+                string memory inferiorShare;
+
+                exists = true;
+
+                usersLiquidity = liquidityProviders[i].providedLiquidity;
+
+                for (uint j = 0; j < liquidityProviders.length; j++) {
+                    liquidity = liquidity.add(liquidityProviders[j].providedLiquidity);
+                }
+
+                percentageOfLPs = usersLiquidity.div(liquidity.div(100));
+                
+                (marketRatio, inferiorShare) = calculateMarketRatio();
+  
+                if(keccak256(abi.encodePacked(inferiorShare)) == keccak256(abi.encodePacked("yes"))) {
+
+                    userWillGet = noSharesEmitted.div(100).mul(percentageOfLPs);
+                    noSharesEmitted = noSharesEmitted.sub(userWillGet);
+                    yesSharesEmitted = yesSharesEmitted.sub(userWillGet);
+                    usd.transfer(msg.sender, userWillGet.add(liquidityProviders[i].earnedProvision));
+                    delete liquidityProviders[i];
+                    yesSharesPerAddress[msg.sender] = yesSharesPerAddress[msg.sender].add(userWillGet.mul(marketRatio)).div(tenToPowerOfTokenDigits).sub(userWillGet);
+                } else {
+                    userWillGet = yesSharesEmitted.div(100).mul(percentageOfLPs);
+                    yesSharesEmitted = yesSharesEmitted.sub(userWillGet);
+                    noSharesEmitted = noSharesEmitted.sub(userWillGet);
+                    usd.transfer(msg.sender, userWillGet.add(liquidityProviders[i].earnedProvision));
+                    delete liquidityProviders[i];
+                    noSharesPerAddress[msg.sender] = noSharesPerAddress[msg.sender].add(userWillGet.mul(marketRatio)).div(tenToPowerOfTokenDigits).sub(userWillGet);
+                    }
+
+                break; 
+            }
+        }
+        require(exists, "You are not a liquidity provider.");
+    }
+
     function chooseWinningSide(string memory _choice) external onlyOwner isClosed onlyIfIsCorrectChoice(_choice) {
         winningSide = _choice;
     }
@@ -72,13 +112,9 @@ contract PredictionMarketOps is PredictionMarketFactory {
         bool claimed = false;
         
         if (keccak256(abi.encodePacked(winningSide)) == keccak256(abi.encodePacked("yes"))){
-            console.log("BAlance je:", usd.balanceOf(address(this)));
-            console.log("User dostane", yesSharesPerAddress[msg.sender]);
             usd.transfer(msg.sender, yesSharesPerAddress[msg.sender]);
             claimed = true;
         } else if(keccak256(abi.encodePacked(winningSide)) == keccak256(abi.encodePacked("no"))) {
-            console.log("BAlance je:", usd.balanceOf(address(this)));
-            console.log("User dostane", noSharesPerAddress[msg.sender]);
             usd.transfer(msg.sender, noSharesPerAddress[msg.sender]);
             claimed = true;
         }
@@ -101,7 +137,7 @@ contract PredictionMarketOps is PredictionMarketFactory {
         uint originalNumberOfYesShares = yesSharesEmitted;
         uint originalNumberOfNoShares = noSharesEmitted;
         uint distributedProviderFee = _amount.div(100).mul(providerFee);
-        usd.transferFrom(msg.sender, address(this), _amount.add(distributedProviderFee));
+        usd.transferFrom(msg.sender, address(this), _amount);
 
         distributeProviderFeeToLiquidityProviders(distributedProviderFee);
         
@@ -110,26 +146,29 @@ contract PredictionMarketOps is PredictionMarketFactory {
             yesSharesEmitted = originalNumberOfYesShares.mul(originalNumberOfNoShares).div(noSharesEmitted);
 
             uint newShares = yesSharesPerAddress[msg.sender].add(originalNumberOfYesShares.sub(yesSharesEmitted).add(_amount));
-            yesSharesPerAddress[msg.sender] = newShares; 
+            yesSharesPerAddress[msg.sender] = newShares.sub(distributedProviderFee); 
         } else {
             yesSharesEmitted = yesSharesEmitted.add(_amount);
             noSharesEmitted = originalNumberOfYesShares.mul(originalNumberOfNoShares).div(yesSharesEmitted);
 
             uint newShares = noSharesPerAddress[msg.sender].add(originalNumberOfNoShares.sub(noSharesEmitted).add(_amount));
-            noSharesPerAddress[msg.sender] = newShares;
+            noSharesPerAddress[msg.sender] = newShares.sub(distributedProviderFee);
         }
     }
 
     function sellShares(string memory _choice, uint _amount) external onlyIfIsCorrectChoice(_choice) isLive {
-        require(_amount >= tenToPowerOfTokenDigits , "You need to buy shares for at least 1 USD.");
+        require(_amount >= tenToPowerOfTokenDigits , "You need to sell shares for at least 1 USD.");
         require(_amount.div(2) <= usd.balanceOf(address(this)), "There is not enough liquidity in this smartcontract.");
 
         if (keccak256(abi.encodePacked(_choice)) == keccak256(abi.encodePacked("yes"))){
             require(_amount <= yesSharesPerAddress[msg.sender], "You don't have enough shares to sell.");
+            require(_amount <= yesSharesEmitted, "There is not enough liquidity in this smartcontract. Wait until it's increased or until the end of the market.");
+            require(_amount.div(2) <= noSharesEmitted, "There is not enough liquidity in this smartcontract. Wait until it's increased or until the end of the market.");
         } else {
             require(_amount <= noSharesPerAddress[msg.sender], "You don't have enough shares to sell.");
+            require(_amount <= noSharesEmitted, "There is not enough liquidity in this smartcontract. Wait until it's increased or until the end of the market.");
+            require(_amount.div(2) <= yesSharesEmitted, "There is not enough liquidity in this smartcontract. Wait until it's increased or until the end of the market.");
         }
-        
         uint originalNumberOfYesShares = yesSharesEmitted;
         uint originalNumberOfNoShares = noSharesEmitted;
         uint distributedProviderFee = _amount.div(100).mul(providerFee);

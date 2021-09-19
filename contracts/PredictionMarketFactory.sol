@@ -42,14 +42,12 @@ contract PredictionMarketFactory is Ownable {
     string public marketName;
     uint public startingBlock;
     uint public endingBlock;
-    //bool public isClosed = false;
     uint public yesSharesEmitted = 0; //18 decimals, might want to change it later
     uint public noSharesEmitted = 0; //18 decimals, might want to change it later
     uint providerFee;
     address public erc20TokenAddress;
     string public winningSide;
     IERC20 internal usd; 
-    IERC20 internal pToken; 
     uint internal tenToPowerOfTokenDigits;
     
     liquidityProvider[] public liquidityProviders;
@@ -69,8 +67,7 @@ contract PredictionMarketFactory is Ownable {
     }
     
     modifier isLive() {
-        //TOHLE ODMAZAT KOMENT, JEN TESTUJU
-        //require(!checkIfTheMarketIsClosed(), "This market is already closed.");
+        require(!checkIfTheMarketIsClosed(), "This market is already closed.");
         _;
     }
 
