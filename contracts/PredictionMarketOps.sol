@@ -3,13 +3,23 @@ pragma solidity >=0.8.0;
 
 import "./PredictionMarketFactory.sol";
 
+/// @title Operations contract for Prediction markets
+/// @author David Psencik
+/// @notice You can use this contract to interact with Prediction market
+/// @dev This contract contains only functions that the end user doesn't need to call
 contract PredictionMarketOps is PredictionMarketFactory {
     using SafeMath for uint;
     using SafeMath for uint128;
 
+    /// @notice Deploy this contract
+    /// @param _name string, the name of the market
+    /// @param _endingBlock The unix timestamp in seconds of the ending date and time 
+    /// @param _erc20TokenAddress Address of ERC-20 which we are using as native currency for our market
+    /// @param _erc20TokenDigits The number of digits of the ERC-20 token
+    /// @param _providerFee The number that express the percentage which is given to liquidity providers
     constructor(string memory _name, uint _endingBlock, address _erc20TokenAddress,  uint _erc20TokenDigits, uint _providerFee) {
         startingBlock = block.timestamp;
-        endingBlock = _endingBlock;
+        endingBlockTimestamp = _endingBlock;
         require(startingBlock < _endingBlock, "The market has to end in the future");
         marketName = _name;
         providerFee = _providerFee; //must be in %
@@ -19,6 +29,8 @@ contract PredictionMarketOps is PredictionMarketFactory {
         emit MarketCreated(address(this));
     }
 
+    /// @notice Provide liquidity into `marketName` market contract
+    /// @param _amount The number of tokens that will be provided
     function addLiquidity(uint _amount) external isLive {
         require(_amount >= uint256(10).mul(tenToPowerOfTokenDigits) , "You need to buy shares for at least 10 USD.");
 
@@ -58,6 +70,7 @@ contract PredictionMarketOps is PredictionMarketFactory {
         emit LiquidityProvided(_amount, msg.sender);
     }
 
+    /// @notice Withdraw your whole liquidity positon from the `marketName` market
     function withdrawLiquidity() external {
         bool exists = false;
         for (uint i = 0; i < liquidityProviders.length; i++) {
@@ -82,7 +95,6 @@ contract PredictionMarketOps is PredictionMarketFactory {
                 (marketRatio, inferiorShare) = calculateMarketRatio();
   
                 if(keccak256(abi.encodePacked(inferiorShare)) == keccak256(abi.encodePacked("yes"))) {
-
                     userWillGet = noSharesEmitted.div(100).mul(percentageOfLPs);
                     noSharesEmitted = noSharesEmitted.sub(userWillGet);
                     yesSharesEmitted = yesSharesEmitted.sub(userWillGet);
@@ -105,11 +117,14 @@ contract PredictionMarketOps is PredictionMarketFactory {
         require(exists, "You are not a liquidity provider.");
     }
 
+    /// @notice Choose the result of the `marketName` market 
+    /// @param _choice String, the market will result
     function chooseWinningSide(string memory _choice) external onlyOwner isClosed onlyIfIsCorrectChoice(_choice) {
         winningSide = _choice;
         emit WinningSideChosen(winningSide);
     }
 
+    /// @notice Claim your winnings
     function claimUsd() external isClosed {
         bool claimed = false;
         
@@ -127,6 +142,9 @@ contract PredictionMarketOps is PredictionMarketFactory {
         noSharesPerAddress[msg.sender] = 0;
     }
 
+    /// @notice Buy shares
+    /// @param _choice String, the shares you want to buy
+    /// @param _amount The number of shares you want to buy
     function buyShares(string memory _choice, uint _amount) external onlyIfIsCorrectChoice(_choice) isLive {
         require(_amount >= tenToPowerOfTokenDigits , "You need to buy shares for at least 1 USD.");
 
@@ -164,6 +182,9 @@ contract PredictionMarketOps is PredictionMarketFactory {
         }
     }
 
+    /// @notice Sell shares
+    /// @param _choice String, the shares you want to sell
+    /// @param _amount The number of shares you want to sell
     function sellShares(string memory _choice, uint _amount) external onlyIfIsCorrectChoice(_choice) isLive {
         require(_amount >= tenToPowerOfTokenDigits , "You need to sell shares for at least 1 USD.");
         require(_amount.div(2) <= usd.balanceOf(address(this)), "There is not enough liquidity in this smartcontract.");

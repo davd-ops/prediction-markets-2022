@@ -17,10 +17,6 @@
 
 pragma solidity >=0.8.0;
 
-// FIXME: This contract was altered compared to the production version.
-// It doesn't use LibNote anymore.
-// New deployments of this contract will need to include custom events (TO DO).
-
 contract UsdToken {
     // --- Auth ---
     mapping (address => uint) public wards;

@@ -6,8 +6,14 @@ import "./Ownable.sol";
 import "./SafeMath.sol";
 import "hardhat/console.sol";
 
-interface IERC20 {
+//TODO
+//SWITCH TO LINUX
+//FRONTEND
 
+/// @title Interface for ERC-20 tokens
+/// @author David Psencik
+/// @notice This allows you to use tokens that use ERC-20 standart in this contract
+interface IERC20 {
     function totalSupply() external view returns (uint256);
 
     function balanceOf(address account) external view returns (uint256);
@@ -33,6 +39,10 @@ interface IERC20 {
     event Approval(address indexed owner, address indexed spender, uint256 value);
 }
 
+/// @title Factory contract for Prediction markets
+/// @author David Psencik
+/// @notice You can use this contract for Prediction markets
+/// @dev This contract contains only functions that the end user doesn't need to call
 contract PredictionMarketFactory is Ownable {
     using SafeMath for uint;
     using SafeMath for uint128;
@@ -47,7 +57,7 @@ contract PredictionMarketFactory is Ownable {
 
     string public marketName;
     uint public startingBlock;
-    uint public endingBlock;
+    uint public endingBlockTimestamp;
     uint public yesSharesEmitted = 0; //18 decimals, might want to change it later
     uint public noSharesEmitted = 0; //18 decimals, might want to change it later
     uint providerFee;
@@ -82,14 +92,19 @@ contract PredictionMarketFactory is Ownable {
         _;
     }
 
+    /// @notice Check if the market is closed or live
+    /// @return true if the market is live, false if is closed
     function checkIfTheMarketIsClosed() public view returns(bool) {
-        if(endingBlock >= block.timestamp){
+        if(endingBlockTimestamp >= block.timestamp){
             return false;
         } else {
             return true;
         }
     }
 
+    /// @notice Distribute provider fee to liquidity providers
+    /// @dev Anyone can inherit contract and fake distribute the fee, needs fix
+    /// @param _providerFee The number of rings from dendrochronological sample
     function distributeProviderFeeToLiquidityProviders(uint _providerFee) internal {
         uint liquidity;
 
@@ -105,6 +120,9 @@ contract PredictionMarketFactory is Ownable {
         }
     }
 
+    /// @notice Calculate tree age in years, rounded up, for live trees
+    /// @return number that represents the ratio of the market using 1:x (x is returned number)
+    /// @return string that represent which share is the more valuable one in the 1:x relation (1 is the more valuable, x is the less valuable)
     function calculateMarketRatio() internal view returns(uint, string memory) {
         if (yesSharesEmitted > noSharesEmitted){
             uint marketRatio = yesSharesEmitted.mul(tenToPowerOfTokenDigits).div(noSharesEmitted);
