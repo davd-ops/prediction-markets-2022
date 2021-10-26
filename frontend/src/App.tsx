@@ -1,14 +1,14 @@
-import React from 'react';
-import './App.css';
+import './styles/App.css';
+import AppHeader from './components/AppHeader';
+import AppBody from "./components/AppBody";
+import AppFooter from "./components/AppFooter";
 
 function App() {
   return (
     <div className="App">
-      <header className="App-header">
-        <p>
-          APP.TSX
-        </p>
-      </header>
+        <AppHeader />
+        <AppBody />
+        <AppFooter />
     </div>
   );
 }
