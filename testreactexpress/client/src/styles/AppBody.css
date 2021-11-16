@@ -1,0 +1,57 @@
+.App-body {
+  background-color: #15202b;
+  min-height: 89.8vh;
+  display: flow-root;
+  align-items: center;
+  font-size: calc(10px + 2vmin);
+  color: white;
+}
+
+h1 {
+  margin-top: 50px;
+  width: 100%;
+}
+
+a {
+  color: white;
+}
+
+.MarketsContainer {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin: 0 10% 60px;
+}
+
+.MarketDiv {
+  transition: transform .2s;
+  border: solid .1px #496883;
+  padding: 40px;
+  border-radius: 50px;
+  width: 21%;
+  height: 155px;
+  margin: 10px 18px;
+}
+
+.MarketDiv:hover {
+  transform: scale(1.05);
+  cursor: pointer;
+  border: solid 0.1px #374e62;
+}
+
+.yes {
+  float: left;
+  width: 50%;
+}
+
+.no {
+  float: right;
+  width: 50%;
+}
+
+.horizontallyCentered {
+  margin: auto;
+  line-height: 80.9vh;
+}
+
+
