@@ -1,5 +1,4 @@
 import '../styles/AppBody.css';
-import MarketsContainer from "./MarketsContainer";
 import React, {useState} from "react";
 import Market from "./Market";
 
@@ -9,7 +8,7 @@ const AppBody = () => {
 } as any)
 
     React.useEffect(() => {
-        fetch("/express_backend")
+        fetch("/markets_api")
             .then((res) => res.json())
             .then((data) => {
 
@@ -20,11 +19,7 @@ const AppBody = () => {
             });
     }, []);
 
-    console.log(markets.marketList)
-
-
     return (
-        <>
         <div className="App-body">
             <h1>Markets</h1>
             <div className="MarketsContainer">
@@ -36,8 +31,6 @@ const AppBody = () => {
 
             </div>
         </div>
-
-        </>
     );
 };
 

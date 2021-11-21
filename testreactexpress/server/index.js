@@ -23,11 +23,36 @@ const loadMarkets = async () => {
     return data
 }
 
-app.get("/express_backend", async (req, res) => {
+const getAdmins = async () => {
+    const uri = "mongodb://localhost:27017"
+    const client = new MongoClient(uri)
+    let data;
+    try{
+        await client.connect()
+        await client.db("PredictionMarkets").collection("AdminList").find().toArray().then(admins => {
+            data = admins
+        })
+    }catch (e){
+        console.error(e)
+    }finally {
+        await client.close()
+    }
 
+    return data
+}
+
+app.get("/markets_api", async (req, res) => {
     loadMarkets().then(r => {
         res.json({
             marketList: r,
+        })
+    })
+});
+
+app.get("/admins_api", async (req, res) => {
+    getAdmins().then(r => {
+        res.json({
+            adminList: r,
         })
     })
 });

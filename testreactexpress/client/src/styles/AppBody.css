@@ -25,7 +25,7 @@ a {
 
 .MarketDiv {
   transition: transform .2s;
-  border: solid .1px #496883;
+  border: solid .1px #374e62;
   padding: 40px;
   border-radius: 50px;
   width: 21%;
@@ -36,7 +36,7 @@ a {
 .MarketDiv:hover {
   transform: scale(1.05);
   cursor: pointer;
-  border: solid 0.1px #374e62;
+  border: solid 0.1px #496883;
 }
 
 .yes {
