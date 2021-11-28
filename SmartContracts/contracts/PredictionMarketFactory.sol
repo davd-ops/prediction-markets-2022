@@ -6,10 +6,6 @@ import "./Ownable.sol";
 import "./SafeMath.sol";
 import "hardhat/console.sol";
 
-//TODO
-//SWITCH TO LINUX
-//FRONTEND
-
 /// @title Interface for ERC-20 tokens
 /// @author David Psencik
 /// @notice This allows you to use tokens that use ERC-20 standart in this contract
