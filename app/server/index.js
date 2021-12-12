@@ -1,14 +1,22 @@
 const express = require("express")
+const bodyParser = require("body-parser");
 const {MongoClient} = require("mongodb")
 
 const PORT = process.env.PORT || 3001
 
 const app = express()
 
+// create application/json parser
+var jsonParser = bodyParser.json()
+
+// create application/x-www-form-urlencoded parser
+var urlencodedParser = bodyParser.urlencoded({ extended: false })
+
 const loadMarkets = async () => {
     const uri = "mongodb://localhost:27017"
     const client = new MongoClient(uri)
     let data;
+
     try{
         await client.connect()
         await client.db("PredictionMarkets").collection("MarketList").find().toArray().then(markets => {
@@ -27,6 +35,7 @@ const getAdmins = async () => {
     const uri = "mongodb://localhost:27017"
     const client = new MongoClient(uri)
     let data;
+
     try{
         await client.connect()
         await client.db("PredictionMarkets").collection("AdminList").find().toArray().then(admins => {
@@ -39,6 +48,31 @@ const getAdmins = async () => {
     }
 
     return data
+}
+
+const insertNewMarketIntoDatabase = async (req) => {
+    const uri = "mongodb://localhost:27017"
+    const client = new MongoClient(uri)
+    try{
+        await client.connect()
+        if(
+            typeof req.body.marketName !== 'undefined' &&
+            typeof req.body.validUntil !== 'undefined' &&
+            typeof req.body.contractAddress !== 'undefined' &&
+            typeof req.body.providerFee !== 'undefined'
+        ){
+            await client.db("PredictionMarkets").collection("MarketList").insertOne({
+                marketName: req.body.marketName,
+                validUntil: req.body.validUntil,
+                contractAddress: req.body.contractAddress,
+                providerFee: req.body.providerFee
+            })
+        }
+    }catch (e){
+        console.error(e)
+    }finally {
+        await client.close()
+    }
 }
 
 app.get("/markets_api", async (req, res) => {
@@ -56,6 +90,15 @@ app.get("/admins_api", async (req, res) => {
         })
     })
 });
+
+app.post("/insert_market", jsonParser, async (req, res) => {
+    console.log(req.body)
+    insertNewMarketIntoDatabase(req).then(r => {
+        res.json({
+            message: r,
+        })
+    })
+})
 
 
 

@@ -7,39 +7,45 @@ import React from "react";
 import CreateMarketPage from "./components/CreateMarketPage";
 import ExpiredMarketsPage from "./components/ExpiredMarketsPage";
 import PortfolioPage from "./components/PortfolioPage";
+import MarketDetail from "./components/MarketDetail";
 
 function App() {
     const [marketsPage, setMarketsPage] = React.useState(true);
+    const [marketDetail, setmarketDetail] = React.useState(true);
     const [createMarketPage, setCreateMarketPage] = React.useState(false);
     const [expiredMarketsPage, setExpiredMarketsPage] = React.useState(false);
     const [portfolioPage, setPortfolioPage] = React.useState(false);
 
-    const switchPageToMarkets = () => {
-        setMarketsPage(true);
-        setCreateMarketPage(false);
-        setExpiredMarketsPage(false);
+    const turnOffPages = () => {
         setPortfolioPage(false);
+        setExpiredMarketsPage(false);
+        setCreateMarketPage(false);
+        setMarketsPage(false);
+    }
+
+    const switchPageToMarkets = () => {
+        turnOffPages();
+        setMarketsPage(true);
     }
 
     const switchPageToCreateMarket = () => {
+        turnOffPages();
         setCreateMarketPage(true);
-        setMarketsPage(false);
-        setExpiredMarketsPage(false);
-        setPortfolioPage(false);
     }
 
     const switchPageToExpiredMarkets = () => {
+        turnOffPages();
         setExpiredMarketsPage(true);
-        setCreateMarketPage(false);
-        setMarketsPage(false);
-        setPortfolioPage(false);
     }
 
     const switchPageToPortfolioPage = () => {
+        turnOffPages();
         setPortfolioPage(true);
-        setExpiredMarketsPage(false);
-        setCreateMarketPage(false);
-        setMarketsPage(false);
+    }
+
+    const displayMarketDetail = () => {
+        turnOffPages();
+        setmarketDetail(true);
     }
 
   return (
@@ -56,12 +62,13 @@ function App() {
                   switchPageToPortfolio={switchPageToPortfolioPage}
               />
               {
-                  marketsPage ? <AppBody /> :
-                      expiredMarketsPage ? <ExpiredMarketsPage /> :
+                  marketsPage ? <AppBody displayMarketDetail={displayMarketDetail} /> :
+                      expiredMarketsPage ? <ExpiredMarketsPage displayMarketDetail={displayMarketDetail} /> :
                           createMarketPage ? <CreateMarketPage /> :
                               portfolioPage ? <PortfolioPage /> :
-                            typeof window.ethereum !== 'undefined' ?
-                                <AppBody /> : <MetamaskMissing />
+                                  marketDetail ? <MarketDetail /> :
+                                    typeof window.ethereum !== 'undefined' ?
+                                        <AppBody displayMarketDetail={displayMarketDetail} /> : <MetamaskMissing />
               }
               <AppFooter />
           </div>

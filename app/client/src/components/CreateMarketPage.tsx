@@ -21,7 +21,14 @@ const CreateMarketPage = () => {
 
             try {
                 const contract = await newMarketFactory.deploy(marketTitle, endingDateTimestamp, usdTokenAddress, 18, providerFee);
-                console.log(contract.address);
+                const requestOptions = {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ marketName: marketTitle, validUntil: endingDateTimestamp, contractAddress: contract.address, providerFee: providerFee })
+                };
+                fetch('/insert_market', requestOptions)
+                    .then(response => response.json())
+                    .then(data => console.log(data));
             } catch (e) {
                 alert((e as Error).message);
             }
