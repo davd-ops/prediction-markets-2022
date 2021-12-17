@@ -2,6 +2,7 @@ const { expect } = require("chai");
 
 describe("PredictionMarket Contract", function () {
   const marketName = "FirstMarket";
+  const marketDescription = "FirstMarket will close when A is B";
   const choice = "no";
   const wantedShares = 12;
   const providerFee = 2;
@@ -22,7 +23,7 @@ describe("PredictionMarket Contract", function () {
   
     usdToken = await usdToken.deploy(1);
     
-    predictionMarket = await predictionMarket.deploy(marketName, endingDate, usdToken.address, usdToken.decimals(), providerFee);
+    predictionMarket = await predictionMarket.deploy(marketName, marketDescription, endingDate, usdToken.address, usdToken.decimals(), providerFee);
   });
 
   describe("Deployment", function() {
@@ -61,6 +62,7 @@ describe("PredictionMarket Contract", function () {
       const lpStruct = await predictionMarket.liquidityProviders(0);
       expect(ethers.utils.formatEther(lpStruct.providedLiquidity)).to.equal("10.0");
       expect(lpStruct.lpAddress).to.equal(userOne.address);
+      expect(ethers.utils.formatEther(await predictionMarket.getCurrentLiquidity())).to.equal("10.0");
     });
     it("Should be able to buy shares", async function() {
       usdToken.mint(marketOwner.address, "50000000000000000000");

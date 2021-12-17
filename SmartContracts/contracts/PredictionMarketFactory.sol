@@ -38,7 +38,8 @@ interface IERC20 {
 /// @title Factory contract for Prediction markets
 /// @author David Psencik
 /// @notice You can use this contract for Prediction markets
-/// @dev This contract contains only functions that the end user doesn't need to call
+/// @dev This contract contains only functions that are not direct ops
+/// @dev Inclusion of slippage would be a nice addition
 contract PredictionMarketFactory is Ownable {
     using SafeMath for uint;
     using SafeMath for uint128;
@@ -52,6 +53,7 @@ contract PredictionMarketFactory is Ownable {
     event SharesSold(uint amount);
 
     string public marketName;
+    string public marketDescription;
     uint public startingBlock;
     uint public endingBlockTimestamp;
     uint public yesSharesEmitted = 0; //18 decimals, might want to change it later
@@ -99,14 +101,14 @@ contract PredictionMarketFactory is Ownable {
     }
 
     /// @notice Distribute provider fee to liquidity providers
-    /// @dev Anyone can inherit contract and fake distribute the fee, needs fix
-    /// @param _providerFee The number of rings from dendrochronological sample
+    /// @param _providerFee The provider fee set by deployer of this market
+    /// @dev try different gas costs when calling getCurrentLiquidity() or asigning manually
     function distributeProviderFeeToLiquidityProviders(uint _providerFee) internal {
-        uint liquidity;
+        uint liquidity = getCurrentLiquidity();
 
-        for (uint i = 0; i < liquidityProviders.length; i++) {
-            liquidity = liquidity.add(liquidityProviders[i].providedLiquidity);
-        }
+        //for (uint i = 0; i < liquidityProviders.length; i++) {
+        //    liquidity = liquidity.add(liquidityProviders[i].providedLiquidity);
+        //}
 
         for (uint i = 0; i < liquidityProviders.length; i++) {
             if(liquidityProviders[i].providedLiquidity != 0) {
@@ -119,17 +121,33 @@ contract PredictionMarketFactory is Ownable {
     /// @notice Calculate tree age in years, rounded up, for live trees
     /// @return number that represents the ratio of the market using 1:x (x is returned number)
     /// @return string that represent which share is the more valuable one in the 1:x relation (1 is the more valuable, x is the less valuable)
-    function calculateMarketRatio() internal view returns(uint, string memory) {
-        if (yesSharesEmitted > noSharesEmitted){
-            uint marketRatio = yesSharesEmitted.mul(tenToPowerOfTokenDigits).div(noSharesEmitted);
-            return (marketRatio, "yes");
+    function calculateMarketRatio() public view returns(uint, string memory) {
+        if (yesSharesEmitted != 0 && noSharesEmitted != 0){
+            if (yesSharesEmitted > noSharesEmitted){
+                uint marketRatio = yesSharesEmitted.mul(tenToPowerOfTokenDigits).div(noSharesEmitted);
+                return (marketRatio, "yes");
         } else if (yesSharesEmitted < noSharesEmitted) {
-            uint marketRatio = noSharesEmitted.mul(tenToPowerOfTokenDigits).div(yesSharesEmitted);
-            return (marketRatio, "no");
+                uint marketRatio = noSharesEmitted.mul(tenToPowerOfTokenDigits).div(yesSharesEmitted);
+                return (marketRatio, "no");
         } else {
-            uint marketRatio = yesSharesEmitted.mul(tenToPowerOfTokenDigits).div(noSharesEmitted);
-            return (marketRatio, "yes");
+                uint marketRatio = yesSharesEmitted.mul(tenToPowerOfTokenDigits).div(noSharesEmitted);
+                return (marketRatio, "yes");
         }
+        } else {
+            return (1000000000000000000, "yes");
+        }
+    }
+
+    /// @notice Calculate current liquidity in the market
+    /// @return number that represents current liquidity in this market
+    function getCurrentLiquidity() public view returns (uint) {
+        uint liquidity;
+
+        for (uint i = 0; i < liquidityProviders.length; i++) {
+            liquidity = liquidity.add(liquidityProviders[i].providedLiquidity);
+        }
+
+        return liquidity;
     }
 
 }
