@@ -57,15 +57,27 @@ const insertNewMarketIntoDatabase = async (req) => {
         await client.connect()
         if(
             typeof req.body.marketName !== 'undefined' &&
+            typeof req.body.marketDescription !== 'undefined' &&
             typeof req.body.validUntil !== 'undefined' &&
+            typeof req.body.createdTimestamp !== 'undefined' &&
             typeof req.body.contractAddress !== 'undefined' &&
-            typeof req.body.providerFee !== 'undefined'
+            typeof req.body.providerFee !== 'undefined' &&
+            typeof req.body.inferiorShare !== 'undefined' &&
+            typeof req.body.ratio !== 'undefined' &&
+            typeof req.body.liquidity !== 'undefined' &&
+            typeof req.body.marketVolume !== 'undefined'
         ){
             await client.db("PredictionMarkets").collection("MarketList").insertOne({
                 marketName: req.body.marketName,
+                marketDescription: req.body.marketDescription,
                 validUntil: req.body.validUntil,
+                createdTimestamp: req.body.createdTimestamp,
                 contractAddress: req.body.contractAddress,
-                providerFee: req.body.providerFee
+                providerFee: req.body.providerFee,
+                inferiorShare: req.body.inferiorShare,
+                ratio: req.body.ratio ,
+                liquidity: req.body.liquidity,
+                marketVolume: req.body.marketVolume
             })
         }
     }catch (e){

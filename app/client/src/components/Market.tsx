@@ -2,10 +2,15 @@ import React from "react";
 
 interface PropTypes {
     marketName: string;
-    ratio: number;
-    inferiorShare: string;
-    validUntil: Date;
+    marketDescription: string;
+    validUntil: number;
+    createdTimestamp: number;
     contractAddress: string;
+    providerFee: number;
+    inferiorShare: string;
+    ratio: number;
+    liquidity: number;
+    marketVolume: number;
     displayMarketDetail: any;
 }
 
@@ -28,7 +33,7 @@ const Market = (props: PropTypes) => {
     }
 
     return (
-        <div className="MarketDiv" onClick={() => props.displayMarketDetail(props.marketName, props.ratio, props.inferiorShare, props.validUntil, props.contractAddress)}>
+        <div className="MarketDiv" onClick={() => props.displayMarketDetail(props.marketName, props.marketDescription, props.validUntil, props.createdTimestamp, props.contractAddress, props.providerFee, props.inferiorShare, props.ratio, 0, props.marketVolume)}>
             <p>{props.marketName}</p>
             <p className="yes">Yes: {yesRatio}</p>
             <p className="no">No: {noRatio}</p>

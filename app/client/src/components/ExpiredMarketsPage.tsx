@@ -27,9 +27,9 @@ const ExpiredMarketsPage = (props: PropTypes) => {
             <h1>Expired markets</h1>
             <div className="MarketsContainer">
                 {
-                    markets.marketList.length > 0 ? markets.marketList.map((market: { _id: React.Key; marketName: string; ratio: number; inferiorShare: string; contractAddress: string; validUntil: Date;}) => (
+                    markets.marketList.length > 0 ? markets.marketList.map((market: { _id: React.Key; marketName: string; marketDescription: string; validUntil: number; createdTimestamp: number; contractAddress: string; providerFee: number; inferiorShare: string; ratio: number; liquidity: number; marketVolume: number;  }) => (
                         Number(market.validUntil) < new Date(Date.now()).getTime() / 1000 ?
-                            <Market key={market._id} marketName={market.marketName} ratio={market.ratio} inferiorShare={market.inferiorShare} validUntil={market.validUntil} contractAddress={market.contractAddress} displayMarketDetail={props.displayMarketDetail}/> : null
+                            <Market key={market._id} marketName={market.marketName} marketDescription={market.marketDescription} validUntil={market.validUntil} createdTimestamp={market.createdTimestamp} contractAddress={market.contractAddress} providerFee={market.providerFee} inferiorShare={market.inferiorShare} ratio={market.ratio} liquidity={market.liquidity} marketVolume={market.marketVolume} displayMarketDetail={props.displayMarketDetail}/> : null
                     )) : 'No expired markets'
                 }
 
