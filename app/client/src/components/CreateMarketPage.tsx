@@ -31,7 +31,7 @@ const CreateMarketPage = () => {
             new Date(endingDate) > new Date()
         ){
             let endingDateTimestamp = new Date(endingDate).getTime() / 1000;
-            let createdTimestamp = + new Date();
+            let createdTimestamp = + new Date() / 1000;
 
             try {
                 const contract = await newMarketFactory.deploy(marketTitle, marketDescription, endingDateTimestamp, usdTokenAddress, 18, providerFee);
@@ -72,12 +72,11 @@ const CreateMarketPage = () => {
         <div className="App-body">
             <h1>Create market</h1>
             <div>
-                <form id='form' onSubmit={deployContract}>
-                    <label>
-                        Market title:
+                <form id='create-market-form' onSubmit={deployContract}>
+                    <label htmlFor="title">Market title:</label>
                         <input
                             className='form-input'
-                            id='marketName'
+                            id='title'
                             type='text'
                             name='title'
                             placeholder='Enter the market title'
@@ -86,12 +85,10 @@ const CreateMarketPage = () => {
                             required
                             minLength={10}
                         />
-                    </label>
-                    <label>
-                        Market description:
+                        <label htmlFor="description">Market description:</label>
                         <input
                             className='form-input'
-                            id='marketDescription'
+                            id='description'
                             type='text'
                             name='description'
                             placeholder='Enter the market description'
@@ -100,12 +97,10 @@ const CreateMarketPage = () => {
                             required
                             minLength={20}
                         />
-                    </label>
-                    <label>
-                        Provider fee:
+                        <label htmlFor="provider-fee"> Provider fee:</label>
                         <input
                             className='form-input'
-                            id='providerFee'
+                            id='provider-fee'
                             type='number'
                             name='provider-fee'
                             placeholder='Enter the provider fee'
@@ -113,12 +108,10 @@ const CreateMarketPage = () => {
                             onChange={e => setProviderFee(parseFloat(e.target.value))}
                             required
                         />
-                    </label>
-                    <label>
-                        Market ends at:
+                        <label htmlFor="endingDate">Market will end at:</label>
                         <input
                             className='form-input'
-                            id='date'
+                            id='endingDate'
                             type='date'
                             name='endingDate'
                             placeholder='Enter the ending date'
@@ -127,7 +120,6 @@ const CreateMarketPage = () => {
                             required
                             minLength={8}
                         />
-                    </label>
                     <input id='submit' type="submit" value="Submit" />
                 </form>
             </div>

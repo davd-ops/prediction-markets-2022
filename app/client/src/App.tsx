@@ -8,46 +8,31 @@ import CreateMarketPage from "./components/CreateMarketPage";
 import ExpiredMarketsPage from "./components/ExpiredMarketsPage";
 import PortfolioPage from "./components/PortfolioPage";
 import MarketDetail from "./components/MarketDetail";
+import ExpiredMarketDetail from "./components/ExpiredMarketDetail";
 
 function App() {
-    const [marketsPage, setMarketsPage] = React.useState(true);
-    const [createMarketPage, setCreateMarketPage] = React.useState(false);
-    const [expiredMarketsPage, setExpiredMarketsPage] = React.useState(false);
-    const [portfolioPage, setPortfolioPage] = React.useState(false);
-    const [marketDetail, setmarketDetail] = React.useState(false);
+    const [currentPage, setCurrentPage] = React.useState('markets-page');
     const [currentMarketData, setCurrentMarketData] = useState({
         marketData: []
     } as any);
 
-    const turnOffPages = () => {
-        setPortfolioPage(false);
-        setExpiredMarketsPage(false);
-        setCreateMarketPage(false);
-        setMarketsPage(false);
-        setmarketDetail(false);
+    const switchPageToMarketsPage = () => {
+        setCurrentPage('markets-page');
     }
 
-    const switchPageToMarkets = () => {
-        turnOffPages();
-        setMarketsPage(true);
+    const switchPageToCreateMarketPage = () => {
+        setCurrentPage('create-market-page');
     }
 
-    const switchPageToCreateMarket = () => {
-        turnOffPages();
-        setCreateMarketPage(true);
-    }
-
-    const switchPageToExpiredMarkets = () => {
-        turnOffPages();
-        setExpiredMarketsPage(true);
+    const switchPageToExpiredMarketsPage = () => {
+        setCurrentPage('expired-markets-page');
     }
 
     const switchPageToPortfolioPage = () => {
-        turnOffPages();
-        setPortfolioPage(true);
+        setCurrentPage('portfolio-page');
     }
 
-    const displayMarketDetail =  async (
+    const switchPageToExpiredMarketDetailPage = (
         marketName: string,
         marketDescription: string,
         validUntil: number,
@@ -74,42 +59,81 @@ function App() {
                 marketVolume: marketVolume
             }
         })
-        turnOffPages();
-        setmarketDetail(true);
+        setCurrentPage('expired-market-detail-page');
+    }
+
+    const switchPageToMarketDetailPage =  async (
+        marketName: string,
+        marketDescription: string,
+        validUntil: number,
+        createdTimestamp: number,
+        contractAddress: string,
+        providerFee: number,
+        inferiorShare: string,
+        ratio: number,
+        liquidity: number,
+        marketVolume: number
+    ) => {
+
+        setCurrentMarketData({
+            marketData: {
+                marketName: marketName,
+                marketDescription: marketDescription,
+                validUntil: validUntil,
+                createdTimestamp: createdTimestamp,
+                contractAddress: contractAddress,
+                providerFee: providerFee,
+                inferiorShare: inferiorShare,
+                ratio: ratio ,
+                liquidity: liquidity,
+                marketVolume: marketVolume
+            }
+        })
+        setCurrentPage('market-detail-page');
     }
 
   return (
       <>
           <div className="App">
               <AppHeader
-                  marketsButton = {marketsPage ? 'nonClickableButton' : 'clickableButton'}
-                  createMarketsButton = {createMarketPage ? 'nonClickableButton' : 'clickableButton'}
-                  expiredMarketsButton = {expiredMarketsPage ? 'nonClickableButton' : 'clickableButton'}
-                  portfolioButton = {portfolioPage ? 'nonClickableButton' : 'clickableButton'}
-                  switchPageToMarkets={switchPageToMarkets}
-                  switchPageToCreateMarket={switchPageToCreateMarket}
-                  switchPageToExpiredMarkets={switchPageToExpiredMarkets}
+                  marketsButton = {currentPage === 'markets-page' ? 'nonClickableButton' : 'clickableButton'}
+                  createMarketsButton = {currentPage === 'create-market-page' ? 'nonClickableButton' : 'clickableButton'}
+                  expiredMarketsButton = {currentPage === 'expired-markets-page' ? 'nonClickableButton' : 'clickableButton'}
+                  portfolioButton = {currentPage === 'portfolio-page' ? 'nonClickableButton' : 'clickableButton'}
+                  switchPageToMarkets={switchPageToMarketsPage}
+                  switchPageToCreateMarket={switchPageToCreateMarketPage}
+                  switchPageToExpiredMarkets={switchPageToExpiredMarketsPage}
                   switchPageToPortfolio={switchPageToPortfolioPage}
               />
               {
-                  marketsPage ? <AppBody displayMarketDetail={displayMarketDetail} /> :
-                      expiredMarketsPage ? <ExpiredMarketsPage displayMarketDetail={displayMarketDetail} /> :
-                          createMarketPage ? <CreateMarketPage /> :
-                              portfolioPage ? <PortfolioPage /> :
-                                  marketDetail ? <MarketDetail
-                                          marketName={currentMarketData.marketData.marketName}
-                                                               marketDescription={currentMarketData.marketData.marketDescription}
-                                                               validUntil={currentMarketData.marketData.validUntil}
-                                                               createdTimestamp={currentMarketData.marketData.createdTimestamp}
-                                                               contractAddress={currentMarketData.marketData.contractAddress}
-                                                               providerFee={currentMarketData.marketData.providerFee}
-                                                               inferiorShare={currentMarketData.marketData.inferiorShare}
-                                                               ratio={currentMarketData.marketData.ratio}
-                                                               liquidity={currentMarketData.marketData.liquidity}
-                                                               marketVolume={currentMarketData.marketData.marketVolume}
-                                      /> :
-                                    typeof window.ethereum !== 'undefined' ?
-                                        <AppBody displayMarketDetail={displayMarketDetail} /> : <MetamaskMissing />
+                  typeof window.ethereum !== 'undefined' ?
+                      currentPage === 'markets-page' ? <AppBody displayMarketDetail={switchPageToMarketDetailPage} /> :
+                        currentPage === 'expired-markets-page' ? <ExpiredMarketsPage displayMarketDetail={switchPageToExpiredMarketDetailPage} /> :
+                            currentPage === 'create-market-page' ? <CreateMarketPage /> :
+                                currentPage === 'portfolio-page' ? <PortfolioPage /> :
+                                    currentPage === 'market-detail-page' ? <MarketDetail
+                                                                    marketName={currentMarketData.marketData.marketName}
+                                                                    marketDescription={currentMarketData.marketData.marketDescription}
+                                                                    validUntil={currentMarketData.marketData.validUntil}
+                                                                    createdTimestamp={currentMarketData.marketData.createdTimestamp}
+                                                                    contractAddress={currentMarketData.marketData.contractAddress}
+                                                                    providerFee={currentMarketData.marketData.providerFee}
+                                                                    inferiorShare={currentMarketData.marketData.inferiorShare}
+                                                                    ratio={currentMarketData.marketData.ratio}
+                                                                    liquidity={currentMarketData.marketData.liquidity}
+                                                                    marketVolume={currentMarketData.marketData.marketVolume}
+                                        /> :
+                                        <ExpiredMarketDetail
+                                                marketName={currentMarketData.marketData.marketName}
+                                                marketDescription={currentMarketData.marketData.marketDescription}
+                                                validUntil={currentMarketData.marketData.validUntil}
+                                                contractAddress={currentMarketData.marketData.contractAddress}
+                                                inferiorShare={currentMarketData.marketData.inferiorShare}
+                                                ratio={currentMarketData.marketData.ratio}
+                                                liquidity={currentMarketData.marketData.liquidity}
+                                                marketVolume={currentMarketData.marketData.marketVolume}
+                                            /> :
+                      <MetamaskMissing />
               }
               <AppFooter />
           </div>

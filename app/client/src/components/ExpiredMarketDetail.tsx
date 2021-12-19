@@ -1,23 +1,20 @@
 import React from 'react';
 import MarketDetailTitle from "./MarketDetailTitle";
-import BuyShares from "./BuyShares";
-import SellShares from "./SellShares";
 import MarketDetailFooter from "./MarketDetailFooter";
 
 interface PropTypes {
     marketName: string;
     marketDescription: string;
     validUntil: number;
-    createdTimestamp: number;
     contractAddress: string;
-    providerFee: number;
     inferiorShare: string;
     ratio: number;
     liquidity: number;
     marketVolume: number;
 }
 
-const MarketDetail = (props: PropTypes) => {
+const ExpiredMarketDetail = (props: PropTypes) => {
+    const [pickedOutcome, setPickedOutcome] = React.useState('yes');
 
     return (
         <div className="App-body">
@@ -30,20 +27,23 @@ const MarketDetail = (props: PropTypes) => {
                 inferiorShare={props.inferiorShare}
             />
             <div className="market-main-body-section">
-                <div className="market-switch-buttons">
-                    <div className="buy-share-section">
-                        <span>BUY</span>
-                        <BuyShares inferiorShare={props.inferiorShare} ratio={props.ratio} />
-                    </div>
-                    <div className="sell-share-section">
-                        <span>SELL</span>
-                        <SellShares inferiorShare={props.inferiorShare} ratio={props.ratio} />
-                    </div>
-                </div>
+                <h1 id="expired-detail-heading">Choose the market outcome:</h1>
+                <form action="">
+                    <label className="switch">
+                        <input
+                            type="checkbox"
+                            id="togBtn"
+                            value={pickedOutcome}
+                            onChange={() => pickedOutcome == 'yes' ? setPickedOutcome('no') : setPickedOutcome('yes')}
+                        />
+                        <div className="slider round"></div>
+                    </label>
+                    <input id='submit-outcome' type="submit" value="Choose outcome" />
+                </form>
             </div>
             <MarketDetailFooter marketName={props.marketName} marketDescription={props.marketDescription} validUntil={props.validUntil} contractAddress={props.contractAddress} />
         </div>
     );
 };
 
-export default MarketDetail;
+export default ExpiredMarketDetail;

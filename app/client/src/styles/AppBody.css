@@ -22,6 +22,13 @@ form {
   justify-content: center;
 }
 
+#create-market-form {
+  display: flex;
+  flex-wrap: wrap;
+  flex-direction: column;
+  align-items: center;
+}
+
 label {
   width: 100%;
   margin-top: 15px;
@@ -207,3 +214,119 @@ input {
   margin: 30px 0 0 0;
 }
 
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 160px;
+  height: 50px;
+}
+
+.switch input {display:none;}
+
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #22303c;
+  -webkit-transition: .4s;
+  transition: .4s;
+  border-radius: 34px;
+}
+
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 42px;
+  width: 42px;
+  left: 4px;
+  bottom: 4px;
+  background-color: white;
+  -webkit-transition: .4s;
+  transition: .4s;
+  border-radius: 50%;
+}
+
+input:checked + .slider {
+  background-color: #374e62;
+}
+
+input:focus + .slider {
+  box-shadow: 0 0 1px #2196F3;
+}
+
+input:checked + .slider:before {
+  -webkit-transform: translateX(75px);
+  -ms-transform: translateX(75px);
+  transform: translateX(110px);
+}
+
+.slider:after
+{
+  content:'YES';
+  color: white;
+  display: block;
+  position: absolute;
+  transform: translate(-50%,-50%);
+  top: 50%;
+  left: 50%;
+  font-size: 10px;
+  font-family: Verdana, sans-serif;
+}
+
+input:checked + .slider:after
+{
+  content:'NO';
+}
+
+#expired-detail-heading {
+  margin-top: 0;
+}
+
+#submit-outcome {
+  margin-top: 35px;
+  width: 70%;
+}
+
+.market-detail-footer {
+  border: 1px solid #374e62;
+  border-radius: 10px;
+  max-width: 90%;
+  min-height: 20vh;
+  margin-left: 5%;
+  margin-top: 30px;
+  margin-bottom: 30px;
+
+}
+
+.market-detail-footer h4 {
+  margin: 40px 30px 20px 70px;
+  text-align: left;
+}
+
+.market-detail-footer p {
+  font-size: 20px;
+  text-align: left;
+  padding: 0 100px 0 90px;
+  margin: 0;
+}
+
+.market-footer-props {
+  display: flex;
+  width: 90%;
+  justify-content: space-evenly;
+  margin-top: 30px;
+  margin-bottom: 30px;
+}
+
+.market-footer-props p {
+  text-align: center;
+  width: 100%;
+}
+
+.market-footer-props-detail {
+  display: flex;
+  flex-direction: column;
+}
