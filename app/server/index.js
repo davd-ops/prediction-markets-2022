@@ -112,9 +112,6 @@ app.post("/insert_market", jsonParser, async (req, res) => {
     })
 })
 
-
-
-
 app.listen(PORT, () => {
     console.log(`Server listening on ${PORT}`)
 });
