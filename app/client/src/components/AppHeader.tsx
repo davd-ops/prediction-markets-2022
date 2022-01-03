@@ -2,11 +2,14 @@ import '../styles/AppHeader.css';
 import OnboardingButton from "./OnboardingButton";
 import React, {useState} from "react";
 import MetaMaskOnboarding from "@metamask/onboarding";
+import {ethers} from "ethers";
+import {usdABI, usdBytecode} from "../otherContractProps/usdContractProps";
+
 
 const ONBOARD_TEXT = 'Install MetaMask!';
 const CONNECT_TEXT = 'Connect';
 const CONNECTED_TEXT = 'Connected';
-
+const USD_ADDRESS = '0x5FbDB2315678afecb367f032d93F642f64180aa3';
 
 const AppHeader = (
     {
@@ -20,9 +23,12 @@ const AppHeader = (
         switchPageToPortfolio
     }: React.ComponentProps<any>
 ) => {
+    const provider = new ethers.providers.Web3Provider((window as any).ethereum);
+    let usdContract = new ethers.Contract(USD_ADDRESS, usdABI, provider);
 
     const [buttonText, setButtonText] = React.useState(ONBOARD_TEXT);
     const [isDisabled, setDisabled] = React.useState(false);
+    const [usdAmount, setUsdAmount] = React.useState(0);
     const [metamaskButtonStyle, setMetamaskButtonStyle] = React.useState('clickableButton');
     const [adminAddress, setAdminAddress] = React.useState();
     const [accounts, setAccounts] = React.useState([]);
@@ -35,10 +41,10 @@ const AppHeader = (
         }
     }, []);
 
-    React.useEffect(() => {
+    React.useEffect( () => {
         if (MetaMaskOnboarding.isMetaMaskInstalled()) {
             if (accounts.length > 0) {
-                setButtonText(CONNECTED_TEXT);
+                setButtonText(usdAmount + ' USD');
                 setDisabled(true);
                 walletChanged();
                 onboarding?.current?.stopOnboarding();
@@ -93,9 +99,13 @@ const AppHeader = (
         }
     };
 
-    const walletChanged = () => {
+    const walletChanged = async () => {
         if (typeof adminAddress != "undefined"){
             adminAddress === accounts[0] ? setIsAdminLogged(true) : setIsAdminLogged(false);
+        }
+        if (typeof accounts[0] != "undefined"){
+            setUsdAmount(Number(ethers.utils.formatEther(await usdContract.balanceOf(accounts[0]))));
+            setButtonText(usdAmount + ' USD');
         }
     }
 

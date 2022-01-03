@@ -10,6 +10,7 @@ const AppBody = (props: PropTypes) => {
     const [markets, setMarkets] = useState({
         marketList: []
 } as any)
+    let isThereLiveMarket = false;
 
     React.useEffect(() => {
         fetch("/markets_api")
@@ -24,6 +25,12 @@ const AppBody = (props: PropTypes) => {
             });
     }, []);
 
+    const returnMarketDetail = (market: { _id: any; marketName: any; marketDescription: any; validUntil: any; createdTimestamp: any; contractAddress: any; providerFee: any; inferiorShare: any; ratio: any; liquidity: any; marketVolume: any; }) => {
+        isThereLiveMarket = true;
+        return  <Market key={market._id} marketName={market.marketName} marketDescription={market.marketDescription} validUntil={market.validUntil} createdTimestamp={market.createdTimestamp} contractAddress={market.contractAddress} providerFee={market.providerFee} inferiorShare={market.inferiorShare} ratio={market.ratio} liquidity={market.liquidity} marketVolume={market.marketVolume} displayMarketDetail={props.displayMarketDetail}/>;
+
+    }
+
     return (
         <div className="App-body">
             <h1>Markets</h1>
@@ -31,10 +38,12 @@ const AppBody = (props: PropTypes) => {
                 {
                     markets.marketList.length > 0 ? markets.marketList.map((market: { _id: React.Key; marketName: string; marketDescription: string; validUntil: number; createdTimestamp: number; contractAddress: string; providerFee: number; inferiorShare: string; ratio: number; liquidity: number; marketVolume: number;  }) => (
                         Number(market.validUntil) > new Date(Date.now()).getTime() / 1000 ?
-                        <Market key={market._id} marketName={market.marketName} marketDescription={market.marketDescription} validUntil={market.validUntil} createdTimestamp={market.createdTimestamp} contractAddress={market.contractAddress} providerFee={market.providerFee} inferiorShare={market.inferiorShare} ratio={market.ratio} liquidity={market.liquidity} marketVolume={market.marketVolume} displayMarketDetail={props.displayMarketDetail}/> : null
-                    )) : 'No markets live'
+                            returnMarketDetail(market) : null
+                    )) : null
                 }
-
+                {
+                    !isThereLiveMarket ? 'No markets live' : null
+                }
             </div>
         </div>
     );
