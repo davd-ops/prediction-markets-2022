@@ -123,7 +123,7 @@ contract PredictionMarketOps is PredictionMarketFactory {
     /// @param _choice String, the market will result
     function chooseWinningSide(string memory _choice) external onlyOwner isClosed onlyIfIsCorrectChoice(_choice) {
         winningSide = _choice;
-        emit WinningSideChosen(winningSide);
+        emit WinningSideChosen(winningSide, msg.sender);
     }
 
     /// @notice Claim your winnings
@@ -132,11 +132,11 @@ contract PredictionMarketOps is PredictionMarketFactory {
         
         if (keccak256(abi.encodePacked(winningSide)) == keccak256(abi.encodePacked("yes"))){
             usd.transfer(msg.sender, yesSharesPerAddress[msg.sender]);
-            emit UsdClaimed(yesSharesPerAddress[msg.sender]);
+            emit UsdClaimed(yesSharesPerAddress[msg.sender], msg.sender);
             claimed = true;
         } else if(keccak256(abi.encodePacked(winningSide)) == keccak256(abi.encodePacked("no"))) {
             usd.transfer(msg.sender, noSharesPerAddress[msg.sender]);
-            emit UsdClaimed(noSharesPerAddress[msg.sender]);
+            emit UsdClaimed(noSharesPerAddress[msg.sender], msg.sender);
             claimed = true;
         }
         require(claimed, "Error have occured, please try again later.");
@@ -172,7 +172,7 @@ contract PredictionMarketOps is PredictionMarketFactory {
             uint originalNumberOfShares = yesSharesPerAddress[msg.sender];
             uint newShares = yesSharesPerAddress[msg.sender].add(originalNumberOfYesShares.sub(yesSharesEmitted).add(_amount));
             yesSharesPerAddress[msg.sender] = newShares.sub(distributedProviderFee); 
-            emit SharesBought(noSharesPerAddress[msg.sender].sub(originalNumberOfShares));
+            emit SharesBought(noSharesPerAddress[msg.sender].sub(originalNumberOfShares), msg.sender);
         } else {
             yesSharesEmitted = yesSharesEmitted.add(_amount);
             noSharesEmitted = originalNumberOfYesShares.mul(originalNumberOfNoShares).div(yesSharesEmitted);
@@ -180,7 +180,7 @@ contract PredictionMarketOps is PredictionMarketFactory {
             uint originalNumberOfShares = noSharesPerAddress[msg.sender];
             uint newShares = noSharesPerAddress[msg.sender].add(originalNumberOfNoShares.sub(noSharesEmitted).add(_amount));
             noSharesPerAddress[msg.sender] = newShares.sub(distributedProviderFee);
-            emit SharesBought(noSharesPerAddress[msg.sender].sub(originalNumberOfShares));
+            emit SharesBought(noSharesPerAddress[msg.sender].sub(originalNumberOfShares), msg.sender);
         }
     }
 
@@ -213,14 +213,14 @@ contract PredictionMarketOps is PredictionMarketFactory {
 
             uint newShares = yesSharesPerAddress[msg.sender].sub(_amount);
             yesSharesPerAddress[msg.sender] = newShares;
-            emit SharesSold(_amount);
+            emit SharesSold(_amount, msg.sender);
         } else {
             yesSharesEmitted = yesSharesEmitted.sub(_amount.div(2));
             noSharesEmitted = originalNumberOfYesShares.mul(originalNumberOfNoShares).div(yesSharesEmitted);       
 
             uint newShares = noSharesPerAddress[msg.sender].sub(_amount);
             noSharesPerAddress[msg.sender] = newShares;
-            emit SharesSold(_amount);
+            emit SharesSold(_amount, msg.sender);
         }
     }
 

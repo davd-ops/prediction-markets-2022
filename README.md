@@ -1,5 +1,11 @@
 # PredictionMarkets
 
+## You will need:
+
+Hardhat - https://hardhat.org/getting-started/
+
+Node.js - https://docs.npmjs.com/downloading-and-installing-node-js-and-npm
+
 ## How to start with localhost testing
 
 ### Local Ethereum development network

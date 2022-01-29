@@ -47,10 +47,10 @@ contract PredictionMarketFactory is Ownable {
     event MarketCreated(address marketAddress);
     event LiquidityProvided(uint amount, address provider);
     event LiquidityWithdrawn(uint amount, address provider);
-    event WinningSideChosen(string chosenWinningSide);
-    event UsdClaimed(uint amount);
-    event SharesBought(uint amount);
-    event SharesSold(uint amount);
+    event WinningSideChosen(string chosenWinningSide, address resolver);
+    event UsdClaimed(uint amount, address sender);
+    event SharesBought(uint amount, address sender);
+    event SharesSold(uint amount, address sender);
 
     string public marketName;
     string public marketDescription;
