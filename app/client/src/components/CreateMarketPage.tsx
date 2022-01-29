@@ -9,7 +9,6 @@ const CreateMarketPage = () => {
     const [endingDate, setEndingDate] = React.useState(Date());
     const inferiorShare = "yes";
     const ratio = 1000000000000000000;
-    const liquidity = 0;
     const marketVolume = 0;
 
     const usdTokenAddress = '0x5FbDB2315678afecb367f032d93F642f64180aa3';
@@ -35,6 +34,7 @@ const CreateMarketPage = () => {
 
             try {
                 const contract = await newMarketFactory.deploy(marketTitle, marketDescription, endingDateTimestamp, usdTokenAddress, 18, providerFee);
+                console.log(contract)
                 const requestOptions = {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -47,7 +47,6 @@ const CreateMarketPage = () => {
                         providerFee: providerFee,
                         inferiorShare: inferiorShare,
                         ratio: ratio,
-                        liquidity: liquidity,
                         marketVolume: marketVolume
                     })
                 };

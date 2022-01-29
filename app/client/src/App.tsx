@@ -39,9 +39,6 @@ function App() {
         createdTimestamp: number,
         contractAddress: string,
         providerFee: number,
-        inferiorShare: string,
-        ratio: number,
-        liquidity: number,
         marketVolume: number
     ) => {
 
@@ -53,9 +50,6 @@ function App() {
                 createdTimestamp: createdTimestamp,
                 contractAddress: contractAddress,
                 providerFee: providerFee,
-                inferiorShare: inferiorShare,
-                ratio: ratio ,
-                liquidity: liquidity,
                 marketVolume: marketVolume
             }
         })
@@ -69,9 +63,6 @@ function App() {
         createdTimestamp: number,
         contractAddress: string,
         providerFee: number,
-        inferiorShare: string,
-        ratio: number,
-        liquidity: number,
         marketVolume: number
     ) => {
 
@@ -83,9 +74,6 @@ function App() {
                 createdTimestamp: createdTimestamp,
                 contractAddress: contractAddress,
                 providerFee: providerFee,
-                inferiorShare: inferiorShare,
-                ratio: ratio ,
-                liquidity: liquidity,
                 marketVolume: marketVolume
             }
         })
@@ -118,9 +106,6 @@ function App() {
                                                                     createdTimestamp={currentMarketData.marketData.createdTimestamp}
                                                                     contractAddress={currentMarketData.marketData.contractAddress}
                                                                     providerFee={currentMarketData.marketData.providerFee}
-                                                                    inferiorShare={currentMarketData.marketData.inferiorShare}
-                                                                    ratio={currentMarketData.marketData.ratio}
-                                                                    liquidity={currentMarketData.marketData.liquidity}
                                                                     marketVolume={currentMarketData.marketData.marketVolume}
                                         /> :
                                         <ExpiredMarketDetail
@@ -128,9 +113,6 @@ function App() {
                                                 marketDescription={currentMarketData.marketData.marketDescription}
                                                 validUntil={currentMarketData.marketData.validUntil}
                                                 contractAddress={currentMarketData.marketData.contractAddress}
-                                                inferiorShare={currentMarketData.marketData.inferiorShare}
-                                                ratio={currentMarketData.marketData.ratio}
-                                                liquidity={currentMarketData.marketData.liquidity}
                                                 marketVolume={currentMarketData.marketData.marketVolume}
                                             /> :
                       <MetamaskMissing />

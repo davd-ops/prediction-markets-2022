@@ -1,38 +1,44 @@
-import React from 'react';
+import React from 'react'
+import {BigNumber, ethers} from "ethers"
 
 interface PropTypes {
-    inferiorShare: string;
-    ratio: number;
+    action: string;
+    yesRatio: number;
+    noRatio: number;
+    approvedAmount: number;
+    liquidity: number;
+    usdContract: any;
+    marketContract: any;
+    signer: any;
+    contractAddress: string;
 }
 
 const BuyShares = (props: PropTypes) => {
-    const [option, setOption] = React.useState('yes');
-    const [amount, setAmount] = React.useState(0);
-    const [yesRatio, setYesRatio] = React.useState(0);
-    const [noRatio, setNoRatio] = React.useState(0);
+    const [option, setOption] = React.useState('yes')
+    const [amount, setAmount] = React.useState(0)
+    const bigNumberTenToPowerOf18Digits = BigNumber.from(10).pow(18)
 
-    React.useEffect(() => {
-        calculatePercentageOfMarketShares();
-    }, []);
+    const submitAction = async (event: { preventDefault: () => void; }) => {
+        event.preventDefault()
 
-    const calculatePercentageOfMarketShares = () => {
-        if (props.inferiorShare === "yes") {
-            setYesRatio(100/(1+(props.ratio/(10**18))));
-            setNoRatio(100-100/(1+(props.ratio/(10**18))));
+        if (!isNaN(amount) && amount >= 1){
+
+            amount > props.approvedAmount ?
+                await props.usdContract.connect(props.signer).approve(props.contractAddress, BigNumber.from(1000000000).mul(bigNumberTenToPowerOf18Digits)) :
+                props.liquidity > amount ?
+                    props.action === "buy" ? await props.marketContract.connect(props.signer).buyShares(option,  BigNumber.from(amount).mul(bigNumberTenToPowerOf18Digits)) :
+                        await props.marketContract.connect(props.signer).sellShares(option,  BigNumber.from(amount).mul(bigNumberTenToPowerOf18Digits)) :
+                    alert("Theres not enough liq")
+
         } else {
-            setYesRatio(100-100/(1+(props.ratio/(10**18))));
-            setNoRatio(100/(1+(props.ratio/(10**18))));
+            isNaN(amount) ? alert("The input must be a number") :
+                amount <= 1 ? alert("The amount must be at least one") : alert("Something went wrong");
         }
-    }
-
-    const deployContract = async (event: { preventDefault: () => void; }) => {
-        console.log(option);
-        event.preventDefault();
     }
 
     return (
         <div className="buy-shares">
-            <form id='form' onSubmit={deployContract}>
+            <form id='form' onSubmit={submitAction}>
                     <input
                         className='form-input'
                         id='amount'
@@ -50,13 +56,17 @@ const BuyShares = (props: PropTypes) => {
                         onChange={e => setOption(e.target.value)}
                         required
                     >
-                        <option value="yes">Yes ({yesRatio/100}$)</option>
-                        <option value="no">No ({noRatio/100}$)</option>
+                        <option value="yes">Yes ({props.yesRatio/100}$)</option>
+                        <option value="no">No ({props.noRatio/100}$)</option>
                     </select>
-                <input id='buy-button' type="submit" value="Buy shares" />
+                    {amount <= props.approvedAmount ?
+                        <input id='buy-button' type="submit" value={props.action === "buy" ? "Buy Shares" : "Sell Shares"} /> :
+                        <input id='buy-button' type="submit" value="Approve USD" />}
+
+
             </form>
         </div>
-    );
-};
+    )
+}
 
-export default BuyShares;
+export default BuyShares

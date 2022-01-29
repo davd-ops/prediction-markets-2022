@@ -3,13 +3,12 @@ import OnboardingButton from "./OnboardingButton";
 import React, {useState} from "react";
 import MetaMaskOnboarding from "@metamask/onboarding";
 import {ethers} from "ethers";
-import {usdABI, usdBytecode} from "../otherContractProps/usdContractProps";
+import {usdABI, usdBytecode, usdContractAddress} from "../otherContractProps/usdContractProps";
 
 
 const ONBOARD_TEXT = 'Install MetaMask!';
 const CONNECT_TEXT = 'Connect';
 const CONNECTED_TEXT = 'Connected';
-const USD_ADDRESS = '0x5FbDB2315678afecb367f032d93F642f64180aa3';
 
 const AppHeader = (
     {
@@ -24,7 +23,7 @@ const AppHeader = (
     }: React.ComponentProps<any>
 ) => {
     const provider = new ethers.providers.Web3Provider((window as any).ethereum);
-    let usdContract = new ethers.Contract(USD_ADDRESS, usdABI, provider);
+    let usdContract = new ethers.Contract(usdContractAddress, usdABI, provider);
 
     const [buttonText, setButtonText] = React.useState(ONBOARD_TEXT);
     const [isDisabled, setDisabled] = React.useState(false);

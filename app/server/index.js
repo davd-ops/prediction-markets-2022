@@ -62,9 +62,6 @@ const insertNewMarketIntoDatabase = async (req) => {
             typeof req.body.createdTimestamp !== 'undefined' &&
             typeof req.body.contractAddress !== 'undefined' &&
             typeof req.body.providerFee !== 'undefined' &&
-            typeof req.body.inferiorShare !== 'undefined' &&
-            typeof req.body.ratio !== 'undefined' &&
-            typeof req.body.liquidity !== 'undefined' &&
             typeof req.body.marketVolume !== 'undefined'
         ){
             await client.db("PredictionMarkets").collection("MarketList").insertOne({
@@ -74,11 +71,10 @@ const insertNewMarketIntoDatabase = async (req) => {
                 createdTimestamp: req.body.createdTimestamp,
                 contractAddress: req.body.contractAddress,
                 providerFee: req.body.providerFee,
-                inferiorShare: req.body.inferiorShare,
-                ratio: req.body.ratio ,
-                liquidity: req.body.liquidity,
                 marketVolume: req.body.marketVolume
             })
+        } else {
+            alert("Something went wrong!")
         }
     }catch (e){
         console.error(e)
@@ -106,8 +102,9 @@ app.get("/admins_api", async (req, res) => {
 app.post("/insert_market", jsonParser, async (req, res) => {
     console.log(req.body)
     insertNewMarketIntoDatabase(req).then(r => {
+        console.log(req.body)
         res.json({
-            message: r,
+            message: req.body,
         })
     })
 })
