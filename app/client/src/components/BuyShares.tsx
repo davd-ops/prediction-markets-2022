@@ -1,5 +1,6 @@
 import React from 'react'
 import {BigNumber, ethers} from "ethers"
+import {toast} from "react-hot-toast"
 
 interface PropTypes {
     action: string;
@@ -11,6 +12,8 @@ interface PropTypes {
     marketContract: any;
     signer: any;
     contractAddress: string;
+    pendingTx: any;
+    user: string;
 }
 
 const BuyShares = (props: PropTypes) => {
@@ -23,17 +26,37 @@ const BuyShares = (props: PropTypes) => {
 
         if (!isNaN(amount) && amount >= 1){
 
-            amount > props.approvedAmount ?
-                await props.usdContract.connect(props.signer).approve(props.contractAddress, BigNumber.from(1000000000).mul(bigNumberTenToPowerOf18Digits)) :
-                props.liquidity > amount ?
-                    props.action === "buy" ? await props.marketContract.connect(props.signer).buyShares(option,  BigNumber.from(amount).mul(bigNumberTenToPowerOf18Digits)) :
-                        await props.marketContract.connect(props.signer).sellShares(option,  BigNumber.from(amount).mul(bigNumberTenToPowerOf18Digits)) :
-                    alert("Theres not enough liq")
+            try {
+                amount >= props.approvedAmount ?
+                    await approveTokens() :
+                    props.liquidity >= amount ?
+                        props.action === "buy" ? await buyShares() :
+                            await sellShares() :
+                        toast.error('Not enough liquidity')
+            } catch (e: any) {
+                toast.error(e.data.message)
+            }
+
 
         } else {
-            isNaN(amount) ? alert("The input must be a number") :
-                amount <= 1 ? alert("The amount must be at least one") : alert("Something went wrong");
+            isNaN(amount) ? toast.error('The input must be a number') :
+                amount <= 1 ? toast.error('The amount must greater than one') : toast.error('Something went wrong')
         }
+    }
+
+    const approveTokens = async () => {
+        await props.usdContract.connect(props.signer).approve(props.contractAddress, BigNumber.from(1000000000).mul(bigNumberTenToPowerOf18Digits))
+        props.pendingTx(props.marketContract, props.user)
+    }
+
+    const buyShares = async () => {
+        await props.marketContract.connect(props.signer).buyShares(option,  BigNumber.from(amount).mul(bigNumberTenToPowerOf18Digits))
+        props.pendingTx(props.marketContract, props.user)
+    }
+
+    const sellShares = async () => {
+        await props.marketContract.connect(props.signer).sellShares(option,  BigNumber.from(amount).mul(bigNumberTenToPowerOf18Digits))
+        props.pendingTx(props.marketContract, props.user)
     }
 
     return (

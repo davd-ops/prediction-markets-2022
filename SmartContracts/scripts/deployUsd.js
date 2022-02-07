@@ -10,9 +10,9 @@ async function main() {
   
     console.log("Usd token deployed to:", usd.address);
 
-    await usd.mint(admin_address, "50000000000000000000");
+    await usd.mint(admin_address, "10000000000000000000000");
     console.log('Minted', ethers.utils.formatEther(await usd.balanceOf(admin_address)) , 'usd tokens to', admin_address);
-    await usd.mint(user_address, "50000000000000000000");
+    await usd.mint(user_address, "1000000000000000000000");
     console.log('Minted', ethers.utils.formatEther(await usd.balanceOf(user_address)) , 'usd tokens to', user_address);
 
   }

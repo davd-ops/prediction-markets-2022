@@ -9,9 +9,6 @@ const app = express()
 // create application/json parser
 var jsonParser = bodyParser.json()
 
-// create application/x-www-form-urlencoded parser
-var urlencodedParser = bodyParser.urlencoded({ extended: false })
-
 const loadMarkets = async () => {
     const uri = "mongodb://localhost:27017"
     const client = new MongoClient(uri)

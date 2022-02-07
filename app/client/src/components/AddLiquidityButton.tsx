@@ -1,5 +1,6 @@
 import React from 'react'
 import {BigNumber, ethers} from "ethers"
+import {toast} from "react-hot-toast";
 
 interface PropTypes {
     approvedAmount: number;
@@ -7,6 +8,8 @@ interface PropTypes {
     marketContract: any;
     signer: any;
     contractAddress: string;
+    pendingTx: any;
+    user: string;
 }
 
 const AddLiquidityButton = (props: PropTypes) => {
@@ -18,12 +21,22 @@ const AddLiquidityButton = (props: PropTypes) => {
 
         if (!isNaN(amount) && amount >= 1){
             amount > props.approvedAmount ?
-                await props.usdContract.connect(props.signer).approve(props.contractAddress, BigNumber.from(1000000000).mul(bigNumberTenToPowerOf18Digits)) :
-                    await props.marketContract.connect(props.signer).addLiquidity(BigNumber.from(amount).mul(bigNumberTenToPowerOf18Digits))
+                 await approveTokens() :
+                    await provideLiquidity()
         } else {
-            isNaN(amount) ? alert("The input must be a number") :
-                amount <= 1 ? alert("The amount must be at least one") : alert("Something went wrong");
+            isNaN(amount) ? toast.error('The input must be a number') :
+                amount <= 1 ? toast.error('The amount must be at least one') : toast.error('Something went wrong')
         }
+    }
+
+    const approveTokens = async () => {
+        await props.usdContract.connect(props.signer).approve(props.contractAddress, BigNumber.from(1000000000).mul(bigNumberTenToPowerOf18Digits))
+        props.pendingTx(props.marketContract, props.user)
+    }
+
+    const provideLiquidity = async () => {
+        await props.marketContract.connect(props.signer).addLiquidity(BigNumber.from(amount).mul(bigNumberTenToPowerOf18Digits))
+        props.pendingTx(props.marketContract, props.user)
     }
 
     return (

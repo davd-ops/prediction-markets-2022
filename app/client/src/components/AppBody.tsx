@@ -16,8 +16,6 @@ const AppBody = (props: PropTypes) => {
         fetch("/markets_api")
             .then((res) => res.json())
             .then((data) => {
-                console.log(data.marketList);
-
                 setMarkets({
                     marketList: data.marketList
                 })

@@ -1,8 +1,13 @@
 import React from 'react';
 import {ethers} from "ethers";
 import {predictionMarketABI, predictionMarketBytecode} from "../otherContractProps/predictionMarketContractProps";
+import {toast} from "react-hot-toast";
 
-const CreateMarketPage = () => {
+interface PropTypes {
+    pendingTx: any;
+}
+
+const CreateMarketPage = (props: PropTypes) => {
     const [marketTitle, setMarketTitle] = React.useState('');
     const [marketDescription, setMarketDescription] = React.useState('');
     const [providerFee, setProviderFee] = React.useState(0);
@@ -24,7 +29,6 @@ const CreateMarketPage = () => {
         if (
             marketTitle.length >= 10 &&
             marketDescription.length >= 20 &&
-            typeof providerFee == 'number' &&
             providerFee >= 0 &&
             providerFee <= 100 &&
             new Date(endingDate) > new Date()
@@ -34,7 +38,7 @@ const CreateMarketPage = () => {
 
             try {
                 const contract = await newMarketFactory.deploy(marketTitle, marketDescription, endingDateTimestamp, usdTokenAddress, 18, providerFee);
-                console.log(contract)
+                props.pendingTx(contract, '')
                 const requestOptions = {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -54,16 +58,15 @@ const CreateMarketPage = () => {
                     .then(response => response.json())
                     .then(data => console.log(data));
             } catch (e) {
-                alert((e as Error).message);
+                toast.error((e as Error).message)
             }
 
         } else {
-            marketTitle.length < 10 ? alert("The title has to be more than 10 characters long") :
-                marketDescription.length < 20 ? alert("The description has to be more than 20 characters long") :
-                    typeof providerFee != 'number' ? alert("The provider fee must be a number") :
-                        providerFee > 100 ? alert("The provider fee has to be lower than 100%") :
-                            providerFee < 0 ? alert("The provider fee has to be 0% or bigger") :
-                                alert("The date needs to be in the future");
+            marketTitle.length < 10 ? toast.error('The title has to be more than 10 characters long') :
+                marketDescription.length < 20 ? toast.error('The description has to be more than 20 characters long') :
+                        providerFee > 100 ? toast.error('The provider fee has to be lower than 100%') :
+                            providerFee < 0 ? toast.error('The provider fee has to be 0% or bigger') :
+            toast.error('The date needs to be in the future');
             }
     }
 
