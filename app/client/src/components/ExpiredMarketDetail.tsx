@@ -1,49 +1,58 @@
 import React from 'react';
 import MarketDetailTitle from "./MarketDetailTitle";
 import MarketDetailFooter from "./MarketDetailFooter";
-import {ethers} from "ethers";
+import {BigNumber, ethers} from "ethers";
 import {usdABI, usdContractAddress} from "../otherContractProps/usdContractProps";
 import {predictionMarketABI} from "../otherContractProps/predictionMarketContractProps";
+import {toast} from "react-hot-toast";
 
 interface PropTypes {
     marketName: string;
     marketDescription: string;
     validUntil: number;
     contractAddress: string;
-    marketVolume: number;
+    pendingTx: any;
+    user: string;
 }
 
 const ExpiredMarketDetail = (props: PropTypes) => {
-    const [ratio, setRatio] = React.useState(0)
-    const [yesRatio, setYesRatio] = React.useState(0);
-    const [noRatio, setNoRatio] = React.useState(0);
-    const [inferiorShare, setInferiorShare] = React.useState("")
     const [pickedOutcome, setPickedOutcome] = React.useState('yes');
-    const [liquidity, setLiquidity] = React.useState(0)
 
     const provider = new ethers.providers.Web3Provider((window as any).ethereum)
     const signer = provider.getSigner()
-    const usdContract = new ethers.Contract(usdContractAddress, usdABI, provider)
     const marketContract = new ethers.Contract(props.contractAddress, predictionMarketABI, provider)
 
-    window.ethereum
-        .request({ method: 'eth_requestAccounts' })
-        .then(async (accounts: any) => {
-            setLiquidity(Number(ethers.utils.formatEther(await marketContract.yesSharesEmitted())))
-            const ratioVariables = await marketContract.calculateMarketRatio()
-            //calculatePercentageOfMarketShares(ratioVariables[1], ratioVariables[0])
-        })
+    const pickOutcome = async (event: { preventDefault: () => void; }) => {
+        event.preventDefault()
 
-    const calculatePercentageOfMarketShares = (inferiorShare: string, ratio: number) => {
-        setRatio(ratio)
-        setInferiorShare(inferiorShare)
-        if (inferiorShare === "yes") {
-            setYesRatio(Math.round(100/(1+(ratio/(10**18)))));
-            setNoRatio(Math.round(100-100/(1+(ratio/(10**18)))));
+        if (pickedOutcome === 'yes' || pickedOutcome === 'no'){
+            try {
+                await submitOutcome()
+            } catch (e: any) {
+                typeof(e.data) !== "undefined" ? toast.error(e.data.message.substring(
+                    e.data.message.indexOf("'") + 1,
+                    e.data.message.lastIndexOf("'")
+                )) : toast.error(e.message)
+
+            }
         } else {
-            setYesRatio(Math.round(100-100/(1+(ratio/(10**18)))));
-            setNoRatio(Math.round(100/(1+(ratio/(10**18)))));
+            toast.error('Something went wrong')
         }
+    }
+
+    const submitOutcome = async () => {
+        const contract = await marketContract.connect(signer).chooseWinningSide(pickedOutcome)
+        props.pendingTx(marketContract, props.user)
+        const requestOptions = {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                contractAddress: contract.address
+            })
+        };
+        fetch('/update_outcome', requestOptions)
+            .then(response => response.json())
+            .then(data => console.log(data));
     }
 
     return (
@@ -51,12 +60,12 @@ const ExpiredMarketDetail = (props: PropTypes) => {
             <MarketDetailTitle
                 marketName={props.marketName}
                 validUntil={props.validUntil}
-                liquidity={liquidity}
-                marketVolume={props.marketVolume}
+                liquidity={0}
+                marketVolume={0}
             />
             <div className="market-main-body-section">
                 <h1 id="expired-detail-heading">Choose the market outcome:</h1>
-                <form action="">
+                <form action="" onSubmit={pickOutcome}>
                     <label className="switch">
                         <input
                             type="checkbox"
@@ -64,7 +73,7 @@ const ExpiredMarketDetail = (props: PropTypes) => {
                             value={pickedOutcome}
                             onChange={() => pickedOutcome == 'yes' ? setPickedOutcome('no') : setPickedOutcome('yes')}
                         />
-                        <div className="slider round"></div>
+                        <div className="slider round" />
                     </label>
                     <input id='submit-outcome' type="submit" value="Choose outcome" />
                 </form>

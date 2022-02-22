@@ -34,7 +34,11 @@ const BuyShares = (props: PropTypes) => {
                             await sellShares() :
                         toast.error('Not enough liquidity')
             } catch (e: any) {
-                toast.error(e.data.message)
+                typeof(e.data) !== "undefined" ? toast.error(e.data.message.substring(
+                    e.data.message.indexOf("'") + 1,
+                    e.data.message.lastIndexOf("'")
+                )) : toast.error(e.message)
+
             }
 
 
@@ -50,12 +54,12 @@ const BuyShares = (props: PropTypes) => {
     }
 
     const buyShares = async () => {
-        await props.marketContract.connect(props.signer).buyShares(option,  BigNumber.from(amount).mul(bigNumberTenToPowerOf18Digits))
+        await props.marketContract.connect(props.signer).buyShares(option,  BigNumber.from(ethers.utils.parseEther(String(amount))))
         props.pendingTx(props.marketContract, props.user)
     }
 
     const sellShares = async () => {
-        await props.marketContract.connect(props.signer).sellShares(option,  BigNumber.from(amount).mul(bigNumberTenToPowerOf18Digits))
+        await props.marketContract.connect(props.signer).sellShares(option,  BigNumber.from(ethers.utils.parseEther(String(amount))))
         props.pendingTx(props.marketContract, props.user)
     }
 

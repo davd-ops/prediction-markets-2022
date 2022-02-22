@@ -130,7 +130,8 @@ function App() {
             marketContract.on('LiquidityProvided', async (amount: ethers.BigNumberish, providerAddress: string) => {
                 if (user.toString().toLowerCase() === providerAddress.toLowerCase()) {
                     toast.remove('PendingTx')
-                    toast.success(ethers.utils.formatEther(amount) + ' USD provided', {
+                    amount = ethers.utils.formatEther(amount)
+                    toast.success(parseFloat(amount).toFixed(2) + ' USD provided', {
                         id: 'LiquidityProvided',
                         duration: duration,
                     })
@@ -141,7 +142,8 @@ function App() {
             marketContract.on('LiquidityWithdrawn', async (amount: ethers.BigNumberish, providerAddress: string) => {
                 if (user.toString().toLowerCase() === providerAddress.toLowerCase()) {
                     toast.remove('PendingTx')
-                    toast.success(ethers.utils.formatEther(amount) + ' USD withdrawn', {
+                    amount = ethers.utils.formatEther(amount)
+                    toast.success(parseFloat(amount).toFixed(2) + ' USD withdrawn', {
                         id: 'LiquidityWithdrawn',
                         duration: duration,
                     })
@@ -152,7 +154,8 @@ function App() {
             marketContract.on('SharesBought', async (amount: ethers.BigNumberish, sender: string) => {
                 if (user.toString().toLowerCase() === sender.toLowerCase()) {
                     toast.remove('PendingTx')
-                    toast.success('You just bought ' + ethers.utils.formatEther(amount) + ' shares', {
+                    amount = ethers.utils.formatEther(amount)
+                    toast.success('You just bought ' + parseFloat(amount).toFixed(2) + ' shares', {
                         id: 'SharesBought',
                         duration: duration,
                     })
@@ -163,7 +166,8 @@ function App() {
             marketContract.on('SharesSold', async (amount: ethers.BigNumberish, sender: string) => {
                 if (user.toString().toLowerCase() === sender.toLowerCase()) {
                     toast.remove('PendingTx')
-                    toast.success('You just sold ' + ethers.utils.formatEther(amount) + ' shares', {
+                    amount = ethers.utils.formatEther(amount)
+                    toast.success('You just sold ' + parseFloat(amount).toFixed(2) + ' shares', {
                         id: 'SharesSold',
                         duration: duration,
                     })
@@ -173,13 +177,22 @@ function App() {
 
             marketContract.on('WinningSideChosen', async (chosenWinningSide: any, resolver: string) => {
                 if (user.toString().toLowerCase() === resolver.toLowerCase()) {
-                    console.log("Market successfully resolved!")
+                    toast.remove('PendingTx')
+                    toast.success('Market successfully resolved!', {
+                        id: 'MarketResolved',
+                        duration: duration,
+                    })
                 }
             })
 
             marketContract.on('UsdClaimed', async (amount: ethers.BigNumberish, sender: string) => {
                 if (user.toString().toLowerCase() === sender.toLowerCase()) {
-                    console.log(ethers.utils.formatEther(amount) + ' USD claimed!')
+                    toast.remove('PendingTx')
+                    amount = ethers.utils.formatEther(amount)
+                    toast.success(parseFloat(amount).toFixed(2) + ' USD claimed!', {
+                        id: 'UsdClaimed',
+                        duration: duration,
+                    })
                     await updateBalance()
                 }
             })
@@ -228,12 +241,13 @@ function App() {
                                                                     user={user.toString()}
                                         /> :
                                         <ExpiredMarketDetail
-                                                marketName={currentMarketData.marketData.marketName}
-                                                marketDescription={currentMarketData.marketData.marketDescription}
-                                                validUntil={currentMarketData.marketData.validUntil}
-                                                contractAddress={currentMarketData.marketData.contractAddress}
-                                                marketVolume={currentMarketData.marketData.marketVolume}
-                                            /> :
+                                            marketName={currentMarketData.marketData.marketName}
+                                            marketDescription={currentMarketData.marketData.marketDescription}
+                                            validUntil={currentMarketData.marketData.validUntil}
+                                            contractAddress={currentMarketData.marketData.contractAddress}
+                                            pendingTx={pendingTx}
+                                            user={user.toString()}
+                                        /> :
                       <MetamaskMissing />
               }
               <AppFooter />

@@ -1,4 +1,5 @@
 import React from 'react';
+import ExpiredMarketDetail from "./ExpiredMarketDetail";
 
 interface PropTypes {
     marketName: string;
@@ -48,6 +49,13 @@ const MarketDetailTitle = (props: PropTypes) => {
             </div>
         </div>
     );
+};
+
+MarketDetailTitle.props = {
+    marketName: "",
+    validUntil: 0,
+    liquidity: 0,
+    marketVolume: 0,
 };
 
 export default MarketDetailTitle;

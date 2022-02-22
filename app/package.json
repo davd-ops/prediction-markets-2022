@@ -1,5 +1,5 @@
 {
-  "name": "testreactexpress",
+  "name": "server",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
@@ -14,7 +14,7 @@
   "dependencies": {
     "body-parser": "^1.19.0",
     "ethers": "^5.5.1",
-    "express": "^4.17.1",
+    "express": "^4.17.2",
     "mongodb": "^4.1.3"
   },
   "devDependencies": {
