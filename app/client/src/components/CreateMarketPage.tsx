@@ -2,9 +2,14 @@ import React from 'react';
 import {ethers} from "ethers";
 import {predictionMarketABI, predictionMarketBytecode} from "../otherContractProps/predictionMarketContractProps";
 import {toast} from "react-hot-toast";
+import MetaMaskOnboarding from "@metamask/onboarding";
+import {useMoralis} from "react-moralis";
 
 interface PropTypes {
     pendingTx: any;
+    signMessage: any;
+    logOut: any;
+    user: any;
 }
 
 const CreateMarketPage = (props: PropTypes) => {
@@ -22,16 +27,53 @@ const CreateMarketPage = (props: PropTypes) => {
 
     const newMarketFactory = new ethers.ContractFactory(predictionMarketABI, predictionMarketBytecode, signer);
 
-    const deployContract = async (event: { preventDefault: () => void; }) => {
+    const {
+        authenticate,
+        isAuthenticated,
+        user,
+        Moralis,
+        logout
+    } = useMoralis()
 
-        event.preventDefault();
+    const deployContract = async (event: { preventDefault: () => void; }) => {
+        event.preventDefault()
+
+        let user
+        let userAddress
+        user = Moralis.User.current()
+
+        try {
+        if (!user) {
+            user = await Moralis.authenticate({signingMessage: "Confirm ownership of this address"})
+                .then(function (user) {
+                    console.log(user.get("ethAddress"))
+                    userAddress = user.get("ethAddress")
+                })
+        } else {
+            userAddress = user.attributes.ethAddress
+        }
+        } catch (e) {
+            console.log((e as Error).message)
+        }
+
+        let isAdminLogged = false
+        const AdminList = Moralis.Object.extend("AdminList")
+        const adminList = new Moralis.Query(AdminList)
+        const results = await adminList.find()
+
+        for (let i = 0; i < results.length; i++) {
+            const object = results[i]
+            if (object.get('address') == userAddress) isAdminLogged = true
+            console.log(object.get('address') + ' ' + userAddress + ' ' + isAdminLogged)
+        }
 
         if (
             marketTitle.length >= 10 &&
             marketDescription.length >= 20 &&
             providerFee >= 0 &&
             providerFee <= 100 &&
-            new Date(endingDate) > new Date()
+            new Date(endingDate) > new Date() &&
+            isAdminLogged
         ){
             let endingDateTimestamp = new Date(endingDate).getTime() / 1000;
             let createdTimestamp = + new Date() / 1000;
@@ -39,24 +81,24 @@ const CreateMarketPage = (props: PropTypes) => {
             try {
                 const contract = await newMarketFactory.deploy(marketTitle, marketDescription, endingDateTimestamp, usdTokenAddress, 18, providerFee);
                 props.pendingTx(contract, '')
-                const requestOptions = {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        marketName: marketTitle,
-                        marketDescription: marketDescription,
-                        validUntil: endingDateTimestamp,
-                        createdTimestamp: createdTimestamp,
-                        contractAddress: contract.address,
-                        providerFee: providerFee,
-                        inferiorShare: inferiorShare,
-                        ratio: ratio,
-                        marketVolume: marketVolume
+
+                const MarketList = Moralis.Object.extend("MarketList")
+                const marketList = new MarketList()
+
+                marketList.set("marketName", marketTitle)
+                marketList.set("marketDescription", marketDescription)
+                marketList.set("validUntil", endingDateTimestamp)
+                marketList.set("createdTimestamp", createdTimestamp)
+                marketList.set("contractAddress", contract.address)
+                marketList.set("providerFee", providerFee)
+                marketList.set("marketVolume", 0)
+
+                marketList.save()
+                    .then(() => {
+                        console.log('New market added')
+                    }, (error: { message: string; }) => {
+                        alert('Failed to create new object, with error code: ' + error.message)
                     })
-                };
-                fetch('/insert_market', requestOptions)
-                    .then(response => response.json())
-                    .then(data => console.log(data));
             } catch (e) {
                 toast.error((e as Error).message)
             }
@@ -66,7 +108,8 @@ const CreateMarketPage = (props: PropTypes) => {
                 marketDescription.length < 20 ? toast.error('The description has to be more than 20 characters long') :
                         providerFee > 100 ? toast.error('The provider fee has to be lower than 100%') :
                             providerFee < 0 ? toast.error('The provider fee has to be 0% or bigger') :
-            toast.error('The date needs to be in the future');
+                                new Date(endingDate) < new Date() ? toast.error('The date needs to be in the future') :
+            toast.error('You need to sign the message')
             }
     }
 

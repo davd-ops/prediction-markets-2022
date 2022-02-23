@@ -1,36 +1,23 @@
 import React, {useState} from 'react';
 import Market from "./Market";
+import {useMoralis} from "react-moralis";
 
 interface PropTypes {
     displayMarketDetail: any;
+    markets: { marketList: { objectId: React.Key; marketName: string; marketDescription: string; validUntil: number; createdTimestamp: number; contractAddress: string; providerFee: number; marketVolume: number; isResolved: boolean; }[]; };
 }
 
 const ExpiredMarketsPage = (props: PropTypes) => {
-    const [markets, setMarkets] = useState({
-        marketList: []
-    } as any)
-
-    React.useEffect(() => {
-        fetch("/markets_api")
-            .then((res) => res.json())
-            .then((data) => {
-
-                setMarkets({
-                    marketList: data.marketList
-                })
-
-            });
-    }, []);
 
     return (
         <div className="App-body">
             <h1>Expired markets</h1>
             <div className="MarketsContainer">
                 {
-                    markets.marketList.length > 0 ? markets.marketList.map((market: {
+                    props.markets.marketList.length > 0 ? props.markets.marketList.map((market: {
                         validUntil: number;
                         isResolved: boolean;
-                        _id: React.Key | null | undefined;
+                        objectId: React.Key | null | undefined;
                         marketName: string | undefined;
                         marketDescription: string;
                         createdTimestamp: number;
@@ -40,12 +27,12 @@ const ExpiredMarketsPage = (props: PropTypes) => {
                     }) => (
                         Number(market.validUntil) < new Date(Date.now()).getTime() / 1000 ?
                             !market.isResolved ?
-                                <Market key={market._id} marketName={market.marketName}
+                                <Market key={market.objectId} marketName={market.marketName}
                                         marketDescription={market.marketDescription} validUntil={market.validUntil}
                                         createdTimestamp={market.createdTimestamp}
                                         contractAddress={market.contractAddress} providerFee={market.providerFee}
                                         marketVolume={market.marketVolume}
-                                        displayMarketDetail={props.displayMarketDetail}/> : "No expired markets" :
+                                        displayMarketDetail={props.displayMarketDetail}/> :null :
                             null
                     )) : 'No expired markets'
                 }

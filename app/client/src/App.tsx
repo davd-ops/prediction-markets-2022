@@ -13,19 +13,37 @@ import toast, {Toaster} from "react-hot-toast";
 import {ethers} from "ethers";
 import {usdABI, usdContractAddress} from "./otherContractProps/usdContractProps";
 import MetaMaskOnboarding from "@metamask/onboarding";
+import {useMoralis} from "react-moralis";
 
 function App() {
+    const {
+        authenticate,
+        isWeb3Enabled,
+        isAuthenticated,
+        user,
+        enableWeb3,
+        Moralis,
+        logout
+    } = useMoralis();
+
     const [usdAmount, setUsdAmount] = React.useState(0)
-    const [user, setUser] = React.useState([])
-    const [currentPage, setCurrentPage] = React.useState('markets-page');
+    const [userAddress, setUserAddress] = React.useState([])
+    const [currentPage, setCurrentPage] = React.useState('markets-page')
+    const [markets, setMarkets] = useState({
+        marketList: []
+    } as any)
     const [currentMarketData, setCurrentMarketData] = useState({
         marketData: []
     } as any)
 
     React.useEffect(() => {
+        setTimeout(() => {
+            getMarkets()
+        }, 1)
 
         function handleNewAccounts(newAccounts: React.SetStateAction<never[]>) {
-            setUser(newAccounts);
+            setUserAddress(newAccounts);
+            logOut()
         }
         if (MetaMaskOnboarding.isMetaMaskInstalled()) {
             window.ethereum
@@ -35,7 +53,28 @@ function App() {
         }
     }, []);
 
-    const switchPageToMarketsPage = () => {
+    const getMarkets = async () => {
+        const MarketList = Moralis.Object.extend("MarketList")
+        const marketList = new Moralis.Query(MarketList)
+        const  marketsParseObjectSubclass = await marketList.find()
+        setMarkets({
+            marketList: JSON.parse(JSON.stringify(marketsParseObjectSubclass))
+        })
+    }
+
+    const signMessage = async () => {
+        if (!isAuthenticated && !user) {
+                await authenticate({signingMessage: "I confirm, that I have ownership of following address: " + userAddress})
+        }
+    }
+
+    const logOut = async () => {
+        await logout()
+        console.log("logged outs")
+    }
+
+    const switchPageToMarketsPage = async () => {
+        getMarkets()
         setCurrentPage('markets-page')
     }
 
@@ -44,6 +83,7 @@ function App() {
     }
 
     const switchPageToExpiredMarketsPage = () => {
+        getMarkets()
         setCurrentPage('expired-markets-page')
     }
 
@@ -200,55 +240,60 @@ function App() {
     }
 
     const updateBalance = async () => {
-        if (typeof user[0] !== "undefined") {
+        if (typeof userAddress[0] !== "undefined") {
             const provider = new ethers.providers.Web3Provider((window as any).ethereum)
             let usdContract = new ethers.Contract(usdContractAddress, usdABI, provider);
-            setUsdAmount(Number(ethers.utils.formatEther(await usdContract.balanceOf(user[0]))))
+            setUsdAmount(Number(ethers.utils.formatEther(await usdContract.balanceOf(userAddress[0]))))
         }
+
     }
 
-  return (
-      <>
-          <div className="App">
-              <AppHeader
-                  marketsButton = {currentPage === 'markets-page' ? 'nonClickableButton' : 'clickableButton'}
-                  createMarketsButton = {currentPage === 'create-market-page' ? 'nonClickableButton' : 'clickableButton'}
-                  expiredMarketsButton = {currentPage === 'expired-markets-page' ? 'nonClickableButton' : 'clickableButton'}
-                  portfolioButton = {currentPage === 'portfolio-page' ? 'nonClickableButton' : 'clickableButton'}
-                  switchPageToMarkets={switchPageToMarketsPage}
-                  switchPageToCreateMarket={switchPageToCreateMarketPage}
-                  switchPageToExpiredMarkets={switchPageToExpiredMarketsPage}
-                  switchPageToPortfolio={switchPageToPortfolioPage}
-                  usdAmount={usdAmount}
-                  updateBalance={updateBalance}
-              />
-              <Toaster />
-              {
-                  typeof window.ethereum !== 'undefined' ?
-                      currentPage === 'markets-page' ? <AppBody displayMarketDetail={switchPageToMarketDetailPage} /> :
-                        currentPage === 'expired-markets-page' ? <ExpiredMarketsPage displayMarketDetail={switchPageToExpiredMarketDetailPage} /> :
-                            currentPage === 'create-market-page' ? <CreateMarketPage pendingTx={pendingTx} /> :
-                                currentPage === 'portfolio-page' ? <PortfolioPage /> :
-                                    currentPage === 'market-detail-page' ? <MarketDetail
-                                                                    marketName={currentMarketData.marketData.marketName}
-                                                                    marketDescription={currentMarketData.marketData.marketDescription}
-                                                                    validUntil={currentMarketData.marketData.validUntil}
-                                                                    createdTimestamp={currentMarketData.marketData.createdTimestamp}
-                                                                    contractAddress={currentMarketData.marketData.contractAddress}
-                                                                    providerFee={currentMarketData.marketData.providerFee}
-                                                                    marketVolume={currentMarketData.marketData.marketVolume}
-                                                                    pendingTx={pendingTx}
-                                                                    user={user.toString()}
-                                        /> :
-                                        <ExpiredMarketDetail
+    return (
+        <>
+            <div className="App">
+                {
+                    typeof window.ethereum !== 'undefined' ?
+                        <AppHeader
+                            marketsButton={currentPage === 'markets-page' ? 'nonClickableButton' : 'clickableButton'}
+                            createMarketsButton={currentPage === 'create-market-page' ? 'nonClickableButton' : 'clickableButton'}
+                            expiredMarketsButton={currentPage === 'expired-markets-page' ? 'nonClickableButton' : 'clickableButton'}
+                            portfolioButton={currentPage === 'portfolio-page' ? 'nonClickableButton' : 'clickableButton'}
+                            switchPageToMarkets={switchPageToMarketsPage}
+                            switchPageToCreateMarket={switchPageToCreateMarketPage}
+                            switchPageToExpiredMarkets={switchPageToExpiredMarketsPage}
+                            switchPageToPortfolio={switchPageToPortfolioPage}
+                            usdAmount={usdAmount}
+                            updateBalance={updateBalance}
+                        /> : <header className="App-header" />
+                }
+                <Toaster/>
+                {
+                    typeof window.ethereum !== 'undefined' ?
+                        currentPage === 'markets-page' ? <AppBody displayMarketDetail={switchPageToMarketDetailPage} markets={markets} /> :
+                        currentPage === 'expired-markets-page' ? <ExpiredMarketsPage displayMarketDetail={switchPageToExpiredMarketDetailPage} markets={markets} /> :
+                            currentPage === 'create-market-page' ? <CreateMarketPage pendingTx={pendingTx} signMessage={signMessage} logOut={logOut} user={user} /> :
+                                currentPage === 'portfolio-page' ? <PortfolioPage/> :
+                                    currentPage === 'market-detail-page' ?
+                                        <MarketDetail
                                             marketName={currentMarketData.marketData.marketName}
                                             marketDescription={currentMarketData.marketData.marketDescription}
                                             validUntil={currentMarketData.marketData.validUntil}
+                                            createdTimestamp={currentMarketData.marketData.createdTimestamp}
                                             contractAddress={currentMarketData.marketData.contractAddress}
+                                            providerFee={currentMarketData.marketData.providerFee}
+                                            marketVolume={currentMarketData.marketData.marketVolume}
                                             pendingTx={pendingTx}
-                                            user={user.toString()}
+                                            user={userAddress.toString()}
                                         /> :
-                      <MetamaskMissing />
+                                            <ExpiredMarketDetail
+                                                marketName={currentMarketData.marketData.marketName}
+                                                marketDescription={currentMarketData.marketData.marketDescription}
+                                                validUntil={currentMarketData.marketData.validUntil}
+                                                contractAddress={currentMarketData.marketData.contractAddress}
+                                                pendingTx={pendingTx}
+                                                user={userAddress.toString()}
+                                            /> :
+                        <MetamaskMissing/>
               }
               <AppFooter />
           </div>

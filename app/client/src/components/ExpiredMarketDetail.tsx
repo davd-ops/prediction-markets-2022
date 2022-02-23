@@ -1,10 +1,10 @@
 import React from 'react';
 import MarketDetailTitle from "./MarketDetailTitle";
 import MarketDetailFooter from "./MarketDetailFooter";
-import {BigNumber, ethers} from "ethers";
-import {usdABI, usdContractAddress} from "../otherContractProps/usdContractProps";
+import {ethers} from "ethers";
 import {predictionMarketABI} from "../otherContractProps/predictionMarketContractProps";
 import {toast} from "react-hot-toast";
+import {useMoralis} from "react-moralis";
 
 interface PropTypes {
     marketName: string;
@@ -22,14 +22,51 @@ const ExpiredMarketDetail = (props: PropTypes) => {
     const signer = provider.getSigner()
     const marketContract = new ethers.Contract(props.contractAddress, predictionMarketABI, provider)
 
+    const {
+        authenticate,
+        isAuthenticated,
+        user,
+        Moralis,
+        logout
+    } = useMoralis()
+
     const pickOutcome = async (event: { preventDefault: () => void; }) => {
         event.preventDefault()
 
-        if (pickedOutcome === 'yes' || pickedOutcome === 'no'){
+        let user
+        let userAddress
+        user = Moralis.User.current()
+
+        try {
+            if (!user) {
+                user = await Moralis.authenticate({signingMessage: "Confirm ownership of this address"})
+                    .then(function (user) {
+                        console.log(user.get("ethAddress"))
+                        userAddress = user.get("ethAddress")
+                    })
+            } else {
+                userAddress = user.attributes.ethAddress
+            }
+        } catch (e) {
+            console.log((e as Error).message)
+        }
+
+        let isAdminLogged = false
+        const AdminList = Moralis.Object.extend("AdminList")
+        const adminList = new Moralis.Query(AdminList)
+        const results = await adminList.find()
+
+        for (let i = 0; i < results.length; i++) {
+            const object = results[i]
+            if (object.get('address') == userAddress) isAdminLogged = true
+            console.log(object.get('address') + ' ' + userAddress + ' ' + isAdminLogged)
+        }
+
+        if (pickedOutcome === 'yes' && isAdminLogged || pickedOutcome === 'no' && isAdminLogged) {
             try {
                 await submitOutcome()
             } catch (e: any) {
-                typeof(e.data) !== "undefined" ? toast.error(e.data.message.substring(
+                typeof (e.data) !== "undefined" ? toast.error(e.data.message.substring(
                     e.data.message.indexOf("'") + 1,
                     e.data.message.lastIndexOf("'")
                 )) : toast.error(e.message)
@@ -41,18 +78,24 @@ const ExpiredMarketDetail = (props: PropTypes) => {
     }
 
     const submitOutcome = async () => {
-        const contract = await marketContract.connect(signer).chooseWinningSide(pickedOutcome)
-        props.pendingTx(marketContract, props.user)
-        const requestOptions = {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                contractAddress: contract.address
-            })
-        };
-        fetch('/update_outcome', requestOptions)
-            .then(response => response.json())
-            .then(data => console.log(data));
+        //const contract = await marketContract.connect(signer).chooseWinningSide(pickedOutcome)
+        //props.pendingTx(marketContract, props.user)
+
+        const MarketList = Moralis.Object.extend("MarketList")
+        const query = new Moralis.Query(MarketList)
+        query.equalTo("contractAddress", props.contractAddress)
+        const result = await query.first()
+        if (typeof result !== "undefined") {
+            result.set('isResolved', true)
+            result.save()
+                .then(() => {
+                    console.log('Outcome updated')
+                }, (error: { message: string; }) => {
+                    toast.error('Failed to create new object, with error code: ' + error.message)
+                })
+        } else {
+            toast.error('Something went wrong!')
+        }
     }
 
     return (
@@ -73,14 +116,15 @@ const ExpiredMarketDetail = (props: PropTypes) => {
                             value={pickedOutcome}
                             onChange={() => pickedOutcome == 'yes' ? setPickedOutcome('no') : setPickedOutcome('yes')}
                         />
-                        <div className="slider round" />
+                        <div className="slider round"/>
                     </label>
-                    <input id='submit-outcome' type="submit" value="Choose outcome" />
+                    <input id='submit-outcome' type="submit" value="Choose outcome"/>
                 </form>
             </div>
-            <MarketDetailFooter marketName={props.marketName} marketDescription={props.marketDescription} validUntil={props.validUntil} contractAddress={props.contractAddress} />
+            <MarketDetailFooter marketName={props.marketName} marketDescription={props.marketDescription}
+                                validUntil={props.validUntil} contractAddress={props.contractAddress}/>
         </div>
-    );
-};
+    )
+}
 
-export default ExpiredMarketDetail;
+export default ExpiredMarketDetail

@@ -3,6 +3,7 @@ import OnboardingButton from "./OnboardingButton";
 import React, {useState} from "react";
 import MetaMaskOnboarding from "@metamask/onboarding";
 import {ethers} from "ethers";
+import {useMoralis} from "react-moralis";
 
 
 const ONBOARD_TEXT = 'Install MetaMask!';
@@ -23,8 +24,6 @@ interface PropTypes {
 }
 
 const AppHeader = (props: PropTypes) => {
-    const provider = new ethers.providers.Web3Provider((window as any).ethereum);
-
     const [buttonText, setButtonText] = React.useState(ONBOARD_TEXT)
     const [isDisabled, setDisabled] = React.useState(false)
     const [metamaskButtonStyle, setMetamaskButtonStyle] = React.useState('clickableButton')
@@ -32,6 +31,10 @@ const AppHeader = (props: PropTypes) => {
     const [accounts, setAccounts] = React.useState([])
     const onboarding = React.useRef<MetaMaskOnboarding>()
     const [isAdminLogged, setIsAdminLogged] = useState(false)
+
+    const {
+        Moralis,
+    } = useMoralis();
 
     React.useEffect(() => {
         if (!onboarding.current) {
@@ -44,12 +47,13 @@ const AppHeader = (props: PropTypes) => {
             if (accounts.length > 0) {
                 setButtonText(props.usdAmount.toFixed(2) + ' USD')
                 setDisabled(true)
+                setMetamaskButtonStyle('nonClickableButton')
                 walletChanged()
                 onboarding?.current?.stopOnboarding()
             } else {
                 setButtonText(CONNECT_TEXT)
                 setDisabled(false)
-                setMetamaskButtonStyle('nonClickableButton')
+                setMetamaskButtonStyle('clickableButton')
             }
         }
     }, [accounts]);
@@ -70,11 +74,12 @@ const AppHeader = (props: PropTypes) => {
     }, [])
 
     React.useEffect(() => {
-        fetch("/admins_api")
-            .then((res) => res.json())
-            .then((data) => {
-                setAdminAddress(data.adminList[0].address)
-            })
+        setTimeout(async () => {
+            const AdminList = Moralis.Object.extend("AdminList")
+            const adminList = new Moralis.Query(AdminList)
+            const results = await adminList.find()
+            setAdminAddress(results[0].get('address'))
+        }, 1)
     }, [])
 
     React.useEffect(() => {
@@ -106,19 +111,18 @@ const AppHeader = (props: PropTypes) => {
             setButtonText(props.usdAmount.toFixed(2) + ' USD')
         }
     }
+        return (
+            <header className="App-header">
+                <button className={props.marketsButton} onClick={props.switchPageToMarkets}>Markets</button>
+                {
+                    isAdminLogged ? <>
+                        <button className={props.createMarketsButton} onClick={props.switchPageToCreateMarket}>Create market</button>
+                        <button className={props.expiredMarketsButton} onClick={props.switchPageToExpiredMarkets}>Expired markets</button>
+                    </> : <button className={props.portfolioButton} onClick={props.switchPageToPortfolio}>Portfolio</button>
+                }
+                <OnboardingButton isDisabled={isDisabled} onClick={onClick} classNamed={metamaskButtonStyle} text={buttonText} walletChanged={walletChanged} />
+            </header>
+        )
+}
 
-    return (
-        <header className="App-header">
-            <button className={props.marketsButton} onClick={props.switchPageToMarkets}>Markets</button>
-            {
-                isAdminLogged ? <>
-                    <button className={props.createMarketsButton} onClick={props.switchPageToCreateMarket}>Create market</button>
-                    <button className={props.expiredMarketsButton} onClick={props.switchPageToExpiredMarkets}>Expired markets</button>
-                </> : <button className={props.portfolioButton} onClick={props.switchPageToPortfolio}>Portfolio</button>
-            }
-            <OnboardingButton isDisabled={isDisabled} onClick={onClick} classNamed={metamaskButtonStyle} text={buttonText} walletChanged={walletChanged} />
-        </header>
-    );
-};
-
-export default AppHeader;
+export default AppHeader
