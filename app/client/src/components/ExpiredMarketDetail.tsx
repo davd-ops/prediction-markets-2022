@@ -1,7 +1,7 @@
 import React from 'react';
 import MarketDetailTitle from "./MarketDetailTitle";
 import MarketDetailFooter from "./MarketDetailFooter";
-import {ethers} from "ethers";
+import {BigNumber, ethers} from "ethers";
 import {predictionMarketABI} from "../otherContractProps/predictionMarketContractProps";
 import {toast} from "react-hot-toast";
 import {useMoralis} from "react-moralis";
@@ -13,6 +13,8 @@ interface PropTypes {
     contractAddress: string;
     pendingTx: any;
     user: string;
+    signMessage: any;
+    isAdminLogged: any;
 }
 
 const ExpiredMarketDetail = (props: PropTypes) => {
@@ -23,44 +25,13 @@ const ExpiredMarketDetail = (props: PropTypes) => {
     const marketContract = new ethers.Contract(props.contractAddress, predictionMarketABI, provider)
 
     const {
-        authenticate,
-        isAuthenticated,
-        user,
         Moralis,
-        logout
     } = useMoralis()
 
     const pickOutcome = async (event: { preventDefault: () => void; }) => {
         event.preventDefault()
 
-        let user
-        let userAddress
-        user = Moralis.User.current()
-
-        try {
-            if (!user) {
-                user = await Moralis.authenticate({signingMessage: "Confirm ownership of this address"})
-                    .then(function (user) {
-                        console.log(user.get("ethAddress"))
-                        userAddress = user.get("ethAddress")
-                    })
-            } else {
-                userAddress = user.attributes.ethAddress
-            }
-        } catch (e) {
-            console.log((e as Error).message)
-        }
-
-        let isAdminLogged = false
-        const AdminList = Moralis.Object.extend("AdminList")
-        const adminList = new Moralis.Query(AdminList)
-        const results = await adminList.find()
-
-        for (let i = 0; i < results.length; i++) {
-            const object = results[i]
-            if (object.get('address') == userAddress) isAdminLogged = true
-            console.log(object.get('address') + ' ' + userAddress + ' ' + isAdminLogged)
-        }
+        let isAdminLogged = await props.isAdminLogged()
 
         if (pickedOutcome === 'yes' && isAdminLogged || pickedOutcome === 'no' && isAdminLogged) {
             try {
@@ -70,16 +41,13 @@ const ExpiredMarketDetail = (props: PropTypes) => {
                     e.data.message.indexOf("'") + 1,
                     e.data.message.lastIndexOf("'")
                 )) : toast.error(e.message)
-
             }
-        } else {
-            toast.error('Something went wrong')
         }
     }
 
     const submitOutcome = async () => {
-        //const contract = await marketContract.connect(signer).chooseWinningSide(pickedOutcome)
-        //props.pendingTx(marketContract, props.user)
+        const contract = await marketContract.connect(signer).chooseWinningSide(pickedOutcome)
+        props.pendingTx(marketContract, props.user)
 
         const MarketList = Moralis.Object.extend("MarketList")
         const query = new Moralis.Query(MarketList)

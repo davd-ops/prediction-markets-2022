@@ -49,9 +49,35 @@ describe("PredictionMarket Contract", function () {
       console.log(ethers.utils.formatEther(await predictionMarket.yesSharesPerAddress(userTwo.address)));
       console.log("BALANCE: " + ethers.utils.formatEther(await usdToken.balanceOf(userTwo.address)));
       //await predictionMarket.connect(userTwo).sellShares("yes", "10000000000000000000");
-      await predictionMarket.connect(userTwo).sellShares2("yes", "16296296296296296297");
+      await predictionMarket.connect(userTwo).sellShares("yes", "16296296296296296297");
       console.log(ethers.utils.formatEther(await predictionMarket.yesSharesPerAddress(userTwo.address)));
       console.log("BALANCE: " + ethers.utils.formatEther(await usdToken.balanceOf(userTwo.address)));
+      
+      //await predictionMarket.connect(userTwo).sellShares2("yes", "5000000000000000000");
+    });
+    it("TEST", async function() {
+      usdToken.mint(marketOwner.address, "50000000000000000000");
+      usdToken.mint(userOne.address, "10000000000000000000000");
+      usdToken.mint(userTwo.address, "1000000000000000000000");
+      usdToken.approve(predictionMarket.address, "50000000000000000000");
+      usdToken.connect(userOne).approve(predictionMarket.address, "10000000000000000000000");
+      usdToken.connect(userTwo).approve(predictionMarket.address, "10000000000000000000000");
+      await predictionMarket.connect(userOne).addLiquidity("1000000000000000000000");
+
+      console.log("BALANCE: " + ethers.utils.formatEther(await usdToken.balanceOf(userTwo.address)));
+      await predictionMarket.connect(userTwo).buyShares("yes", "20000000000000000000");
+      console.log("BALANCE: " + ethers.utils.formatEther(await usdToken.balanceOf(userTwo.address)));
+      console.log("yesSharesOwned " + ethers.utils.formatEther(await predictionMarket.yesSharesPerAddress(userTwo.address)));
+      let ratioVariables = await predictionMarket.calculateMarketRatio();
+      console.log("MARKETRATIO: " + ethers.utils.formatEther(ratioVariables[0]) + " SHARE: " + ratioVariables[1]);
+      
+      //await predictionMarket.connect(userTwo).sellShares("yes", "10000000000000000000");
+      await predictionMarket.connect(userTwo).sellShares("yes", "39607843137254901961").toString();
+      console.log("BALANCE: " + ethers.utils.formatEther(await usdToken.balanceOf(userTwo.address)));
+      console.log("yesSharesOwned " + ethers.utils.formatEther(await predictionMarket.yesSharesPerAddress(userTwo.address)));
+      ratioVariables = await predictionMarket.calculateMarketRatio();
+      console.log("MARKETRATIO: " + ethers.utils.formatEther(ratioVariables[0]) + " SHARE: " + ratioVariables[1]);
+      //console.log("BALANCE: " + ethers.utils.formatEther(await usdToken.balanceOf(userTwo.address)));
       
       //await predictionMarket.connect(userTwo).sellShares2("yes", "5000000000000000000");
     });

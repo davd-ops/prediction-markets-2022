@@ -10,6 +10,7 @@ interface PropTypes {
     signMessage: any;
     logOut: any;
     user: any;
+    isAdminLogged: any;
 }
 
 const CreateMarketPage = (props: PropTypes) => {
@@ -28,52 +29,22 @@ const CreateMarketPage = (props: PropTypes) => {
     const newMarketFactory = new ethers.ContractFactory(predictionMarketABI, predictionMarketBytecode, signer);
 
     const {
-        authenticate,
-        isAuthenticated,
-        user,
-        Moralis,
-        logout
+        Moralis
     } = useMoralis()
 
     const deployContract = async (event: { preventDefault: () => void; }) => {
         event.preventDefault()
 
-        let user
-        let userAddress
-        user = Moralis.User.current()
+        let isAdminLogged = await props.isAdminLogged()
 
-        try {
-        if (!user) {
-            user = await Moralis.authenticate({signingMessage: "Confirm ownership of this address"})
-                .then(function (user) {
-                    console.log(user.get("ethAddress"))
-                    userAddress = user.get("ethAddress")
-                })
-        } else {
-            userAddress = user.attributes.ethAddress
-        }
-        } catch (e) {
-            console.log((e as Error).message)
-        }
-
-        let isAdminLogged = false
-        const AdminList = Moralis.Object.extend("AdminList")
-        const adminList = new Moralis.Query(AdminList)
-        const results = await adminList.find()
-
-        for (let i = 0; i < results.length; i++) {
-            const object = results[i]
-            if (object.get('address') == userAddress) isAdminLogged = true
-            console.log(object.get('address') + ' ' + userAddress + ' ' + isAdminLogged)
-        }
+        if (!isAdminLogged) return
 
         if (
             marketTitle.length >= 10 &&
             marketDescription.length >= 20 &&
             providerFee >= 0 &&
             providerFee <= 100 &&
-            new Date(endingDate) > new Date() &&
-            isAdminLogged
+            new Date(endingDate) > new Date()
         ){
             let endingDateTimestamp = new Date(endingDate).getTime() / 1000;
             let createdTimestamp = + new Date() / 1000;
@@ -108,8 +79,7 @@ const CreateMarketPage = (props: PropTypes) => {
                 marketDescription.length < 20 ? toast.error('The description has to be more than 20 characters long') :
                         providerFee > 100 ? toast.error('The provider fee has to be lower than 100%') :
                             providerFee < 0 ? toast.error('The provider fee has to be 0% or bigger') :
-                                new Date(endingDate) < new Date() ? toast.error('The date needs to be in the future') :
-            toast.error('You need to sign the message')
+                                toast.error('The date needs to be in the future')
             }
     }
 

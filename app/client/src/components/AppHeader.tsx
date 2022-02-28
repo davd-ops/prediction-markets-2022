@@ -118,8 +118,9 @@ const AppHeader = (props: PropTypes) => {
                     isAdminLogged ? <>
                         <button className={props.createMarketsButton} onClick={props.switchPageToCreateMarket}>Create market</button>
                         <button className={props.expiredMarketsButton} onClick={props.switchPageToExpiredMarkets}>Expired markets</button>
-                    </> : <button className={props.portfolioButton} onClick={props.switchPageToPortfolio}>Portfolio</button>
+                    </> : null
                 }
+                <button className={props.portfolioButton} onClick={props.switchPageToPortfolio}>Portfolio</button>
                 <OnboardingButton isDisabled={isDisabled} onClick={onClick} classNamed={metamaskButtonStyle} text={buttonText} walletChanged={walletChanged} />
             </header>
         )

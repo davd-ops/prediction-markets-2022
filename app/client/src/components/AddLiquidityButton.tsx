@@ -1,6 +1,7 @@
 import React from 'react'
 import {BigNumber, ethers} from "ethers"
 import {toast} from "react-hot-toast";
+import {useMoralis} from "react-moralis";
 
 interface PropTypes {
     approvedAmount: number;
@@ -10,6 +11,8 @@ interface PropTypes {
     contractAddress: string;
     pendingTx: any;
     user: string;
+    signMessage: any;
+    addPosition: any;
 }
 
 const AddLiquidityButton = (props: PropTypes) => {
@@ -19,13 +22,12 @@ const AddLiquidityButton = (props: PropTypes) => {
     const addLiquidity = async (event: { preventDefault: () => void; }) => {
         event.preventDefault()
 
-        if (!isNaN(amount) && amount >= 1){
+        if (!isNaN(amount)){
             amount > props.approvedAmount ?
                  await approveTokens() :
                     await provideLiquidity()
         } else {
-            isNaN(amount) ? toast.error('The input must be a number') :
-                amount <= 1 ? toast.error('The amount must be at least one') : toast.error('Something went wrong')
+            isNaN(amount) ? toast.error('The input must be a number') : toast.error('Something went wrong')
         }
     }
 
@@ -35,8 +37,20 @@ const AddLiquidityButton = (props: PropTypes) => {
     }
 
     const provideLiquidity = async () => {
-        await props.marketContract.connect(props.signer).addLiquidity(BigNumber.from(amount).mul(bigNumberTenToPowerOf18Digits))
-        props.pendingTx(props.marketContract, props.user)
+        const userAddress = await props.signMessage()
+
+        try {
+            if (typeof userAddress !== "undefined") {
+                await props.marketContract.connect(props.signer).addLiquidity(BigNumber.from(amount).mul(bigNumberTenToPowerOf18Digits))
+                props.pendingTx(props.marketContract, props.user)
+
+                props.addPosition(userAddress)
+            } else {
+                toast.error('You denied the message, please try again')
+            }
+        } catch (e) {
+            toast.error((e as Error).message)
+        }
     }
 
     return (

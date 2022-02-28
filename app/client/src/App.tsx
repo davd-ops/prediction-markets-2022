@@ -17,14 +17,10 @@ import {useMoralis} from "react-moralis";
 
 function App() {
     const {
-        authenticate,
-        isWeb3Enabled,
-        isAuthenticated,
         user,
-        enableWeb3,
         Moralis,
         logout
-    } = useMoralis();
+    } = useMoralis()
 
     const [usdAmount, setUsdAmount] = React.useState(0)
     const [userAddress, setUserAddress] = React.useState([])
@@ -43,6 +39,7 @@ function App() {
 
         function handleNewAccounts(newAccounts: React.SetStateAction<never[]>) {
             setUserAddress(newAccounts);
+            setCurrentPage('markets-page')
             logOut()
         }
         if (MetaMaskOnboarding.isMetaMaskInstalled()) {
@@ -63,14 +60,52 @@ function App() {
     }
 
     const signMessage = async () => {
-        if (!isAuthenticated && !user) {
-                await authenticate({signingMessage: "I confirm, that I have ownership of following address: " + userAddress})
+        let user
+        let userAddress
+        user = Moralis.User.current()
+
+        try {
+            if (!user) {
+                await Moralis.authenticate({signingMessage: "Confirm ownership of this address"})
+                    .then(function (user) {
+                        userAddress = user.get("ethAddress")
+                    })
+            } else {
+                userAddress = user.attributes.ethAddress
+            }
+        } catch (e) {
+            console.log((e as Error).message)
         }
+
+        return userAddress
     }
 
     const logOut = async () => {
         await logout()
-        console.log("logged outs")
+    }
+
+    const isAdminLogged = async () => {
+        const userAddress = await signMessage()
+
+        let isAdminLogged
+        try {
+            if (typeof userAddress !== "undefined") {
+                const AdminList = Moralis.Object.extend("AdminList")
+                const adminList = new Moralis.Query(AdminList)
+                const results = await adminList.find()
+
+                for (let i = 0; i < results.length; i++) {
+                    const object = results[i]
+                    if (object.get('address') == userAddress) isAdminLogged = true
+                }
+            } else {
+                toast.error('You denied the message, please try again')
+            }
+        } catch (e) {
+            toast.error((e as Error).message)
+        }
+
+        return isAdminLogged
     }
 
     const switchPageToMarketsPage = async () => {
@@ -194,8 +229,9 @@ function App() {
             marketContract.on('SharesBought', async (amount: ethers.BigNumberish, sender: string) => {
                 if (user.toString().toLowerCase() === sender.toLowerCase()) {
                     toast.remove('PendingTx')
-                    amount = ethers.utils.formatEther(amount)
-                    toast.success('You just bought ' + parseFloat(amount).toFixed(2) + ' shares', {
+                    amount = Number(ethers.utils.formatEther(amount))
+                    amount = Math.floor((amount + Number.EPSILON) * 100) / 100
+                    toast.success('You just bought ' + amount + ' shares', {
                         id: 'SharesBought',
                         duration: duration,
                     })
@@ -203,11 +239,13 @@ function App() {
                 }
             })
 
-            marketContract.on('SharesSold', async (amount: ethers.BigNumberish, sender: string) => {
+            marketContract.on('SharesSold', async (usdAmount: ethers.BigNumberish, sender: string) => {
                 if (user.toString().toLowerCase() === sender.toLowerCase()) {
                     toast.remove('PendingTx')
-                    amount = ethers.utils.formatEther(amount)
-                    toast.success('You just sold ' + parseFloat(amount).toFixed(2) + ' shares', {
+                    usdAmount = Number(ethers.utils.formatEther(usdAmount))
+                    usdAmount = Math.floor((usdAmount + Number.EPSILON) * 100) / 100
+
+                    toast.success('You just sold shares for ' + usdAmount + ' USD', {
                         id: 'SharesSold',
                         duration: duration,
                     })
@@ -271,8 +309,8 @@ function App() {
                     typeof window.ethereum !== 'undefined' ?
                         currentPage === 'markets-page' ? <AppBody displayMarketDetail={switchPageToMarketDetailPage} markets={markets} /> :
                         currentPage === 'expired-markets-page' ? <ExpiredMarketsPage displayMarketDetail={switchPageToExpiredMarketDetailPage} markets={markets} /> :
-                            currentPage === 'create-market-page' ? <CreateMarketPage pendingTx={pendingTx} signMessage={signMessage} logOut={logOut} user={user} /> :
-                                currentPage === 'portfolio-page' ? <PortfolioPage/> :
+                            currentPage === 'create-market-page' ? <CreateMarketPage pendingTx={pendingTx} signMessage={signMessage} logOut={logOut} user={user} isAdminLogged={isAdminLogged} /> :
+                                currentPage === 'portfolio-page' ? <PortfolioPage userAddress={userAddress.toString()} /> :
                                     currentPage === 'market-detail-page' ?
                                         <MarketDetail
                                             marketName={currentMarketData.marketData.marketName}
@@ -284,6 +322,7 @@ function App() {
                                             marketVolume={currentMarketData.marketData.marketVolume}
                                             pendingTx={pendingTx}
                                             user={userAddress.toString()}
+                                            signMessage={signMessage}
                                         /> :
                                             <ExpiredMarketDetail
                                                 marketName={currentMarketData.marketData.marketName}
@@ -292,6 +331,8 @@ function App() {
                                                 contractAddress={currentMarketData.marketData.contractAddress}
                                                 pendingTx={pendingTx}
                                                 user={userAddress.toString()}
+                                                signMessage={signMessage}
+                                                isAdminLogged={isAdminLogged}
                                             /> :
                         <MetamaskMissing/>
               }

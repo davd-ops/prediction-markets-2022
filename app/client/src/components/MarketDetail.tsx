@@ -1,11 +1,13 @@
 import React from 'react';
 import MarketDetailTitle from "./MarketDetailTitle";
-import BuyShares from "./BuyShares";
+import BuyOrSellShares from "./BuyOrSellShares";
 import MarketDetailFooter from "./MarketDetailFooter";
 import AddLiquidityButton from "./AddLiquidityButton";
 import {ethers} from "ethers";
 import {usdABI, usdContractAddress} from "../otherContractProps/usdContractProps";
 import {predictionMarketABI} from "../otherContractProps/predictionMarketContractProps";
+import {toast} from "react-hot-toast";
+import {useMoralis} from "react-moralis";
 
 interface PropTypes {
     marketName: string;
@@ -17,11 +19,12 @@ interface PropTypes {
     marketVolume: number;
     pendingTx: any;
     user: string;
+    signMessage: any;
 }
 
 const MarketDetail = (props: PropTypes) => {
-    const [yesRatio, setYesRatio] = React.useState(0);
-    const [noRatio, setNoRatio] = React.useState(0);
+    const [yesRatio, setYesRatio] = React.useState(0)
+    const [noRatio, setNoRatio] = React.useState(0)
     const [approvedAmount, setApprovedAmount] = React.useState(0)
     const [liquidity, setLiquidity] = React.useState(0)
 
@@ -29,8 +32,9 @@ const MarketDetail = (props: PropTypes) => {
     const signer = provider.getSigner()
     const usdContract = new ethers.Contract(usdContractAddress, usdABI, provider)
     const marketContract = new ethers.Contract(props.contractAddress, predictionMarketABI, provider)
-
-    let executedTimestamp = 0
+    const {
+        Moralis
+    } = useMoralis()
 
     provider.once("block", () => {
         usdContract.on("Approval", (yourAddress, marketAddress, amount) => {
@@ -70,11 +74,66 @@ const MarketDetail = (props: PropTypes) => {
 
     const calculatePercentageOfMarketShares = (inferiorShare: string, ratio: number) => {
         if (inferiorShare === "yes") {
-            setYesRatio(Math.round(100/(1+(ratio/(10**18)))))
-            setNoRatio(Math.round(100-100/(1+(ratio/(10**18)))))
+            setYesRatio(Math.round(100 / (1 + (ratio / (10 ** 18)))))
+            setNoRatio(Math.round(100 - 100 / (1 + (ratio / (10 ** 18)))))
         } else {
-            setYesRatio(Math.round(100-100/(1+(ratio/(10**18)))))
-            setNoRatio(Math.round(100/(1+(ratio/(10**18)))))
+            setYesRatio(Math.round(100 - 100 / (1 + (ratio / (10 ** 18)))))
+            setNoRatio(Math.round(100 / (1 + (ratio / (10 ** 18)))))
+        }
+    }
+
+    const addPosition = async (userAddress: string) => {
+        const PositionMapping = Moralis.Object.extend("PositionMapping")
+        const query = new Moralis.Query(PositionMapping)
+        const results = await query.find()
+
+        let userIsAlreadyInDB = false
+
+        for (let i = 0; i < results.length; i++) {
+            const object = results[i]
+            if (userAddress === object.get('userAddress') && props.contractAddress === object.get('marketAddress')) {
+                userIsAlreadyInDB = true
+            }
+        }
+
+        if (!userIsAlreadyInDB) {
+            const newRecord = new PositionMapping()
+            newRecord.set("userAddress", userAddress)
+            newRecord.set("marketAddress", props.contractAddress)
+
+            newRecord.save()
+                .then(() => {
+                    console.log('New position added')
+                }, (error: { message: string; }) => {
+                    toast.error('Failed to create new object, with error code: ' + error.message)
+                })
+        }
+    }
+
+    const removePosition = async (userAddress: string, amount :number, option :string) => {
+        let yesSharesPerAddress = parseFloat(ethers.utils.formatEther(await marketContract.yesSharesPerAddress(userAddress)))
+        yesSharesPerAddress = Math.floor((yesSharesPerAddress + Number.EPSILON) * 100) / 100
+        let noSharesPerAddress = parseFloat(ethers.utils.formatEther(await marketContract.noSharesPerAddress(userAddress)))
+        noSharesPerAddress = Math.floor((noSharesPerAddress + Number.EPSILON) * 100) / 100
+
+        console.log(yesSharesPerAddress-amount)
+        console.log(noSharesPerAddress-amount)
+
+        if ((yesSharesPerAddress-amount === 0 && option === 'yes') || (noSharesPerAddress-amount === 0 && option === 'yes')) {
+            const PositionMapping = Moralis.Object.extend("PositionMapping")
+            const query = new Moralis.Query(PositionMapping)
+            query.equalTo("userAddress", userAddress)
+            query.equalTo("marketAddress", props.contractAddress)
+            const result = await query.first()
+
+            if (typeof result !== "undefined") {
+                    result.destroy()
+                        .then(() => {
+                            console.log('Position removed')
+                        }, (error: { message: string; }) => {
+                            toast.error('Failed to create new object, with error code: ' + error.message)
+                        })
+            }
         }
     }
 
@@ -90,16 +149,31 @@ const MarketDetail = (props: PropTypes) => {
                 <div className="market-switch-buttons">
                     <div className="buy-share-section">
                         <span>BUY</span>
-                        <BuyShares action="buy" yesRatio={yesRatio} noRatio={noRatio} approvedAmount={approvedAmount} liquidity={liquidity} usdContract={usdContract} marketContract={marketContract} signer={signer} contractAddress={props.contractAddress} pendingTx={props.pendingTx} user={props.user} />
+                        <BuyOrSellShares action="buy" yesRatio={yesRatio} noRatio={noRatio}
+                                         approvedAmount={approvedAmount} liquidity={liquidity} usdContract={usdContract}
+                                         marketContract={marketContract} signer={signer}
+                                         contractAddress={props.contractAddress} pendingTx={props.pendingTx}
+                                         user={props.user} signMessage={props.signMessage} addPosition={addPosition}
+                                         removePosition={removePosition}
+                        />
                     </div>
                     <div className="sell-share-section">
                         <span>SELL</span>
-                        <BuyShares action="sell" yesRatio={yesRatio} noRatio={noRatio} approvedAmount={approvedAmount} liquidity={liquidity} usdContract={usdContract} marketContract={marketContract} signer={signer} contractAddress={props.contractAddress} pendingTx={props.pendingTx} user={props.user} />
+                        <BuyOrSellShares action="sell" yesRatio={yesRatio} noRatio={noRatio}
+                                         approvedAmount={approvedAmount} liquidity={liquidity} usdContract={usdContract}
+                                         marketContract={marketContract} signer={signer}
+                                         contractAddress={props.contractAddress} pendingTx={props.pendingTx}
+                                         user={props.user} signMessage={props.signMessage} addPosition={addPosition}
+                                         removePosition={removePosition}
+                        />
                     </div>
                 </div>
             </div>
             <div className="market-main-body-section">
-                <AddLiquidityButton approvedAmount={approvedAmount} usdContract={usdContract} marketContract={marketContract} signer={signer} contractAddress={props.contractAddress} pendingTx={props.pendingTx} user={props.user}/>
+                <AddLiquidityButton approvedAmount={approvedAmount} usdContract={usdContract}
+                                    marketContract={marketContract} signer={signer}
+                                    contractAddress={props.contractAddress} pendingTx={props.pendingTx}
+                                    user={props.user} signMessage={props.signMessage} addPosition={addPosition}/>
             </div>
             <MarketDetailFooter marketName={props.marketName} marketDescription={props.marketDescription} validUntil={props.validUntil} contractAddress={props.contractAddress} />
         </div>
