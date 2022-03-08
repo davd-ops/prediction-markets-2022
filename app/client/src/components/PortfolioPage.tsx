@@ -1,42 +1,57 @@
-import React from 'react';
+import React, {useState} from 'react';
 import {useMoralis} from "react-moralis";
-import set = Reflect.set;
+import MarketInPortfolioComp from "./MarketInPortfolioComp";
 
 interface PropTypes {
     userAddress: string;
+    displayMarketDetail: any;
+    markets: { marketList: { objectId: React.Key; marketName: string; marketDescription: string; validUntil: number; createdTimestamp: number; contractAddress: string; providerFee: number; marketVolume: number; }[]; };
 }
 
 const PortfolioPage = (props: PropTypes) => {
-    const [positions, setPositions] = React.useState([''])
-    const {
-        Moralis,
-    } = useMoralis()
+    let isThereLiveMarket, isThereExpiredMarket = false
 
-    React.useEffect(() => {
-        setTimeout(() => {
-            getPortfolio()
-        }, 1)
-    })
+    const returnMarketDetail = (market: { objectId: any; marketName: any; marketDescription: any; validUntil: any; createdTimestamp: any; contractAddress: any; providerFee: any; marketVolume: any; }) => {
+        isThereLiveMarket = true
+        return <MarketInPortfolioComp key={market.objectId} marketName={market.marketName} marketDescription={market.marketDescription}
+                       validUntil={market.validUntil} createdTimestamp={market.createdTimestamp}
+                       contractAddress={market.contractAddress} providerFee={market.providerFee}
+                       marketVolume={market.marketVolume} displayMarketDetail={props.displayMarketDetail} userAddress={props.userAddress} />
+    }
 
-    const getPortfolio = async () => {
-        const PositionMapping = Moralis.Object.extend("PositionMapping")
-        const positionMapping = new Moralis.Query(PositionMapping)
-        const  results = await positionMapping.find()
-        let userPositionsArray = []
-
-        for (let i = 0; i < results.length; i++) {
-            const object = results[i]
-            if (object.get('userAddress') == props.userAddress) userPositionsArray.push(object.get('marketAddress'))
-        }
-        console.log(userPositionsArray)
-        setPositions(userPositionsArray)
+    const returnExpiredMarketDetail = (market: { objectId: any; marketName: any; marketDescription: any; validUntil: any; createdTimestamp: any; contractAddress: any; providerFee: any; marketVolume: any; }) => {
+        isThereExpiredMarket = true
+        return <MarketInPortfolioComp key={market.objectId} marketName={market.marketName} marketDescription={market.marketDescription}
+                                      validUntil={market.validUntil} createdTimestamp={market.createdTimestamp}
+                                      contractAddress={market.contractAddress} providerFee={market.providerFee}
+                                      marketVolume={market.marketVolume} displayMarketDetail={props.displayMarketDetail} userAddress={props.userAddress} />
     }
 
     return (
         <div className="App-body">
-            <h1>Portfolio Page</h1>
-            <div>
-                <p>markets</p>
+            <h1>Live markets</h1>
+            <div className='portfolioMarketsContainer'>
+                {
+                    props.markets.marketList.length > 0 ? props.markets.marketList.map((market: { objectId: React.Key; marketName: string; marketDescription: string; validUntil: number; createdTimestamp: number; contractAddress: string; providerFee: number; marketVolume: number;  }) => (
+                        Number(market.validUntil) > new Date(Date.now()).getTime() / 1000 ?
+                            returnMarketDetail(market) : null
+                    )) : null
+                }
+                {
+                    !isThereLiveMarket ? "You don't have any live positions" : null
+                }
+            </div>
+            <h1>Expired markets</h1>
+            <div className='portfolioMarketsContainer'>
+                {
+                    props.markets.marketList.length > 0 ? props.markets.marketList.map((market: { objectId: React.Key; marketName: string; marketDescription: string; validUntil: number; createdTimestamp: number; contractAddress: string; providerFee: number; marketVolume: number;  }) => (
+                        Number(market.validUntil) < new Date(Date.now()).getTime() / 1000 ?
+                            returnExpiredMarketDetail(market) : null
+                    )) : null
+                }
+                {
+                    !isThereExpiredMarket ? "You don't have any expired positions" : null
+                }
             </div>
         </div>
     );

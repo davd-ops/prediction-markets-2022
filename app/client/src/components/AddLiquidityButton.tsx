@@ -44,7 +44,7 @@ const AddLiquidityButton = (props: PropTypes) => {
                 await props.marketContract.connect(props.signer).addLiquidity(BigNumber.from(amount).mul(bigNumberTenToPowerOf18Digits))
                 props.pendingTx(props.marketContract, props.user)
 
-                props.addPosition(userAddress)
+                props.addPosition(userAddress, 0, "")
             } else {
                 toast.error('You denied the message, please try again')
             }

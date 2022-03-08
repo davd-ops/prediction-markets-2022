@@ -82,7 +82,7 @@ const MarketDetail = (props: PropTypes) => {
         }
     }
 
-    const addPosition = async (userAddress: string) => {
+    const addPosition = async (userAddress: string, amount :number, shareType: string) => {
         const PositionMapping = Moralis.Object.extend("PositionMapping")
         const query = new Moralis.Query(PositionMapping)
         const results = await query.find()
@@ -91,8 +91,17 @@ const MarketDetail = (props: PropTypes) => {
 
         for (let i = 0; i < results.length; i++) {
             const object = results[i]
-            if (userAddress === object.get('userAddress') && props.contractAddress === object.get('marketAddress')) {
+            if (userAddress === object.get('userAddress') && props.contractAddress === object.get('marketAddress') && shareType === object.get('shareType')) {
                 userIsAlreadyInDB = true
+                const initValue = object.get('initialValue')
+                object.set(initValue + amount)
+
+                object.save()
+                    .then(() => {
+                        console.log('Position updated')
+                    }, (error: { message: string; }) => {
+                        toast.error('Failed to create new object, with error code: ' + error.message)
+                    })
             }
         }
 
@@ -100,6 +109,8 @@ const MarketDetail = (props: PropTypes) => {
             const newRecord = new PositionMapping()
             newRecord.set("userAddress", userAddress)
             newRecord.set("marketAddress", props.contractAddress)
+            newRecord.set("initialValue", amount)
+            newRecord.set("shareType", shareType)
 
             newRecord.save()
                 .then(() => {
@@ -110,31 +121,38 @@ const MarketDetail = (props: PropTypes) => {
         }
     }
 
-    const removePosition = async (userAddress: string, amount :number, option :string) => {
-        let yesSharesPerAddress = parseFloat(ethers.utils.formatEther(await marketContract.yesSharesPerAddress(userAddress)))
-        yesSharesPerAddress = Math.floor((yesSharesPerAddress + Number.EPSILON) * 100) / 100
-        let noSharesPerAddress = parseFloat(ethers.utils.formatEther(await marketContract.noSharesPerAddress(userAddress)))
-        noSharesPerAddress = Math.floor((noSharesPerAddress + Number.EPSILON) * 100) / 100
+    const removePosition = async (userAddress: string, amount :number, shareType :string) => {
+        const valueOfShares = parseFloat(ethers.utils.formatEther(await marketContract.getCurrentValueOfShares(amount, shareType)))
 
-        console.log(yesSharesPerAddress-amount)
-        console.log(noSharesPerAddress-amount)
-
-        if ((yesSharesPerAddress-amount === 0 && option === 'yes') || (noSharesPerAddress-amount === 0 && option === 'yes')) {
             const PositionMapping = Moralis.Object.extend("PositionMapping")
             const query = new Moralis.Query(PositionMapping)
             query.equalTo("userAddress", userAddress)
             query.equalTo("marketAddress", props.contractAddress)
+            query.equalTo("shareType", shareType)
             const result = await query.first()
 
             if (typeof result !== "undefined") {
+                const resultAmount = result.get('amount')
+                if (resultAmount - valueOfShares > 0) {
+                    result.set('amount', resultAmount - valueOfShares)
+
+                    result.save()
+                        .then(() => {
+                            console.log('Position updated')
+                        }, (error: { message: string; }) => {
+                            toast.error('Failed to create new object, with error code: ' + error.message)
+                        })
+                } else {
                     result.destroy()
                         .then(() => {
                             console.log('Position removed')
                         }, (error: { message: string; }) => {
                             toast.error('Failed to create new object, with error code: ' + error.message)
                         })
+                }
+            } else {
+                console.log('Position probably already removed!')
             }
-        }
     }
 
     return (

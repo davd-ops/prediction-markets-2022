@@ -2,11 +2,11 @@
 pragma solidity >=0.8.0;
 
 import "./PredictionMarketFactory.sol";
+import "./SafeMath.sol";
 
 /// @title Operations contract for Prediction markets
 /// @author David Psencik
 /// @notice You can use this contract to interact with Prediction market
-/// @dev This contract contains only functions that the end user doesn't need to call
 contract PredictionMarketOps is PredictionMarketFactory {
     using SafeMath for uint;
     using SafeMath for uint128;
@@ -26,6 +26,7 @@ contract PredictionMarketOps is PredictionMarketFactory {
         marketDescription = _description;
         providerFee = _providerFee; //must be in %
         usd = IERC20(address(_erc20TokenAddress)); //should be a stablecoin
+        erc20TokenDigits = _erc20TokenDigits;
         tenToPowerOfTokenDigits = 10 ** _erc20TokenDigits;
         require(_erc20TokenDigits >= 6, "The token must have more than 6 decimals.");
         emit MarketCreated(address(this));
@@ -34,7 +35,7 @@ contract PredictionMarketOps is PredictionMarketFactory {
     /// @notice Provide liquidity into `marketName` market contract
     /// @param _amount The number of tokens that will be provided
     function addLiquidity(uint _amount) external isLive {
-        require(_amount >= uint256(10).mul(tenToPowerOfTokenDigits) , "You need to buy shares for at least 10 USD.");
+        require(_amount >= uint256(10).mul(tenToPowerOfTokenDigits) , "You need to provide liquidity for at least 10 USD.");
 
         bool thisUserExists = false;
         
@@ -170,11 +171,6 @@ contract PredictionMarketOps is PredictionMarketFactory {
 
             uint originalNumberOfShares = yesSharesPerAddress[msg.sender];
             uint newShares = yesSharesPerAddress[msg.sender].add(originalNumberOfYesShares.sub(yesSharesEmitted).add(_amount));
-            //console.log("newShares", newShares);
-            //console.log("yesSharesPerAddress[msg.sender]", yesSharesPerAddress[msg.sender]);
-            //console.log("originalNumberOfYesShares", originalNumberOfYesShares);
-            //console.log("yesSharesEmitted", yesSharesEmitted);
-            //console.log("_amount", _amount);
             yesSharesPerAddress[msg.sender] = newShares.sub(distributedProviderFee); 
             emit SharesBought(yesSharesPerAddress[msg.sender].sub(originalNumberOfShares), msg.sender);
         } else {
@@ -192,43 +188,48 @@ contract PredictionMarketOps is PredictionMarketFactory {
     /// @param _choice String, the shares you want to sell
     /// @param _amount The number of shares you want to sell
     function sellShares(string memory _choice, uint _amount) external onlyIfIsCorrectChoice(_choice) isLive {
+        int originalNumberOfYesShares = int(yesSharesEmitted);
+        int originalNumberOfNoShares = int(noSharesEmitted);
+        
         if (keccak256(abi.encodePacked(_choice)) == keccak256(abi.encodePacked("yes"))){
             require(_amount <= yesSharesPerAddress[msg.sender], "You don't have enough shares to sell.");
             require(_amount.div(2) <= noSharesEmitted, "There is not enough liquidity in this smartcontract. Wait until it's increased or until the end of the market.");
+            yesSharesEmitted = yesSharesEmitted.add(_amount);
+            noSharesEmitted = noSharesEmitted;
         } else {
             require(_amount <= noSharesPerAddress[msg.sender], "You don't have enough shares to sell.");
             require(_amount.div(2) <= yesSharesEmitted, "There is not enough liquidity in this smartcontract. Wait until it's increased or until the end of the market.");
+            yesSharesEmitted = yesSharesEmitted;
+            noSharesEmitted = noSharesEmitted.add(_amount);
         }
+        
+        int A = int(1*tenToPowerOfTokenDigits);
+        int B = -int(yesSharesEmitted+noSharesEmitted);
+        int C = ((int(yesSharesEmitted*noSharesEmitted)/int(tenToPowerOfTokenDigits))-((originalNumberOfYesShares*originalNumberOfNoShares)/int(tenToPowerOfTokenDigits)));
 
-        uint originalNumberOfYesShares = yesSharesEmitted;
-        uint originalNumberOfNoShares = noSharesEmitted;
+        uint usdToBeReturned = uint(calculateQuadraticEquationAndReturnLowerResult(A, B, C));
 
-        if (keccak256(abi.encodePacked(_choice)) == keccak256(abi.encodePacked("yes"))){
-            yesSharesEmitted = yesSharesEmitted.add(_amount.div(2));
-            noSharesEmitted = originalNumberOfYesShares.mul(originalNumberOfNoShares).div(yesSharesEmitted);       
+        yesSharesEmitted = yesSharesEmitted.sub(usdToBeReturned);
+        noSharesEmitted = noSharesEmitted.sub(usdToBeReturned);
 
+        if (keccak256(abi.encodePacked(_choice)) == keccak256(abi.encodePacked("yes"))){  
             uint newShares = yesSharesPerAddress[msg.sender].sub(_amount);
-            uint usdAmount = (_amount.div(2).add(originalNumberOfNoShares.sub(noSharesEmitted))).div(2);
-            uint distributedProviderFee = usdAmount.div(100).mul(providerFee);
+            uint distributedProviderFee = usdToBeReturned.div(100).mul(providerFee);
 
-            usd.transfer(msg.sender, usdAmount.sub(distributedProviderFee));
+            usd.transfer(msg.sender, usdToBeReturned.sub(distributedProviderFee));
             distributeProviderFeeToLiquidityProviders(distributedProviderFee);
 
             yesSharesPerAddress[msg.sender] = newShares;
-            emit SharesSold(usdAmount, msg.sender);
+            emit SharesSold(usdToBeReturned, msg.sender);
         } else {
-            noSharesEmitted = noSharesEmitted.add(_amount.div(2));
-            yesSharesEmitted = originalNumberOfYesShares.mul(originalNumberOfNoShares).div(noSharesEmitted);       
-
             uint newShares = noSharesPerAddress[msg.sender].sub(_amount);
-            uint usdAmount = (_amount.div(2).add(originalNumberOfYesShares.sub(yesSharesEmitted))).div(2);
-            uint distributedProviderFee = usdAmount.div(100).mul(providerFee);
+            uint distributedProviderFee = usdToBeReturned.div(100).mul(providerFee);
 
-            usd.transfer(msg.sender, usdAmount.sub(distributedProviderFee));
+            usd.transfer(msg.sender, usdToBeReturned.sub(distributedProviderFee));
             distributeProviderFeeToLiquidityProviders(distributedProviderFee);
 
             noSharesPerAddress[msg.sender] = newShares;
-            emit SharesSold(usdAmount, msg.sender);
+            emit SharesSold(usdToBeReturned, msg.sender);
         }
     }
 

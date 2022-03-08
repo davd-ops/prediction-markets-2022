@@ -121,7 +121,7 @@ const BuyShares = (props: PropTypes) => {
                 await props.marketContract.connect(props.signer).buyShares(option, BigNumber.from(ethers.utils.parseEther(String(amount))))
                 props.pendingTx(props.marketContract, props.user)
 
-                props.addPosition(userAddress)
+                props.addPosition(userAddress, amount, option)
             } else {
                 toast.error('You denied the message, please try again')
             }

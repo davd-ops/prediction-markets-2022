@@ -28,6 +28,9 @@ function App() {
     const [markets, setMarkets] = useState({
         marketList: []
     } as any)
+    const [portfolioMarkets, setPortfolioMarkets] = useState({
+        marketList: []
+    } as any)
     const [currentMarketData, setCurrentMarketData] = useState({
         marketData: []
     } as any)
@@ -38,7 +41,7 @@ function App() {
         }, 1)
 
         function handleNewAccounts(newAccounts: React.SetStateAction<never[]>) {
-            setUserAddress(newAccounts);
+            setUserAddress(newAccounts)
             setCurrentPage('markets-page')
             logOut()
         }
@@ -48,14 +51,44 @@ function App() {
                 .then(handleNewAccounts)
             window.ethereum.on('accountsChanged', handleNewAccounts)
         }
-    }, []);
+    }, [])
+
+    React.useEffect(() => {
+        setTimeout(() => {
+            getPortfolio()
+        }, 1)
+    }, [userAddress])
 
     const getMarkets = async () => {
         const MarketList = Moralis.Object.extend("MarketList")
         const marketList = new Moralis.Query(MarketList)
         const  marketsParseObjectSubclass = await marketList.find()
+
         setMarkets({
             marketList: JSON.parse(JSON.stringify(marketsParseObjectSubclass))
+        })
+    }
+
+    const getPortfolio = async () => {
+        const PositionMapping = Moralis.Object.extend("PositionMapping")
+        const positionMapping = new Moralis.Query(PositionMapping)
+        const addressResults = await positionMapping.find()
+        let userPositionsArray = []
+
+        for (let i = 0; i < addressResults.length; i++) {
+            const object = addressResults[i]
+            if (object.get('userAddress') == userAddress) {
+                userPositionsArray.push(object.get('marketAddress'))
+            }
+        }
+
+        const MarketList = Moralis.Object.extend("MarketList")
+        const query = new Moralis.Query(MarketList)
+        query.containedIn("contractAddress", userPositionsArray)
+
+        const marketResults = await query.find()
+        setPortfolioMarkets({
+            marketList: JSON.parse(JSON.stringify(marketResults))
         })
     }
 
@@ -123,6 +156,7 @@ function App() {
     }
 
     const switchPageToPortfolioPage = () => {
+        getPortfolio()
         setCurrentPage('portfolio-page')
     }
 
@@ -280,8 +314,24 @@ function App() {
     const updateBalance = async () => {
         if (typeof userAddress[0] !== "undefined") {
             const provider = new ethers.providers.Web3Provider((window as any).ethereum)
-            let usdContract = new ethers.Contract(usdContractAddress, usdABI, provider);
-            setUsdAmount(Number(ethers.utils.formatEther(await usdContract.balanceOf(userAddress[0]))))
+            let usdContract = new ethers.Contract(usdContractAddress, usdABI, provider)
+            const usdBalance = ethers.utils.formatEther(await usdContract.balanceOf(userAddress[0]))
+
+            if (
+                usdBalance.substring(usdBalance.indexOf(".") + 2) === "0" ||
+                usdBalance.substring(usdBalance.indexOf(".") + 2) === ""
+            ) {
+                if  (
+                    usdBalance.substring(usdBalance.indexOf(".") + 1) === "0" ||
+                    usdBalance.substring(usdBalance.indexOf(".") + 1) === ""
+                ) {
+                    setUsdAmount(Number(Number(usdBalance).toFixed(0)))
+                } else {
+                    setUsdAmount(Number(Number(usdBalance).toFixed(1)))
+                }
+            } else {
+                setUsdAmount(Number(Number(usdBalance).toFixed(2)))
+            }
         }
 
     }
@@ -310,7 +360,7 @@ function App() {
                         currentPage === 'markets-page' ? <AppBody displayMarketDetail={switchPageToMarketDetailPage} markets={markets} /> :
                         currentPage === 'expired-markets-page' ? <ExpiredMarketsPage displayMarketDetail={switchPageToExpiredMarketDetailPage} markets={markets} /> :
                             currentPage === 'create-market-page' ? <CreateMarketPage pendingTx={pendingTx} signMessage={signMessage} logOut={logOut} user={user} isAdminLogged={isAdminLogged} /> :
-                                currentPage === 'portfolio-page' ? <PortfolioPage userAddress={userAddress.toString()} /> :
+                                currentPage === 'portfolio-page' ? <PortfolioPage userAddress={userAddress.toString()} displayMarketDetail={switchPageToMarketDetailPage} markets={portfolioMarkets} /> :
                                     currentPage === 'market-detail-page' ?
                                         <MarketDetail
                                             marketName={currentMarketData.marketData.marketName}

@@ -45,7 +45,7 @@ const AppHeader = (props: PropTypes) => {
     React.useEffect( () => {
         if (MetaMaskOnboarding.isMetaMaskInstalled()) {
             if (accounts.length > 0) {
-                setButtonText(props.usdAmount.toFixed(2) + ' USD')
+                setButtonText(props.usdAmount + ' USD')
                 setDisabled(true)
                 setMetamaskButtonStyle('nonClickableButton')
                 walletChanged()
@@ -108,7 +108,7 @@ const AppHeader = (props: PropTypes) => {
         }
         if (typeof accounts[0] != "undefined"){
             props.updateBalance()
-            setButtonText(props.usdAmount.toFixed(2) + ' USD')
+            setButtonText(props.usdAmount + ' USD')
         }
     }
         return (

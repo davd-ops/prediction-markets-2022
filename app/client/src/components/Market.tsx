@@ -25,8 +25,7 @@ const Market = (props: PropTypes) => {
         marketContract.calculateMarketRatio().then((r: any) => {
             calculatePercentageOfMarketShares(r[1], r[0])
         })
-
-    })
+    }, [])
 
     const calculatePercentageOfMarketShares = (inferiorShare: string, ratio: number) => {
         if (inferiorShare === "yes") {
