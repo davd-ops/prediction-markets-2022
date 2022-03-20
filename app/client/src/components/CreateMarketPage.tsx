@@ -9,7 +9,6 @@ interface PropTypes {
     pendingTx: any;
     signMessage: any;
     logOut: any;
-    user: any;
     isAdminLogged: any;
 }
 
@@ -18,9 +17,6 @@ const CreateMarketPage = (props: PropTypes) => {
     const [marketDescription, setMarketDescription] = React.useState('');
     const [providerFee, setProviderFee] = React.useState(0);
     const [endingDate, setEndingDate] = React.useState(Date());
-    const inferiorShare = "yes";
-    const ratio = 1000000000000000000;
-    const marketVolume = 0;
 
     const usdTokenAddress = '0x5FbDB2315678afecb367f032d93F642f64180aa3';
     const provider = new ethers.providers.Web3Provider((window as any).ethereum)
@@ -85,59 +81,69 @@ const CreateMarketPage = (props: PropTypes) => {
 
     return (
         <div className="App-body">
-            <h1>Create market</h1>
-            <div>
-                <form id='create-market-form' onSubmit={deployContract}>
-                    <label htmlFor="title">Market title:</label>
-                        <input
-                            className='form-input'
-                            id='title'
-                            type='text'
-                            name='title'
-                            placeholder='Enter the market title'
-                            value={marketTitle}
-                            onChange={e => setMarketTitle(e.target.value)}
-                            required
-                            minLength={10}
-                        />
-                        <label htmlFor="description">Market description:</label>
-                        <input
-                            className='form-input'
-                            id='description'
-                            type='text'
-                            name='description'
-                            placeholder='Enter the market description'
-                            value={marketDescription}
-                            onChange={e => setMarketDescription(e.target.value)}
-                            required
-                            minLength={20}
-                        />
-                        <label htmlFor="provider-fee"> Provider fee:</label>
-                        <input
-                            className='form-input'
-                            id='provider-fee'
-                            type='number'
-                            name='provider-fee'
-                            placeholder='Enter the provider fee'
-                            value={providerFee}
-                            onChange={e => setProviderFee(parseFloat(e.target.value))}
-                            required
-                        />
-                        <label htmlFor="endingDate">Market will end at:</label>
-                        <input
-                            className='form-input'
-                            id='endingDate'
-                            type='date'
-                            name='endingDate'
-                            placeholder='Enter the ending date'
-                            value={endingDate}
-                            onChange={e => setEndingDate(e.target.value)}
-                            required
-                            minLength={8}
-                        />
-                    <input id='submit' type="submit" value="Submit" />
-                </form>
-            </div>
+            <form autoComplete="off" className="form" onSubmit={deployContract}>
+                <div className="title">Create new market</div>
+                <div className="input-container ic1">
+                    <input
+                        className='input'
+                        id='title'
+                        type='text'
+                        name='title'
+                        placeholder=' '
+                        value={marketTitle}
+                        onChange={e => setMarketTitle(e.target.value)}
+                        required
+                        minLength={10}
+                    />
+                    <div className="cut cut-title"></div>
+                    <label htmlFor="title" className="placeholder">Market title</label>
+                </div>
+                <div className="input-container ic1">
+                    <input
+                        className='input'
+                        id='description'
+                        type='text'
+                        name='description'
+                        placeholder=' '
+                        value={marketDescription}
+                        onChange={e => setMarketDescription(e.target.value)}
+                        required
+                        minLength={20}
+                    />
+                    <div className="cut"></div>
+                    <label htmlFor="description" className="placeholder">Market description</label>
+                </div>
+                <div className="input-container ic1">
+                    <input
+                        className='input'
+                        id='provider-fee'
+                        type='number'
+                        name='provider-fee'
+                        placeholder=' '
+                        value={providerFee}
+                        onChange={e => setProviderFee(parseFloat(e.target.value))}
+                        required
+                    />
+                    <div className="cut cut-short"></div>
+                    <label htmlFor="provider-fee" className="placeholder">Provider fee</label>
+                </div>
+                <div className="input-container ic1">
+                    <input
+                        className='input'
+                        id='endingDate'
+                        type='date'
+                        name='endingDate'
+                        placeholder='Enter the ending date'
+                        value={endingDate}
+                        onChange={e => setEndingDate(e.target.value)}
+                        required
+                        minLength={8}
+                    />
+                    <div className="cut cut-short"></div>
+                    <label htmlFor="endingDate" className="placeholder">Ending date</label>
+                </div>
+                <input id='submit' type="submit" value="Submit" />
+            </form>
         </div>
     );
 };

@@ -1,6 +1,7 @@
 import React from 'react'
 import {BigNumber, ethers} from "ethers"
 import {toast} from "react-hot-toast"
+import {predictionMarketABI} from "../otherContractProps/predictionMarketContractProps";
 
 interface PropTypes {
     action: string;
@@ -17,36 +18,33 @@ interface PropTypes {
     signMessage: any;
     addPosition: any;
     removePosition: any;
+    increaseVolume: any;
+    yesSharesOwned: number;
+    noSharesOwned: number;
+    usdAmount: number;
 }
 
 const BuyShares = (props: PropTypes) => {
     const [option, setOption] = React.useState('yes')
     const [amount, setAmount] = React.useState(0)
+    const [maxShares, setMaxShares] = React.useState(0)
     const bigNumberTenToPowerOf18Digits = BigNumber.from(10).pow(18)
 
-
-    React.useEffect(() => {
-        setTimeout(async () => {
-            let yesSharesPerAddress = parseFloat(ethers.utils.formatEther(await props.marketContract.yesSharesPerAddress('0x70997970C51812dc3A010C7d01b50e0d17dc79C8')))
-            yesSharesPerAddress = Math.floor((yesSharesPerAddress + Number.EPSILON) * 100) / 100
-            console.log('yesSharesPerAddress ' + parseFloat(ethers.utils.formatEther(await props.marketContract.yesSharesPerAddress('0x70997970C51812dc3A010C7d01b50e0d17dc79C8'))))
-
-            console.log(yesSharesPerAddress)
-        }, 1)
-    }, [])
-
+    const getMaxShares = setInterval(function() {
+        option === 'yes' ? setMaxShares(props.yesSharesOwned) : setMaxShares(props.noSharesOwned)
+        clearInterval(getMaxShares)
+    }, 1)
 
     const submitAction = async (event: { preventDefault: () => void; }) => {
         event.preventDefault()
 
-        const yesSharesEmitted = ethers.utils.formatEther(await props.marketContract.yesSharesEmitted())
-        const noSharesEmitted = ethers.utils.formatEther(await props.marketContract.noSharesEmitted())
-
-        console.log(yesSharesEmitted)
-        console.log(noSharesEmitted)
+        if (amount <= 0) {
+            toast.error('Amount must be greater than 0')
+            return
+        }
 
         if (props.action === "buy") {
-            switch(option) {
+            switch (option) {
                 case 'yes':
                     const yesSharesEmitted = ethers.utils.formatEther(await props.marketContract.yesSharesEmitted())
                     if (amount >= Number(yesSharesEmitted)) {
@@ -121,7 +119,8 @@ const BuyShares = (props: PropTypes) => {
                 await props.marketContract.connect(props.signer).buyShares(option, BigNumber.from(ethers.utils.parseEther(String(amount))))
                 props.pendingTx(props.marketContract, props.user)
 
-                props.addPosition(userAddress, amount, option)
+                props.addPosition(userAddress, amount, option, props.contractAddress)
+                props.increaseVolume(amount, props.contractAddress)
             } else {
                 toast.error('You denied the message, please try again')
             }
@@ -135,23 +134,27 @@ const BuyShares = (props: PropTypes) => {
 
         try {
             if (typeof userAddress !== "undefined") {
-                let yesSharesPerAddress = ethers.utils.formatEther(await props.marketContract.yesSharesPerAddress(userAddress))
-                let noSharesPerAddress = ethers.utils.formatEther(await props.marketContract.noSharesPerAddress(userAddress))
                 if (option === 'yes') {
-                    if (Number(yesSharesPerAddress) < amount) {
+                    if (Number(props.yesSharesOwned) < amount) {
                         toast.error("You don't have enough shares")
                         return
                     }
                 } else {
-                    if (Number(noSharesPerAddress) < amount) {
+                    if (Number(props.noSharesOwned) < amount) {
                         toast.error("You don't have enough shares")
                         return
                     }
                 }
+
                 await props.marketContract.connect(props.signer).sellShares(option, BigNumber.from(ethers.utils.parseEther(String(amount))))
                 props.pendingTx(props.marketContract, props.user)
 
-                await props.removePosition(userAddress, amount, option)
+                await props.removePosition(userAddress, amount, option, props.contractAddress)
+                props.marketContract.getCurrentValueOfShares(BigNumber.from(ethers.utils.parseEther(amount.toString())), option).then((r: any) => {
+                    console.log('yes ' + Number(ethers.utils.formatEther(r)))
+                    props.increaseVolume(Number(ethers.utils.formatEther(r)), props.contractAddress)
+                })
+
 
             } else {
                 toast.error('You denied the message, please try again')
@@ -163,9 +166,11 @@ const BuyShares = (props: PropTypes) => {
 
     return (
         <div className="buy-shares">
-            <form id='form' onSubmit={submitAction}>
+            <form autoComplete="off" className="share-interaction-form" onSubmit={submitAction}>
+                <div className="title">{props.action === 'buy' ? 'Buy Shares' : 'Sell Shares'}</div>
+                <div className="input-container ic1">
                     <input
-                        className='form-input'
+                        className='input'
                         id='amount'
                         type='number'
                         name='amount'
@@ -174,6 +179,13 @@ const BuyShares = (props: PropTypes) => {
                         onChange={e => setAmount(parseFloat(e.target.value))}
                         required
                     />
+                    <div className={props.action === 'buy' ? 'cut cut-buy' : 'cut cut-sell'}>
+                        {
+                            props.action === 'buy' ?
+                                'Usd amount (' + props.usdAmount + ')' :
+                                'Share amount (' + maxShares + ')'
+                        }
+                    </div>
                     <select
                         name="choose-option"
                         id="choose-option"
@@ -181,14 +193,17 @@ const BuyShares = (props: PropTypes) => {
                         onChange={e => setOption(e.target.value)}
                         required
                     >
-                        <option value="yes">Yes ({props.yesRatio/100}$)</option>
-                        <option value="no">No ({props.noRatio/100}$)</option>
+                        <option value="yes">Yes ({props.yesRatio / 100}$)</option>
+                        <option value="no">No ({props.noRatio / 100}$)</option>
                     </select>
-                    {amount <= props.approvedAmount ?
-                        <input id='buy-button' type="submit" value={props.action === "buy" ? "Buy Shares" : "Sell Shares"} /> :
-                        <input id='buy-button' type="submit" value="Approve USD" />}
-
-
+                </div>
+                {
+                    props.action === 'buy' ?
+                        amount <= props.approvedAmount ?
+                            <input id='submit' type="submit" value='Buy'/> :
+                            <input id='submit' type="submit" value="Approve USD"/>
+                        : <input id='submit' type="submit" value='Sell'/>
+                }
             </form>
         </div>
     )

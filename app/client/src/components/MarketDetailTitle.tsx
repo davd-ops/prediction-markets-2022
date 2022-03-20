@@ -1,5 +1,6 @@
 import React from 'react';
 import ExpiredMarketDetail from "./ExpiredMarketDetail";
+import {ethers} from "ethers";
 
 interface PropTypes {
     marketName: string;
@@ -35,10 +36,10 @@ const MarketDetailTitle = (props: PropTypes) => {
             <div id="market-heading-flex-rows">
                 <p>{dateText} <span className="highlighted-value">{marketEndsOn.toLocaleDateString()}</span></p>
                 {
-                    !expiredMarket ? <p>Liquidity <span className="highlighted-value">${Math.floor(props.liquidity)}</span></p> : null
+                    !expiredMarket ? <p>Liquidity <span className="highlighted-value">${Math.floor((Number(props.liquidity) + Number.EPSILON) * 100) / 100}</span></p> : null
                 }
                 {
-                    !expiredMarket ? <p>Market volume <span className="highlighted-value">${props.marketVolume}</span></p> : null
+                    !expiredMarket ? <p>Market volume <span className="highlighted-value">${Math.floor((Number(props.marketVolume) + Number.EPSILON) * 100) / 100}</span></p> : null
                 }
                 {
                     //expiredMarket ? <p>Yes <span className="highlighted-value">{yesRatio}%</span></p> : null

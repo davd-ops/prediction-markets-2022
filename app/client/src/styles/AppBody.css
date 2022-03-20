@@ -1,6 +1,6 @@
 .App-body {
-  background-color: #15202b;
-  min-height: 89.8vh;
+  background-color: #15172b;
+  min-height: 79.8vh;
   display: flow-root;
   align-items: center;
   font-size: calc(10px + 2vmin);
@@ -16,34 +16,6 @@ a {
   color: white;
 }
 
-form {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-}
-
-#create-market-form {
-  display: flex;
-  flex-wrap: wrap;
-  flex-direction: column;
-  align-items: center;
-}
-
-label {
-  width: 100%;
-  margin-top: 15px;
-}
-
-input {
-  border: solid 0.1px #374e62;
-  padding: 10px;
-  border-radius: 50px;
-  width: 35%;
-  font-size: 18px;
-  margin: 10px;
-  cursor: pointer;
-}
-
 .MarketsContainer {
   display: flex;
   flex-wrap: wrap;
@@ -53,12 +25,15 @@ input {
 
 .MarketDiv {
   transition: transform .2s;
-  border: solid .1px #374e62;
+  border: solid 0.1px #374e62;
   padding: 40px;
-  border-radius: 50px;
+  border-radius: 10px;
   width: 21%;
-  height: 155px;
+  min-height: 155px;
   margin: 10px 18px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 
 .MarketDiv:hover {
@@ -67,14 +42,19 @@ input {
   border: solid 0.1px #496883;
 }
 
+.percentageDiv {
+  display: flex;
+  justify-content: space-evenly;
+}
+
 .yes {
   float: left;
-  width: 50%;
+  font-size: 22px;
 }
 
 .no {
   float: right;
-  width: 50%;
+  font-size: 22px;
 }
 
 #marketName {
@@ -95,17 +75,26 @@ input {
 }
 
 .market-information {
-  border: 1px solid #374e62;
-  border-radius: 10px;
   max-width: 90%;
   margin-left: 5%;
   margin-top: 30px;
   display: flex;
   justify-content: center;
+  border-radius: 5px;
+  box-sizing: border-box;
+  border: 2px solid #303245;
 }
 
 #market-heading {
   width: 50%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+#market-heading p {
+  margin: 0;
+  font-size: 22px;
 }
 
 #market-heading-flex-rows {
@@ -117,48 +106,50 @@ input {
 
 #market-heading-flex-rows p {
   font-size: 13px;
-  border: 1px solid #22303c;
+  border: 1px solid #303245;
   border-radius: 10px;
-  background: #22303c;
+  background: #303245;
   margin-right: 10px;
   padding: 10px 20px 14px 20px;
 }
 
 .highlighted-value {
   font-weight: bold;
-  font-size: 22px;
+  font-size: 18px;
+  margin-left: 2px;
 }
 
 .market-main-body-section {
-  border: 1px solid #374e62;
-  border-radius: 10px;
   max-width: 90%;
-  min-height: 50vh;
   margin-left: 5%;
   margin-top: 30px;
   display: flex;
-  justify-content: center;
   align-items: center;
   flex-direction: column;
+  padding-bottom: 40px;
+  background-color: #15172b;
+  border-radius: 5px;
+  box-sizing: border-box;
+  border: 2px solid #303245;
 }
 
 .market-switch-buttons {
-  width: 75%;
+  width: 85%;
   min-height: 10vh;
   display: flex;
   justify-content: space-between;
   flex-direction: row;
 }
 
-.buy-share-section, .sell-share-section {
-  width: 44%;
+.share-interaction-section {
+  width: 30%;
   display: flex;
   flex-direction: column;
   flex-wrap: nowrap;
   align-items: center;
 }
 
-.buy-share-section span, .sell-share-section span {
+.share-interaction-section span {
   width: 100%;
   padding: 40px 0;
   font-size: 40px;
@@ -175,31 +166,47 @@ input {
 }
 
 #amount {
-  border-radius: 10px 0 0 10px;
-  height: 48px;
-  width: 56%;
-  font-size: 18px;
-  outline: none;
+  width: 58%;
+  position: absolute;
+  left: 0;
   margin: 0;
-  padding: 10px;
   text-align: right;
-  border: solid 0.1px #374e62;
+  background-color: #303245;
+  border-radius: 12px 0 0 12px;
+  border: 0;
+  font-size: 18px;
+  outline: 0;
+  padding: 0 20px 0;
+}
 
-  -ms-box-sizing:content-box;
-  -moz-box-sizing:content-box;
-  -webkit-box-sizing:content-box;
-  box-sizing:content-box;
+#liq-amount {
+  width: 58%;
+  position: absolute;
+  left: 0;
+  margin: 0;
+  text-align: right;
+  background-color: #303245;
+  border-radius: 12px 0 0 12px;
+  border: 0;
+  font-size: 18px;
+  outline: 0;
+  padding: 0 20px 0;
 }
 
 #choose-option {
+  background: #303245;
+  border: solid 0.1px #303245;
+  border-left: 1px solid #808097;
+  color: white;
   border-radius: 0 10px 10px 0;
-  height: 48px;
-  width: 34%;
-  font-size: 18px;
+  height: 48.3px;
+  width: 43%;
+  position: absolute;
+  right: 0;
+  font-size: 16px;
   outline: none;
-  padding: 10px;
+  -webkit-user-select: none;
   user-select: none;
-  border: solid 0.1px #374e62;
   margin-left: -1px;
   text-align: center;
 
@@ -263,6 +270,16 @@ input:checked + .slider:before {
   transform: translateX(110px);
 }
 
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+input[type=number] {
+  -moz-appearance: textfield;
+}
+
 .slider:after
 {
   content:'YES';
@@ -273,7 +290,6 @@ input:checked + .slider:before {
   top: 50%;
   left: 50%;
   font-size: 10px;
-  font-family: Verdana, sans-serif;
 }
 
 input:checked + .slider:after
@@ -291,14 +307,14 @@ input:checked + .slider:after
 }
 
 .market-detail-footer {
-  border: 1px solid #374e62;
-  border-radius: 10px;
   max-width: 90%;
   min-height: 20vh;
   margin-left: 5%;
   margin-top: 30px;
   margin-bottom: 30px;
-
+  border-radius: 5px;
+  box-sizing: border-box;
+  border: 2px solid #303245;
 }
 
 .market-detail-footer h4 {
@@ -310,7 +326,7 @@ input:checked + .slider:after
   font-size: 20px;
   text-align: left;
   padding: 0 100px 0 90px;
-  margin: 0;
+  margin: 0 0 5vh;
 }
 
 .market-footer-props {
@@ -333,39 +349,334 @@ input:checked + .slider:after
 
 .PortfolioMarketDiv {
   transition: transform .2s;
-  border: solid .1px #374e62;
-  padding: 40px;
-  border-radius: 50px;
+  border: solid 0.1px #374e62;
+  padding: 0 40px;
+  border-radius: 10px;
   width: 90%;
-  height: 155px;
+  height: 170px;
   margin: 10px 18px;
 }
 
-.PortfolioMarketDiv:hover {
-  transform: scale(1.01);
+.PortfolioDisplayMarketButton {
   cursor: pointer;
-  border: solid 0.1px #496883;
+  position: relative;
+  top: -8px;
+  background-color: #303245;
+  border: 1px solid #303245;
+  width: 140px;
+  height: 40px;
+  border-radius: 2px;
+  color: #808097;
+  font-size: 15px;
+  transition: transform 200ms, color 200ms;
+}
+
+.PortfolioDisplayMarketButton:hover {
+  color: white;
 }
 
 .MarketName {
   text-align: left;
-  margin-left: 5%;
+  margin-left: 50px;
+  font-size: 25px;
+  margin-top: 30px;
+  margin-bottom: 10px;
 }
 
 .MarketProps {
   padding: 0;
   display: inline-block;
-  margin: 10px 6%;
-  font-size: 1.8vw;
+  margin: 0 6%;
+  font-size: 25px;
+}
+
+.firstProp {
+  position: absolute;
+  left: 5%;
+}
+
+.secondProp {
+  position: absolute;
+  left: 22%;
+}
+
+.thirdProp {
+  position: absolute;
+  left: 39%;
+}
+
+.fourthProp {
+  position: absolute;
+  left: 56%;
+}
+
+.fifthProp {
+  position: absolute;
+  margin-top: 33px;
+  left: 73%;
+}
+
+.marketVolProp {
+  position: absolute;
+  left: 21.5%;
 }
 
 .LessVisibleText {
   color: #b3b3b3;
-  font-size: 1.2vw;
+  font-size: 14px;
 }
 
 .portfolioMarketsContainer {
   display: flex;
   flex-direction: column;
   align-items: center;
+  margin-bottom: 50px;
+}
+
+.form {
+  background-color: #15172b;
+  border-radius: 5px;
+  box-sizing: border-box;
+  padding: 20px 50px;
+  width: 45%;
+  border: 2px solid #303245;
+  margin: 11vh auto 11vh auto;
+}
+
+.title {
+  color: #808097;
+  font-size: 36px;
+  font-weight: 600;
+  margin-top: 30px;
+  margin-bottom: 45px;
+}
+
+.subtitle {
+  color: #808097;
+  margin: 0;
+}
+
+.input-container {
+  height: 50px;
+  position: relative;
+  width: 100%;
+}
+
+.ic1 {
+  margin-top: 25px;
+}
+
+.input {
+  background-color: #303245;
+  border-radius: 12px;
+  border: 0;
+  box-sizing: border-box;
+  color: #eee;
+  font-size: 18px;
+  height: 100%;
+  outline: 0;
+  padding: 4px 20px 0;
+  width: 100%;
+}
+
+.cut {
+  background-color: #15172b;
+  border-radius: 10px;
+  height: 20px;
+  left: 20px;
+  position: absolute;
+  top: -20px;
+  transform: translateY(8px);
+  transition: transform 200ms;
+  width: 169px;
+  z-index: 1;
+}
+
+.cut-short {
+  width: 117px;
+}
+
+.cut-title {
+  width: 109.5px;
+}
+
+.cut-buy {
+  padding: 0 10px;
+  width: auto !important;
+  font-size: 12px;
+  color: #808097;
+  transition: transform 200ms, color 200ms;
+}
+
+.cut-sell {
+  padding: 0 10px;
+  width: auto !important;
+  font-size: 12px;
+  color: #808097;
+  transition: transform 200ms, color 200ms;
+}
+
+.input:focus ~ .cut,
+.input:not(:placeholder-shown) ~ .cut {
+  transform: translateY(8px);
+}
+
+.share-action-placeholder {
+  color: #808097;
+  font-family: sans-serif;
+  left: 20px;
+  line-height: 14px;
+  pointer-events: none;
+  position: absolute;
+  transform-origin: 0 50%;
+  transition: transform 200ms, color 200ms;
+  transform: translateY(-30px) translateX(10px) scale(0.75);
+  top: 20px;
+  z-index: 2;
+  font-size: 21px;
+}
+
+.placeholder {
+  color: #808097;
+  font-family: sans-serif;
+  left: 20px;
+  line-height: 14px;
+  pointer-events: none;
+  position: absolute;
+  transform-origin: 0 50%;
+  transition: transform 200ms, color 200ms;
+  transform: translateY(-30px) translateX(10px) scale(0.75);
+  top: 20px;
+  z-index: 2;
+}
+
+.input:focus ~ .placeholder,
+.input:not(:placeholder-shown) ~ .placeholder {
+  transform: translateY(-30px) translateX(10px) scale(0.75);
+}
+
+.input:focus ~ .placeholder {
+  color: white;
+}
+
+.input:focus ~ .cut-sell {
+  color: white;
+}
+
+#submit {
+  box-sizing: border-box;
+  cursor: pointer;
+  margin-top: 30px;
+  margin-bottom: 10px;
+  outline: 0;
+  text-align: center;
+  background-color: #303245;
+  border: 1px solid #303245;
+  width: 100%;
+  height: 40px;
+  border-radius: 2px;
+  color: #808097;
+  font-size: 15px;
+  transition: transform 200ms, color 200ms;
+}
+
+#submit:hover {
+  color: white;
+}
+
+::-webkit-calendar-picker-indicator {
+  filter: invert(1);
+}
+
+.share-interaction-form {
+  background-color: #15172b;
+  border-radius: 5px;
+  box-sizing: border-box;
+  padding: 20px 50px;
+  width: 100%;
+  border: 2px solid #303245;
+  margin: auto;
+}
+
+.title {
+  color: #808097;
+  font-size: 36px;
+  font-weight: 600;
+  margin-top: 30px;
+  margin-bottom: 45px;
+}
+
+.input-container {
+  height: 50px;
+  position: relative;
+  width: 100%;
+}
+
+.ic1 {
+  margin-top: 25px;
+}
+
+.input {
+  background-color: #303245;
+  border-radius: 12px;
+  border: 0;
+  box-sizing: border-box;
+  color: #eee;
+  font-size: 18px;
+  height: 100%;
+  outline: 0;
+  padding: 4px 20px 0;
+  width: 100%;
+}
+
+.cut {
+  background-color: #15172b;
+  border-radius: 10px;
+  height: 20px;
+  left: 20px;
+  position: absolute;
+  top: -20px;
+  transform: translateY(8px);
+  transition: transform 200ms;
+  width: 169px;
+}
+
+.cut-short {
+  width: 117px;
+}
+
+.cut-title {
+  width: 109.5px;
+}
+
+.input:focus ~ .cut,
+.input:not(:placeholder-shown) ~ .cut {
+  transform: translateY(8px);
+}
+
+.placeholder {
+  color: #808097;
+  font-family: sans-serif;
+  left: 20px;
+  line-height: 14px;
+  pointer-events: none;
+  position: absolute;
+  transform-origin: 0 50%;
+  transition: transform 200ms, color 200ms;
+  transform: translateY(-30px) translateX(10px) scale(0.75);
+  top: 20px;
+  font-size: 24px;
+}
+
+.input:focus ~ .placeholder,
+.input:not(:placeholder-shown) ~ .placeholder {
+  transform: translateY(-30px) translateX(10px) scale(0.75);
+}
+
+.input:focus ~ .placeholder {
+  color: white;
+}
+
+.input:focus ~ .share-action-placeholder {
+  color: white;
 }

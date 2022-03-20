@@ -14,6 +14,8 @@ import {ethers} from "ethers";
 import {usdABI, usdContractAddress} from "./otherContractProps/usdContractProps";
 import MetaMaskOnboarding from "@metamask/onboarding";
 import {useMoralis} from "react-moralis";
+import WrongNetwork from "./components/WrongNetwork";
+import {predictionMarketABI} from "./otherContractProps/predictionMarketContractProps";
 
 function App() {
     const {
@@ -22,6 +24,8 @@ function App() {
         logout
     } = useMoralis()
 
+    const provider = new ethers.providers.Web3Provider((window as any).ethereum)
+    const signer = provider.getSigner()
     const [usdAmount, setUsdAmount] = React.useState(0)
     const [userAddress, setUserAddress] = React.useState([])
     const [currentPage, setCurrentPage] = React.useState('markets-page')
@@ -35,9 +39,29 @@ function App() {
         marketData: []
     } as any)
 
+    window.addEventListener("load", function () {
+        if (window.ethereum) {
+            // detect Network account change
+            window.ethereum.on('chainChanged', async () => {
+                const provider = new ethers.providers.Web3Provider((window as any).ethereum)
+                const {chainId} = await provider.getNetwork()
+                if (chainId !== 31337) {
+                    setCurrentPage('wrong-network-page')
+                } else {
+                    window.location.reload()
+                }
+            })
+        }
+    })
+
     React.useEffect(() => {
-        setTimeout(() => {
+        setTimeout(async () => {
             getMarkets()
+            const provider = new ethers.providers.Web3Provider((window as any).ethereum)
+            const {chainId} = await provider.getNetwork()
+            if (chainId !== 31337) {
+                setCurrentPage('wrong-network-page')
+            }
         }, 1)
 
         function handleNewAccounts(newAccounts: React.SetStateAction<never[]>) {
@@ -112,6 +136,164 @@ function App() {
 
         return userAddress
     }
+
+    const addPosition = async (userAddress: string, amount: number, shareType: string, contractAddress: string) => {
+        const PositionMapping = Moralis.Object.extend("PositionMapping")
+        const query = new Moralis.Query(PositionMapping)
+        const results = await query.find()
+
+        let userIsAlreadyInDB = false
+
+        for (let i = 0; i < results.length; i++) {
+            const object = results[i]
+            if (userAddress === object.get('userAddress') && contractAddress === object.get('marketAddress') && shareType === object.get('shareType')) {
+                userIsAlreadyInDB = true
+                const initValue = object.get('initialValue')
+                const newAmount = initValue + amount
+                object.set('initialValue', newAmount)
+
+                object.save()
+                    .then(() => {
+                        console.log('Position updated')
+                    }, (error: { message: string; }) => {
+                        toast.error('Failed to create new object, with error code: ' + error.message)
+                    })
+            }
+        }
+
+        if (!userIsAlreadyInDB) {
+            const newRecord = new PositionMapping()
+            newRecord.set("userAddress", userAddress)
+            newRecord.set("marketAddress", contractAddress)
+            newRecord.set("initialValue", amount)
+            newRecord.set("shareType", shareType)
+
+            newRecord.save()
+                .then(() => {
+                    console.log('New position added')
+                }, (error: { message: string; }) => {
+                    toast.error('Failed to create new object, with error code: ' + error.message)
+                })
+        }
+    }
+
+    const removePosition = async (userAddress: string, amount: number, shareType: string, contractAddress: string) => {
+        const marketContract = new ethers.Contract(contractAddress, predictionMarketABI, provider)
+        let valueOfShares
+
+        const PositionMapping = Moralis.Object.extend("PositionMapping")
+        const query = new Moralis.Query(PositionMapping)
+        query.equalTo("userAddress", userAddress)
+        query.equalTo("marketAddress", contractAddress)
+        query.equalTo("shareType", shareType)
+        const result = await query.first()
+
+        if (typeof result !== "undefined") {
+            if (shareType === 'yes' || shareType === 'no') {
+                valueOfShares = parseFloat(ethers.utils.formatEther(await marketContract.getCurrentValueOfShares(amount, shareType)))
+            } else {
+                valueOfShares = result.get('amount')
+            }
+            const resultAmount = result.get('amount')
+            if (resultAmount - valueOfShares > 0) {
+                result.set('amount', resultAmount - valueOfShares)
+
+                result.save()
+                    .then(() => {
+                        console.log('Position updated')
+                    }, (error: { message: string; }) => {
+                        toast.error('Failed to create new object, with error code: ' + error.message)
+                    })
+            } else {
+                result.destroy()
+                    .then(() => {
+                        console.log('Position removed')
+                    }, (error: { message: string; }) => {
+                        toast.error('Failed to create new object, with error code: ' + error.message)
+                    })
+            }
+        } else {
+            console.log('Position probably already removed!')
+        }
+    }
+
+    const increaseVolume = async (amount: number, contractAddress: string) => {
+        const MarketList = Moralis.Object.extend("MarketList")
+        const query = new Moralis.Query(MarketList)
+        query.equalTo("contractAddress", contractAddress)
+        const result = await query.first()
+
+        if (typeof result !== "undefined") {
+            const initVolume = result.get('marketVolume')
+            const newVolume = initVolume + amount
+            result.set('marketVolume', newVolume)
+
+            result.save()
+                .then(() => {
+                    console.log('Volume updated')
+                }, (error: { message: string; }) => {
+                    toast.error('Failed to create new object, with error code: ' + error.message)
+                })
+        }
+    }
+
+    const withdrawLiquidity = async (contractAddress: string) => {
+        const marketContract = new ethers.Contract(contractAddress, predictionMarketABI, provider)
+        const userAddress = await signMessage()
+
+        try {
+            if (typeof userAddress !== "undefined") {
+                await marketContract.connect(signer).withdrawLiquidity()
+                pendingTx(marketContract, userAddress)
+
+                removePosition(userAddress, 0, "", contractAddress)
+            } else {
+                toast.error('You denied the message, please try again')
+            }
+        } catch (e) {
+            toast.error((e as Error).message)
+        }
+    }
+
+    const claimUsd = async (contractAddress: string) => {
+        const removeClaimed = async (shareType: string) => {
+            const PositionMapping = Moralis.Object.extend("PositionMapping")
+            const query = new Moralis.Query(PositionMapping)
+            query.equalTo("userAddress", userAddress)
+            query.equalTo("marketAddress", contractAddress)
+            query.equalTo("shareType", shareType)
+            const result = await query.first()
+
+            if (typeof result !== "undefined") {
+                result.destroy()
+                    .then(() => {
+                        console.log('Position removed')
+                    }, (error: { message: string; }) => {
+                        toast.error('Failed to create new object, with error code: ' + error.message)
+                    })
+            } else {
+                console.log('Position probably already removed!')
+            }
+        }
+
+        const marketContract = new ethers.Contract(contractAddress, predictionMarketABI, provider)
+        const userAddress = await signMessage()
+
+        try {
+            if (typeof userAddress !== "undefined") {
+                await marketContract.connect(signer).claimUsd()
+                pendingTx(marketContract, userAddress)
+
+                removeClaimed('yes')
+                removeClaimed('no')
+            } else {
+                toast.error('You denied the message, please try again')
+            }
+        } catch (e) {
+            toast.error((e as Error).message)
+        }
+    }
+
 
     const logOut = async () => {
         await logout()
@@ -270,6 +452,7 @@ function App() {
                         duration: duration,
                     })
                     await updateBalance()
+                    updateCurrentMarket(marketContract)
                 }
             })
 
@@ -284,10 +467,11 @@ function App() {
                         duration: duration,
                     })
                     await updateBalance()
+                    updateCurrentMarket(marketContract)
                 }
             })
 
-            marketContract.on('WinningSideChosen', async (chosenWinningSide: any, resolver: string) => {
+            marketContract.on('WinningSideChosen', async (chosenWinningSide: string, resolver: string) => {
                 if (user.toString().toLowerCase() === resolver.toLowerCase()) {
                     toast.remove('PendingTx')
                     toast.success('Market successfully resolved!', {
@@ -333,7 +517,30 @@ function App() {
                 setUsdAmount(Number(Number(usdBalance).toFixed(2)))
             }
         }
+    }
 
+    const updateCurrentMarket = async (marketContract: { address: any; }) => {
+        try {
+            const MarketList = Moralis.Object.extend("MarketList")
+            const query = new Moralis.Query(MarketList)
+            query.equalTo("contractAddress", marketContract.address)
+            const result = await query.first()
+            if (typeof result !== "undefined") {
+                setCurrentMarketData({
+                    marketData: {
+                        marketName: result.get('marketName'),
+                        marketDescription: result.get('marketDescription'),
+                        validUntil: result.get('validUntil'),
+                        createdTimestamp: result.get('createdTimestamp'),
+                        contractAddress: result.get('contractAddress'),
+                        providerFee: result.get('providerFee'),
+                        marketVolume: result.get('marketVolume')
+                    }
+                })
+            }
+        } catch (e) {
+            toast.error((e as Error).message)
+        }
     }
 
     return (
@@ -358,32 +565,47 @@ function App() {
                 {
                     typeof window.ethereum !== 'undefined' ?
                         currentPage === 'markets-page' ? <AppBody displayMarketDetail={switchPageToMarketDetailPage} markets={markets} /> :
-                        currentPage === 'expired-markets-page' ? <ExpiredMarketsPage displayMarketDetail={switchPageToExpiredMarketDetailPage} markets={markets} /> :
-                            currentPage === 'create-market-page' ? <CreateMarketPage pendingTx={pendingTx} signMessage={signMessage} logOut={logOut} user={user} isAdminLogged={isAdminLogged} /> :
-                                currentPage === 'portfolio-page' ? <PortfolioPage userAddress={userAddress.toString()} displayMarketDetail={switchPageToMarketDetailPage} markets={portfolioMarkets} /> :
-                                    currentPage === 'market-detail-page' ?
-                                        <MarketDetail
-                                            marketName={currentMarketData.marketData.marketName}
-                                            marketDescription={currentMarketData.marketData.marketDescription}
-                                            validUntil={currentMarketData.marketData.validUntil}
-                                            createdTimestamp={currentMarketData.marketData.createdTimestamp}
-                                            contractAddress={currentMarketData.marketData.contractAddress}
-                                            providerFee={currentMarketData.marketData.providerFee}
-                                            marketVolume={currentMarketData.marketData.marketVolume}
-                                            pendingTx={pendingTx}
-                                            user={userAddress.toString()}
-                                            signMessage={signMessage}
-                                        /> :
-                                            <ExpiredMarketDetail
+                            currentPage === 'expired-markets-page' ?
+                                <ExpiredMarketsPage displayMarketDetail={switchPageToExpiredMarketDetailPage}
+                                                    markets={markets}/> :
+                                currentPage === 'create-market-page' ?
+                                    <CreateMarketPage pendingTx={pendingTx} signMessage={signMessage} logOut={logOut}
+                                                      isAdminLogged={isAdminLogged}/> :
+                                    currentPage === 'portfolio-page' ?
+                                        <PortfolioPage userAddress={userAddress.toString()}
+                                                       displayMarketDetail={switchPageToMarketDetailPage}
+                                                       withdrawLiquidity={withdrawLiquidity}
+                                                       claimUsd={claimUsd}
+                                                       markets={portfolioMarkets}/> :
+                                        currentPage === 'market-detail-page' ?
+                                            <MarketDetail
                                                 marketName={currentMarketData.marketData.marketName}
                                                 marketDescription={currentMarketData.marketData.marketDescription}
                                                 validUntil={currentMarketData.marketData.validUntil}
+                                                createdTimestamp={currentMarketData.marketData.createdTimestamp}
                                                 contractAddress={currentMarketData.marketData.contractAddress}
+                                                providerFee={currentMarketData.marketData.providerFee}
+                                                marketVolume={currentMarketData.marketData.marketVolume}
                                                 pendingTx={pendingTx}
                                                 user={userAddress.toString()}
                                                 signMessage={signMessage}
-                                                isAdminLogged={isAdminLogged}
+                                                addPosition={addPosition}
+                                                removePosition={removePosition}
+                                                increaseVolume={increaseVolume}
+                                                usdAmount={usdAmount}
                                             /> :
+                                            currentPage === 'expired-market-detail-page' ?
+                                                <ExpiredMarketDetail
+                                                    marketName={currentMarketData.marketData.marketName}
+                                                    marketDescription={currentMarketData.marketData.marketDescription}
+                                                    validUntil={currentMarketData.marketData.validUntil}
+                                                    contractAddress={currentMarketData.marketData.contractAddress}
+                                                    pendingTx={pendingTx}
+                                                    user={userAddress.toString()}
+                                                    signMessage={signMessage}
+                                                    isAdminLogged={isAdminLogged}
+                                                /> :
+                                                <WrongNetwork/> :
                         <MetamaskMissing/>
               }
               <AppFooter />

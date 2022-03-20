@@ -46,23 +46,33 @@ const ExpiredMarketDetail = (props: PropTypes) => {
     }
 
     const submitOutcome = async () => {
-        const contract = await marketContract.connect(signer).chooseWinningSide(pickedOutcome)
-        props.pendingTx(marketContract, props.user)
+        const userAddress = await props.signMessage()
 
-        const MarketList = Moralis.Object.extend("MarketList")
-        const query = new Moralis.Query(MarketList)
-        query.equalTo("contractAddress", props.contractAddress)
-        const result = await query.first()
-        if (typeof result !== "undefined") {
-            result.set('isResolved', true)
-            result.save()
-                .then(() => {
-                    console.log('Outcome updated')
-                }, (error: { message: string; }) => {
-                    toast.error('Failed to create new object, with error code: ' + error.message)
-                })
-        } else {
-            toast.error('Something went wrong!')
+        try {
+            if (typeof userAddress !== "undefined") {
+                await marketContract.connect(signer).chooseWinningSide(pickedOutcome)
+                props.pendingTx(marketContract, userAddress)
+
+                const MarketList = Moralis.Object.extend("MarketList")
+                const query = new Moralis.Query(MarketList)
+                query.equalTo("contractAddress", props.contractAddress)
+                const result = await query.first()
+                if (typeof result !== "undefined") {
+                    result.set('isResolved', true)
+                    result.save()
+                        .then(() => {
+                            console.log('Outcome updated')
+                        }, (error: { message: string; }) => {
+                            toast.error('Failed to create new object, with error code: ' + error.message)
+                        })
+                } else {
+                    toast.error('Something went wrong!')
+                }
+            } else {
+                toast.error('You denied the message, please try again')
+            }
+        } catch (e) {
+            toast.error((e as Error).message)
         }
     }
 

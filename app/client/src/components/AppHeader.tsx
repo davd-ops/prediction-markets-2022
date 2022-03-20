@@ -47,7 +47,7 @@ const AppHeader = (props: PropTypes) => {
             if (accounts.length > 0) {
                 setButtonText(props.usdAmount + ' USD')
                 setDisabled(true)
-                setMetamaskButtonStyle('nonClickableButton')
+                setMetamaskButtonStyle('balanceButton')
                 walletChanged()
                 onboarding?.current?.stopOnboarding()
             } else {
@@ -113,6 +113,7 @@ const AppHeader = (props: PropTypes) => {
     }
         return (
             <header className="App-header">
+                <OnboardingButton isDisabled={isDisabled} onClick={onClick} classNamed={metamaskButtonStyle} text={buttonText} walletChanged={walletChanged} />
                 <button className={props.marketsButton} onClick={props.switchPageToMarkets}>Markets</button>
                 {
                     isAdminLogged ? <>
@@ -121,7 +122,6 @@ const AppHeader = (props: PropTypes) => {
                     </> : null
                 }
                 <button className={props.portfolioButton} onClick={props.switchPageToPortfolio}>Portfolio</button>
-                <OnboardingButton isDisabled={isDisabled} onClick={onClick} classNamed={metamaskButtonStyle} text={buttonText} walletChanged={walletChanged} />
             </header>
         )
 }

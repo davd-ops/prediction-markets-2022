@@ -31,9 +31,11 @@ const AppBody = (props: PropTypes) => {
                     returnMarketDetail(market) : null
                     )) : null
                 }
+                <p className='subtitle'>
                 {
                     !isThereLiveMarket ? 'No markets live' : null
                 }
+                </p>
             </div>
         </div>
     );

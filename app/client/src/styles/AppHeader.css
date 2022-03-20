@@ -1,6 +1,6 @@
 .App-header {
   border-bottom: solid 0.1px #374e62;
-  background-color: #15202b;
+  background-color: #15172b;
   min-height: 10vh;
   display: flex;
   flex-direction: row;
@@ -12,32 +12,50 @@
 }
 
 .clickableButton {
-  transition: transform .2s;
-  border: solid 0.1px #374e62;
+  text-transform: uppercase;
+  border: none;
   padding: 10px;
-  border-radius: 50px;
-  width: 10%;
-  font-size: 17px;
-  background: #253441;
-  color: white;
-  margin: 10px;
-}
-
-.nonClickableButton {
-  border: solid 0.1px #374e62;
-  padding: 10px;
-  border-radius: 50px;
-  width: 10%;
-  font-size: 18px;
+  font-size: 15px;
   background: transparent;
   color: white;
   margin: 10px;
+  border-radius: 2px;
+  width: 155px;
+  transition: 0.1s;
+}
+
+
+.nonClickableButton {
+  text-transform: uppercase;
+  background: #d9dae1;
+  transition: transform .2s;
+  border: solid 0.1px #303245;
+  padding: 10px;
+  font-size: 15px;
+  color: #15172b;
+  margin: 10px;
+  border-radius: 2px;
+  width: 155px;
+  font-weight: bold;
+
+}
+
+.balanceButton {
+  background: transparent;
+  transition: transform .2s;
+  border: solid 0.1px #374e62;
+  padding: 10px;
+  font-size: 17px;
+  color: white;
+  margin: 10px;
+  border-radius: 5px;
+  width: 155px;
+  position: absolute;
+  left: 3%;
 }
 
 .clickableButton:hover {
-  transition: transform .2s;
-  border: solid 0.1px #374e62;
-  background: #1c2731;
+  background: #b4b4b426;
   color: white;
   cursor: pointer;
 }
