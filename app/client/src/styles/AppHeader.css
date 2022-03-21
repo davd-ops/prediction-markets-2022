@@ -22,6 +22,7 @@
   border-radius: 2px;
   width: 155px;
   transition: 0.1s;
+  text-decoration: none;
 }
 
 
@@ -37,7 +38,8 @@
   border-radius: 2px;
   width: 155px;
   font-weight: bold;
-
+  text-decoration: none;
+  cursor: default;
 }
 
 .balanceButton {

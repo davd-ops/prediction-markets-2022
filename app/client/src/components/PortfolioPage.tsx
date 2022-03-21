@@ -1,5 +1,7 @@
-import React from 'react';
+import React, {useState} from 'react';
 import MarketInPortfolioComp from "./MarketInPortfolioComp";
+import {ethers} from "ethers";
+import {useMoralis} from "react-moralis";
 
 interface PropTypes {
     userAddress: string;
@@ -11,6 +13,42 @@ interface PropTypes {
 
 const PortfolioPage = (props: PropTypes) => {
     let isThereLiveMarket, isThereExpiredMarket = false
+    const [markets, setMarkets] = React.useState({
+        marketList: []
+    } as any)
+    const {
+        Moralis
+    } = useMoralis()
+
+    React.useEffect(() => {
+        setTimeout(async () => {
+            if (props.markets.marketList.length >= 1) {
+                setMarkets(props.markets)
+            } else {
+                const PositionMapping = Moralis.Object.extend("PositionMapping")
+                const positionMapping = new Moralis.Query(PositionMapping)
+                const addressResults = await positionMapping.find()
+                let userPositionsArray = []
+                const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+
+                for (let i = 0; i < addressResults.length; i++) {
+                    const object = addressResults[i]
+                    if (object.get('userAddress').toString().toLowerCase() == accounts[0].toString().toLowerCase()) {
+                        userPositionsArray.push(object.get('marketAddress'))
+                    }
+                }
+
+                const MarketList = Moralis.Object.extend("MarketList")
+                const query = new Moralis.Query(MarketList)
+                query.containedIn("contractAddress", userPositionsArray)
+
+                const marketResults = await query.find()
+                setMarkets({
+                    marketList: JSON.parse(JSON.stringify(marketResults))
+                })
+            }
+        }, 1)
+    }, [])
 
     const returnMarketDetail = (market: { objectId: string; marketName: string; marketDescription: string; validUntil: number; createdTimestamp: number; contractAddress: string; providerFee: number; marketVolume: number; isResolved: boolean; }) => {
         isThereLiveMarket = true
@@ -41,7 +79,7 @@ const PortfolioPage = (props: PropTypes) => {
             <h1>Live markets</h1>
             <div className='portfolioMarketsContainer'>
                 {
-                    props.markets.marketList.length > 0 ? props.markets.marketList.map((market: { objectId: any; marketName: string; marketDescription: string; validUntil: number; createdTimestamp: number; contractAddress: string; providerFee: number; marketVolume: number; isResolved: boolean; }) => (
+                    markets.marketList.length > 0 ? markets.marketList.map((market: { objectId: any; marketName: string; marketDescription: string; validUntil: number; createdTimestamp: number; contractAddress: string; providerFee: number; marketVolume: number; isResolved: boolean; }) => (
                         Number(market.validUntil) > new Date(Date.now()).getTime() / 1000 ?
                             returnMarketDetail(market) : null
                     )) : null
@@ -55,7 +93,7 @@ const PortfolioPage = (props: PropTypes) => {
             <h1>Expired markets</h1>
             <div className='portfolioMarketsContainer'>
                 {
-                    props.markets.marketList.length > 0 ? props.markets.marketList.map((market: { objectId: any; marketName: string; marketDescription: string; validUntil: number; createdTimestamp: number; contractAddress: string; providerFee: number; marketVolume: number; isResolved: boolean; }) => (
+                    markets.marketList.length > 0 ? markets.marketList.map((market: { objectId: any; marketName: string; marketDescription: string; validUntil: number; createdTimestamp: number; contractAddress: string; providerFee: number; marketVolume: number; isResolved: boolean; }) => (
                         Number(market.validUntil) < new Date(Date.now()).getTime() / 1000 ?
                             market.isResolved ? returnExpiredMarketDetail(market) : null
                             : null

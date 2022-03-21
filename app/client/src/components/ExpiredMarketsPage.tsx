@@ -1,24 +1,24 @@
-import React, {useState} from 'react';
+import React from 'react';
 import Market from "./Market";
-import {useMoralis} from "react-moralis";
 
 interface PropTypes {
     displayMarketDetail: any;
-    markets: { marketList: { objectId: React.Key; marketName: string; marketDescription: string; validUntil: number; createdTimestamp: number; contractAddress: string; providerFee: number; marketVolume: number; isResolved: boolean; }[]; };
+    markets: { marketList: { objectId: React.Key; marketName: string; marketDescription: string; validUntil: number; createdTimestamp: number; contractAddress: string; providerFee: number; marketVolume: number; isResolved: boolean; resolved: boolean; }[]; };
 }
 
 const ExpiredMarketsPage = (props: PropTypes) => {
     let areThereExpiredMarkets = false
 
-    const displayMarket = (market: { objectId: React.Key | null | undefined; marketName: string | undefined; marketDescription: string; validUntil: number; createdTimestamp: number; contractAddress: string; providerFee: number; marketVolume: number; }) => {
+    const displayMarket = (market: { objectId: React.Key | null | undefined; marketName: string | undefined; marketDescription: string; validUntil: number; createdTimestamp: number; contractAddress: string; providerFee: number; marketVolume: number; isResolved: boolean; }) => {
         areThereExpiredMarkets = true
+
         return (
             <Market key={market.objectId} marketName={market.marketName}
                     marketDescription={market.marketDescription} validUntil={market.validUntil}
                     createdTimestamp={market.createdTimestamp}
                     contractAddress={market.contractAddress} providerFee={market.providerFee}
                     marketVolume={market.marketVolume}
-                    displayMarketDetail={props.displayMarketDetail}/>
+                    displayMarketDetail={props.displayMarketDetail} resolved={market.isResolved}/>
         )
     }
 
@@ -37,6 +37,7 @@ const ExpiredMarketsPage = (props: PropTypes) => {
                         contractAddress: string;
                         providerFee: number;
                         marketVolume: number;
+                        resolved: boolean;
                     }) => (
                         Number(market.validUntil) < new Date(Date.now()).getTime() / 1000 ?
                                 displayMarket(market):

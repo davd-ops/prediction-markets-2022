@@ -1,6 +1,5 @@
-import React from "react";
+import React, {useState} from "react";
 import {ethers} from "ethers";
-import {usdABI, usdContractAddress} from "../otherContractProps/usdContractProps";
 import {predictionMarketABI} from "../otherContractProps/predictionMarketContractProps";
 
 interface PropTypes {
@@ -11,12 +10,13 @@ interface PropTypes {
     contractAddress: string;
     providerFee: number;
     marketVolume: number;
+    resolved: boolean;
     displayMarketDetail: any;
 }
 
 const Market = (props: PropTypes) => {
-    const [yesRatio, setYesRatio] = React.useState(0)
-    const [noRatio, setNoRatio] = React.useState(0)
+    const [yesRatio, setYesRatio] = useState(0)
+    const [noRatio, setNoRatio] = useState(0)
 
     const provider = new ethers.providers.Web3Provider((window as any).ethereum)
     const marketContract = new ethers.Contract(props.contractAddress, predictionMarketABI, provider)
@@ -37,10 +37,8 @@ const Market = (props: PropTypes) => {
         }
     }
 
-
-
     return (
-        <div className="MarketDiv" onClick={() => props.displayMarketDetail(props.marketName, props.marketDescription, props.validUntil, props.createdTimestamp, props.contractAddress, props.providerFee, props.marketVolume)}>
+        <div className="MarketDiv" onClick={() => props.displayMarketDetail(props.marketName, props.marketDescription, props.validUntil, props.createdTimestamp, props.contractAddress, props.providerFee, props.marketVolume, props.resolved)}>
             <p>{props.marketName}</p>
             <div className='percentageDiv'>
                 <p className="yes">Yes: {yesRatio}%</p>

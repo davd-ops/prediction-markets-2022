@@ -107,10 +107,10 @@ a {
 #market-heading-flex-rows p {
   font-size: 13px;
   border: 1px solid #303245;
-  border-radius: 10px;
+  border-radius: 2px;
   background: #303245;
   margin-right: 10px;
-  padding: 10px 20px 14px 20px;
+  padding: 10px 20px 10px 20px;
 }
 
 .highlighted-value {
@@ -237,7 +237,7 @@ a {
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: #22303c;
+  background-color: #303245;
   -webkit-transition: .4s;
   transition: .4s;
   border-radius: 34px;
@@ -257,7 +257,7 @@ a {
 }
 
 input:checked + .slider {
-  background-color: #374e62;
+  background-color: #2c2d3d;
 }
 
 input:focus + .slider {
@@ -298,7 +298,11 @@ input:checked + .slider:after
 }
 
 #expired-detail-heading {
-  margin-top: 0;
+  color: #808097;
+  font-size: 36px;
+  font-weight: 600;
+  margin-top: 45px;
+  margin-bottom: 35px;
 }
 
 #submit-outcome {
@@ -479,6 +483,32 @@ input:checked + .slider:after
   width: 100%;
 }
 
+.inputDate {
+  background-color: #303245;
+  border-radius: 12px;
+  border: 0;
+  box-sizing: border-box;
+  color: #808097;
+  font-size: 18px;
+  height: 100%;
+  outline: 0;
+  padding: 4px 20px 0;
+  width: 100%;
+}
+
+input::placeholder {
+  color: #808097;
+  opacity: 1;
+}
+
+input:-ms-input-placeholder {
+  color: red;
+}
+
+input::-ms-input-placeholder {
+  color: red;
+}
+
 .cut {
   background-color: #15172b;
   border-radius: 10px;
@@ -614,19 +644,6 @@ input:checked + .slider:after
 
 .ic1 {
   margin-top: 25px;
-}
-
-.input {
-  background-color: #303245;
-  border-radius: 12px;
-  border: 0;
-  box-sizing: border-box;
-  color: #eee;
-  font-size: 18px;
-  height: 100%;
-  outline: 0;
-  padding: 4px 20px 0;
-  width: 100%;
 }
 
 .cut {

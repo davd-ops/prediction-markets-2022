@@ -2,7 +2,6 @@ import './styles/App.css';
 import AppHeader from './components/AppHeader';
 import AppBody from "./components/AppBody";
 import AppFooter from "./components/AppFooter";
-import MetamaskMissing from "./components/MetamaskMissing";
 import React, {useState} from "react";
 import CreateMarketPage from "./components/CreateMarketPage";
 import ExpiredMarketsPage from "./components/ExpiredMarketsPage";
@@ -16,10 +15,12 @@ import MetaMaskOnboarding from "@metamask/onboarding";
 import {useMoralis} from "react-moralis";
 import WrongNetwork from "./components/WrongNetwork";
 import {predictionMarketABI} from "./otherContractProps/predictionMarketContractProps";
+import {BrowserRouter, Link, Route, Switch, useLocation} from "react-router-dom";
+import MetamaskMissing from "./components/MetamaskMissing";
+import Page404 from "./components/Page404";
 
 function App() {
     const {
-        user,
         Moralis,
         logout
     } = useMoralis()
@@ -57,6 +58,8 @@ function App() {
     React.useEffect(() => {
         setTimeout(async () => {
             getMarkets()
+            checkAccessRights()
+
             const provider = new ethers.providers.Web3Provider((window as any).ethereum)
             const {chainId} = await provider.getNetwork()
             if (chainId !== 31337) {
@@ -80,8 +83,49 @@ function App() {
     React.useEffect(() => {
         setTimeout(() => {
             getPortfolio()
+            checkAccessRights()
         }, 1)
     }, [userAddress])
+
+    const checkAccessRights = async () => {
+        const AdminList = Moralis.Object.extend("AdminList")
+        const adminList = new Moralis.Query(AdminList)
+        const result = await adminList.first()
+        const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' })
+
+        switch (window.location.pathname) {
+            case '/': {
+                switchPageToMarketsPage()
+                break;
+            }
+            case '/create-market': {
+                switchPageToCreateMarketPage()
+                if (typeof result !== 'undefined') {
+                    if (accounts[0].toString().toLowerCase() !== result.get('address').toString().toLowerCase()) {
+                        window.location.pathname = '/'
+                    }
+                } else {
+                    window.location.pathname = '/'
+                }
+                break;
+            }
+            case '/expired-markets': {
+                switchPageToExpiredMarketsPage()
+                if (typeof result !== 'undefined') {
+                    if (accounts[0].toString().toLowerCase() !== result.get('address').toString().toLowerCase()) {
+                        window.location.pathname = '/'
+                    }
+                } else {
+                    window.location.pathname = '/'
+                }
+                break;
+            }
+            case '/portfolio': {
+                switchPageToPortfolioPage()
+                break;
+            }
+        }
+    }
 
     const getMarkets = async () => {
         const MarketList = Moralis.Object.extend("MarketList")
@@ -302,7 +346,7 @@ function App() {
     const isAdminLogged = async () => {
         const userAddress = await signMessage()
 
-        let isAdminLogged
+        let isAdminLogged = false
         try {
             if (typeof userAddress !== "undefined") {
                 const AdminList = Moralis.Object.extend("AdminList")
@@ -349,9 +393,9 @@ function App() {
         createdTimestamp: number,
         contractAddress: string,
         providerFee: number,
-        marketVolume: number
+        marketVolume: number,
+        isResolved: boolean
     ) => {
-
         setCurrentMarketData({
             marketData: {
                 marketName: marketName,
@@ -360,7 +404,8 @@ function App() {
                 createdTimestamp: createdTimestamp,
                 contractAddress: contractAddress,
                 providerFee: providerFee,
-                marketVolume: marketVolume
+                marketVolume: marketVolume,
+                resolved: isResolved
             }
         })
         setCurrentPage('expired-market-detail-page');
@@ -373,9 +418,9 @@ function App() {
         createdTimestamp: number,
         contractAddress: string,
         providerFee: number,
-        marketVolume: number
+        marketVolume: number,
+        isResolved: boolean
     ) => {
-
         setCurrentMarketData({
             marketData: {
                 marketName: marketName,
@@ -384,7 +429,8 @@ function App() {
                 createdTimestamp: createdTimestamp,
                 contractAddress: contractAddress,
                 providerFee: providerFee,
-                marketVolume: marketVolume
+                marketVolume: marketVolume,
+                resolved: isResolved
             }
         })
         setCurrentPage('market-detail-page');
@@ -479,6 +525,7 @@ function App() {
                         duration: duration,
                     })
                 }
+                getPortfolio()
             })
 
             marketContract.on('UsdClaimed', async (amount: ethers.BigNumberish, sender: string) => {
@@ -534,7 +581,8 @@ function App() {
                         createdTimestamp: result.get('createdTimestamp'),
                         contractAddress: result.get('contractAddress'),
                         providerFee: result.get('providerFee'),
-                        marketVolume: result.get('marketVolume')
+                        marketVolume: result.get('marketVolume'),
+                        resolved: result.get('isResolved')
                     }
                 })
             }
@@ -544,7 +592,7 @@ function App() {
     }
 
     return (
-        <>
+        <BrowserRouter>
             <div className="App">
                 {
                     typeof window.ethereum !== 'undefined' ?
@@ -564,53 +612,67 @@ function App() {
                 <Toaster/>
                 {
                     typeof window.ethereum !== 'undefined' ?
-                        currentPage === 'markets-page' ? <AppBody displayMarketDetail={switchPageToMarketDetailPage} markets={markets} /> :
-                            currentPage === 'expired-markets-page' ?
-                                <ExpiredMarketsPage displayMarketDetail={switchPageToExpiredMarketDetailPage}
-                                                    markets={markets}/> :
-                                currentPage === 'create-market-page' ?
-                                    <CreateMarketPage pendingTx={pendingTx} signMessage={signMessage} logOut={logOut}
-                                                      isAdminLogged={isAdminLogged}/> :
-                                    currentPage === 'portfolio-page' ?
+                        currentPage === 'market-detail-page' ?
+                            <MarketDetail
+                                marketName={currentMarketData.marketData.marketName}
+                                marketDescription={currentMarketData.marketData.marketDescription}
+                                validUntil={currentMarketData.marketData.validUntil}
+                                createdTimestamp={currentMarketData.marketData.createdTimestamp}
+                                contractAddress={currentMarketData.marketData.contractAddress}
+                                providerFee={currentMarketData.marketData.providerFee}
+                                marketVolume={currentMarketData.marketData.marketVolume}
+                                resolved={currentMarketData.marketData.resolved}
+                                pendingTx={pendingTx}
+                                user={userAddress.toString()}
+                                signMessage={signMessage}
+                                addPosition={addPosition}
+                                removePosition={removePosition}
+                                increaseVolume={increaseVolume}
+                                usdAmount={usdAmount}
+                            /> :
+                            currentPage === 'expired-market-detail-page' ?
+                                <ExpiredMarketDetail
+                                    marketName={currentMarketData.marketData.marketName}
+                                    marketDescription={currentMarketData.marketData.marketDescription}
+                                    validUntil={currentMarketData.marketData.validUntil}
+                                    createdTimestamp={currentMarketData.marketData.createdTimestamp}
+                                    contractAddress={currentMarketData.marketData.contractAddress}
+                                    resolved={currentMarketData.marketData.resolved}
+                                    pendingTx={pendingTx}
+                                    user={userAddress.toString()}
+                                    signMessage={signMessage}
+                                    isAdminLogged={isAdminLogged}
+                                /> : currentPage === 'wrong-network-page' ?
+                                <WrongNetwork/>  :
+                                <Switch>
+                                    <Route exact path='/'>
+                                        <AppBody displayMarketDetail={switchPageToMarketDetailPage} markets={markets}/>
+                                    </Route>
+                                    <Route exact path='/create-market'>
+                                        <CreateMarketPage pendingTx={pendingTx} signMessage={signMessage} logOut={logOut}
+                                                          isAdminLogged={isAdminLogged}/>
+                                    </Route>
+                                    <Route exact path='/expired-markets'>
+                                        <ExpiredMarketsPage displayMarketDetail={switchPageToExpiredMarketDetailPage}
+                                                            markets={markets}/>
+                                    </Route>
+                                    <Route exact path='/portfolio'>
                                         <PortfolioPage userAddress={userAddress.toString()}
                                                        displayMarketDetail={switchPageToMarketDetailPage}
                                                        withdrawLiquidity={withdrawLiquidity}
                                                        claimUsd={claimUsd}
-                                                       markets={portfolioMarkets}/> :
-                                        currentPage === 'market-detail-page' ?
-                                            <MarketDetail
-                                                marketName={currentMarketData.marketData.marketName}
-                                                marketDescription={currentMarketData.marketData.marketDescription}
-                                                validUntil={currentMarketData.marketData.validUntil}
-                                                createdTimestamp={currentMarketData.marketData.createdTimestamp}
-                                                contractAddress={currentMarketData.marketData.contractAddress}
-                                                providerFee={currentMarketData.marketData.providerFee}
-                                                marketVolume={currentMarketData.marketData.marketVolume}
-                                                pendingTx={pendingTx}
-                                                user={userAddress.toString()}
-                                                signMessage={signMessage}
-                                                addPosition={addPosition}
-                                                removePosition={removePosition}
-                                                increaseVolume={increaseVolume}
-                                                usdAmount={usdAmount}
-                                            /> :
-                                            currentPage === 'expired-market-detail-page' ?
-                                                <ExpiredMarketDetail
-                                                    marketName={currentMarketData.marketData.marketName}
-                                                    marketDescription={currentMarketData.marketData.marketDescription}
-                                                    validUntil={currentMarketData.marketData.validUntil}
-                                                    contractAddress={currentMarketData.marketData.contractAddress}
-                                                    pendingTx={pendingTx}
-                                                    user={userAddress.toString()}
-                                                    signMessage={signMessage}
-                                                    isAdminLogged={isAdminLogged}
-                                                /> :
-                                                <WrongNetwork/> :
-                        <MetamaskMissing/>
-              }
-              <AppFooter />
-          </div>
-      </>
+                                                       markets={portfolioMarkets}
+                                        />
+                                    </Route>
+                                    <Route path='/'>
+                                        <Page404 />
+                                    </Route>
+                                </Switch> :
+                                <MetamaskMissing/>
+                }
+                <AppFooter/>
+            </div>
+        </BrowserRouter>
   )
 }
 

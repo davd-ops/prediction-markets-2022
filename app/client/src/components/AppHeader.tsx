@@ -2,8 +2,8 @@ import '../styles/AppHeader.css';
 import OnboardingButton from "./OnboardingButton";
 import React, {useState} from "react";
 import MetaMaskOnboarding from "@metamask/onboarding";
-import {ethers} from "ethers";
 import {useMoralis} from "react-moralis";
+import {Link} from 'react-router-dom';
 
 
 const ONBOARD_TEXT = 'Install MetaMask!';
@@ -113,15 +113,19 @@ const AppHeader = (props: PropTypes) => {
     }
         return (
             <header className="App-header">
-                <OnboardingButton isDisabled={isDisabled} onClick={onClick} classNamed={metamaskButtonStyle} text={buttonText} walletChanged={walletChanged} />
-                <button className={props.marketsButton} onClick={props.switchPageToMarkets}>Markets</button>
+                <OnboardingButton isDisabled={isDisabled} onClick={onClick} classNamed={metamaskButtonStyle}
+                                  text={buttonText} walletChanged={walletChanged}/>
+                <Link to='/' className={props.marketsButton} onClick={props.switchPageToMarkets}>Markets</Link>
                 {
                     isAdminLogged ? <>
-                        <button className={props.createMarketsButton} onClick={props.switchPageToCreateMarket}>Create market</button>
-                        <button className={props.expiredMarketsButton} onClick={props.switchPageToExpiredMarkets}>Expired markets</button>
+                        <Link to='/create-market' className={props.createMarketsButton}
+                              onClick={props.switchPageToCreateMarket}>Create market</Link>
+                        <Link to='/expired-markets' className={props.expiredMarketsButton}
+                              onClick={props.switchPageToExpiredMarkets}>Expired markets</Link>
                     </> : null
                 }
-                <button className={props.portfolioButton} onClick={props.switchPageToPortfolio}>Portfolio</button>
+                <Link to='/portfolio' className={props.portfolioButton}
+                      onClick={props.switchPageToPortfolio}>Portfolio</Link>
             </header>
         )
 }

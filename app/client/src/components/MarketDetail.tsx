@@ -16,6 +16,7 @@ interface PropTypes {
     contractAddress: string;
     providerFee: number;
     marketVolume: number;
+    resolved: boolean;
     pendingTx: any;
     user: string;
     signMessage: any;
@@ -37,9 +38,6 @@ const MarketDetail = (props: PropTypes) => {
     const signer = provider.getSigner()
     const usdContract = new ethers.Contract(usdContractAddress, usdABI, provider)
     const marketContract = new ethers.Contract(props.contractAddress, predictionMarketABI, provider)
-    const {
-        Moralis
-    } = useMoralis()
 
     React.useEffect(() => {
         pullHoldings()
@@ -107,8 +105,10 @@ const MarketDetail = (props: PropTypes) => {
             <MarketDetailTitle
                 marketName={props.marketName}
                 validUntil={props.validUntil}
+                createdTimestamp={0}
                 liquidity={liquidity}
                 marketVolume={props.marketVolume}
+                resolved={props.resolved}
             />
             <div className="market-main-body-section">
                 <div className="market-switch-buttons">

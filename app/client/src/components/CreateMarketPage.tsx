@@ -2,7 +2,6 @@ import React from 'react';
 import {ethers} from "ethers";
 import {predictionMarketABI, predictionMarketBytecode} from "../otherContractProps/predictionMarketContractProps";
 import {toast} from "react-hot-toast";
-import MetaMaskOnboarding from "@metamask/onboarding";
 import {useMoralis} from "react-moralis";
 
 interface PropTypes {
@@ -13,10 +12,10 @@ interface PropTypes {
 }
 
 const CreateMarketPage = (props: PropTypes) => {
-    const [marketTitle, setMarketTitle] = React.useState('');
-    const [marketDescription, setMarketDescription] = React.useState('');
-    const [providerFee, setProviderFee] = React.useState(0);
-    const [endingDate, setEndingDate] = React.useState(Date());
+    const [marketTitle, setMarketTitle] = React.useState('')
+    const [marketDescription, setMarketDescription] = React.useState('')
+    const [providerFee, setProviderFee] = React.useState(parseInt(''))
+    const [endingDate, setEndingDate] = React.useState(Date())
 
     const usdTokenAddress = '0x5FbDB2315678afecb367f032d93F642f64180aa3';
     const provider = new ethers.providers.Web3Provider((window as any).ethereum)
@@ -89,7 +88,7 @@ const CreateMarketPage = (props: PropTypes) => {
                         id='title'
                         type='text'
                         name='title'
-                        placeholder=' '
+                        placeholder='Will Biden be the president of...'
                         value={marketTitle}
                         onChange={e => setMarketTitle(e.target.value)}
                         required
@@ -104,7 +103,7 @@ const CreateMarketPage = (props: PropTypes) => {
                         id='description'
                         type='text'
                         name='description'
-                        placeholder=' '
+                        placeholder='This market will resolve to YES if...'
                         value={marketDescription}
                         onChange={e => setMarketDescription(e.target.value)}
                         required
@@ -119,7 +118,7 @@ const CreateMarketPage = (props: PropTypes) => {
                         id='provider-fee'
                         type='number'
                         name='provider-fee'
-                        placeholder=' '
+                        placeholder='0'
                         value={providerFee}
                         onChange={e => setProviderFee(parseFloat(e.target.value))}
                         required
@@ -129,13 +128,20 @@ const CreateMarketPage = (props: PropTypes) => {
                 </div>
                 <div className="input-container ic1">
                     <input
-                        className='input'
+                        className='inputDate'
                         id='endingDate'
                         type='date'
                         name='endingDate'
-                        placeholder='Enter the ending date'
+                        placeholder=' '
                         value={endingDate}
-                        onChange={e => setEndingDate(e.target.value)}
+                        onChange={e => {
+                            setEndingDate(e.target.value)
+                            const input = document.getElementsByClassName('inputDate') as HTMLCollectionOf<HTMLElement>
+
+                            if (input.length != 0) {
+                                input[0].style.color = "white"
+                            }
+                        }}
                         required
                         minLength={8}
                     />

@@ -1,7 +1,7 @@
 import React from 'react';
 import MarketDetailTitle from "./MarketDetailTitle";
 import MarketDetailFooter from "./MarketDetailFooter";
-import {BigNumber, ethers} from "ethers";
+import {ethers} from "ethers";
 import {predictionMarketABI} from "../otherContractProps/predictionMarketContractProps";
 import {toast} from "react-hot-toast";
 import {useMoralis} from "react-moralis";
@@ -11,10 +11,12 @@ interface PropTypes {
     marketDescription: string;
     validUntil: number;
     contractAddress: string;
+    resolved: boolean;
     pendingTx: any;
     user: string;
     signMessage: any;
     isAdminLogged: any;
+    createdTimestamp: number;
 }
 
 const ExpiredMarketDetail = (props: PropTypes) => {
@@ -81,11 +83,13 @@ const ExpiredMarketDetail = (props: PropTypes) => {
             <MarketDetailTitle
                 marketName={props.marketName}
                 validUntil={props.validUntil}
+                createdTimestamp={props.createdTimestamp}
                 liquidity={0}
                 marketVolume={0}
+                resolved={props.resolved}
             />
             <div className="market-main-body-section">
-                <h1 id="expired-detail-heading">Choose the market outcome:</h1>
+                <h1 id="expired-detail-heading">Choose the market outcome</h1>
                 <form action="" onSubmit={pickOutcome}>
                     <label className="switch">
                         <input
@@ -96,7 +100,7 @@ const ExpiredMarketDetail = (props: PropTypes) => {
                         />
                         <div className="slider round"/>
                     </label>
-                    <input id='submit-outcome' type="submit" value="Choose outcome"/>
+                    <input id='submit' type="submit" value="Choose outcome"/>
                 </form>
             </div>
             <MarketDetailFooter marketName={props.marketName} marketDescription={props.marketDescription}
