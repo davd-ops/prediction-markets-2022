@@ -11,13 +11,13 @@ import ExpiredMarketDetail from "./components/ExpiredMarketDetail";
 import toast, {Toaster} from "react-hot-toast";
 import {ethers} from "ethers";
 import {usdABI, usdContractAddress} from "./otherContractProps/usdContractProps";
-import MetaMaskOnboarding from "@metamask/onboarding";
 import {useMoralis} from "react-moralis";
 import WrongNetwork from "./components/WrongNetwork";
 import {predictionMarketABI} from "./otherContractProps/predictionMarketContractProps";
-import {BrowserRouter, Link, Route, Switch, useLocation} from "react-router-dom";
+import {BrowserRouter, Route, Switch} from "react-router-dom";
 import MetamaskMissing from "./components/MetamaskMissing";
 import Page404 from "./components/Page404";
+import MetaMaskOnboarding from "@metamask/onboarding";
 
 function App() {
     const {
@@ -56,42 +56,49 @@ function App() {
     })
 
     React.useEffect(() => {
-        setTimeout(async () => {
-            getMarkets()
-            checkAccessRights()
-
-            const provider = new ethers.providers.Web3Provider((window as any).ethereum)
-            const {chainId} = await provider.getNetwork()
-            if (chainId !== 31337) {
-                setCurrentPage('wrong-network-page')
-            }
-        }, 1)
-
         function handleNewAccounts(newAccounts: React.SetStateAction<never[]>) {
-            setUserAddress(newAccounts)
-            setCurrentPage('markets-page')
             logOut()
+            setTimeout(async () => {
+                await getMarkets()
+                await getPortfolio()
+            }, 1000)
+
+            setUserAddress(newAccounts)
         }
         if (MetaMaskOnboarding.isMetaMaskInstalled()) {
             window.ethereum
                 .request({ method: 'eth_requestAccounts' })
                 .then(handleNewAccounts)
             window.ethereum.on('accountsChanged', handleNewAccounts)
+            return () => {
+                window.ethereum.off('accountsChanged', handleNewAccounts)
+            }
         }
     }, [])
 
     React.useEffect(() => {
-        setTimeout(() => {
-            getPortfolio()
+        setTimeout(async () => {
             checkAccessRights()
+            getMarkets()
+        }, 1)
+    }, [])
+
+    React.useEffect(() => {
+        setTimeout(() => {
+            checkAccessRights()
+            getPortfolio()
         }, 1)
     }, [userAddress])
 
     const checkAccessRights = async () => {
+        if (!await verifyChainId()) {
+            return
+        }
+
         const AdminList = Moralis.Object.extend("AdminList")
         const adminList = new Moralis.Query(AdminList)
         const result = await adminList.first()
-        const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' })
+        const accounts = await window.ethereum.request({method: 'eth_requestAccounts'})
 
         switch (window.location.pathname) {
             case '/': {
@@ -127,10 +134,21 @@ function App() {
         }
     }
 
+    const verifyChainId = async () => {
+        const provider = new ethers.providers.Web3Provider((window as any).ethereum)
+        const {chainId} = await provider.getNetwork()
+        if (chainId !== 31337) {
+            setCurrentPage('wrong-network-page')
+            return false
+        } else {
+            return true
+        }
+    }
+
     const getMarkets = async () => {
         const MarketList = Moralis.Object.extend("MarketList")
         const marketList = new Moralis.Query(MarketList)
-        const  marketsParseObjectSubclass = await marketList.find()
+        const marketsParseObjectSubclass = await marketList.find()
 
         setMarkets({
             marketList: JSON.parse(JSON.stringify(marketsParseObjectSubclass))
@@ -234,7 +252,7 @@ function App() {
 
         if (typeof result !== "undefined") {
             if (shareType === 'yes' || shareType === 'no') {
-                valueOfShares = parseFloat(ethers.utils.formatEther(await marketContract.getCurrentValueOfShares(amount, shareType)))
+                valueOfShares = parseFloat(ethers.utils.formatEther(await marketContract.connect(signer).getCurrentValueOfShares(amount, shareType)))
             } else {
                 valueOfShares = result.get('amount')
             }
@@ -368,25 +386,37 @@ function App() {
     }
 
     const switchPageToMarketsPage = async () => {
+        if (!await verifyChainId()) {
+            return
+        }
         getMarkets()
         setCurrentPage('markets-page')
     }
 
-    const switchPageToCreateMarketPage = () => {
+    const switchPageToCreateMarketPage = async () => {
+        if (!await verifyChainId()) {
+            return
+        }
         setCurrentPage('create-market-page')
     }
 
-    const switchPageToExpiredMarketsPage = () => {
+    const switchPageToExpiredMarketsPage = async () => {
+        if (!await verifyChainId()) {
+            return
+        }
         getMarkets()
         setCurrentPage('expired-markets-page')
     }
 
-    const switchPageToPortfolioPage = () => {
+    const switchPageToPortfolioPage = async () => {
+        if (!await verifyChainId()) {
+            return
+        }
         getPortfolio()
         setCurrentPage('portfolio-page')
     }
 
-    const switchPageToExpiredMarketDetailPage = (
+    const switchPageToExpiredMarketDetailPage = async (
         marketName: string,
         marketDescription: string,
         validUntil: number,
@@ -396,6 +426,9 @@ function App() {
         marketVolume: number,
         isResolved: boolean
     ) => {
+        if (!await verifyChainId()) {
+            return
+        }
         setCurrentMarketData({
             marketData: {
                 marketName: marketName,
@@ -408,7 +441,7 @@ function App() {
                 resolved: isResolved
             }
         })
-        setCurrentPage('expired-market-detail-page');
+        setCurrentPage('expired-market-detail-page')
     }
 
     const switchPageToMarketDetailPage =  async (
@@ -421,6 +454,9 @@ function App() {
         marketVolume: number,
         isResolved: boolean
     ) => {
+        if (!await verifyChainId()) {
+            return
+        }
         setCurrentMarketData({
             marketData: {
                 marketName: marketName,
@@ -433,7 +469,7 @@ function App() {
                 resolved: isResolved
             }
         })
-        setCurrentPage('market-detail-page');
+        setCurrentPage('market-detail-page')
     }
 
     const pendingTx = (marketContract: any, user: string) => {
@@ -612,62 +648,66 @@ function App() {
                 <Toaster/>
                 {
                     typeof window.ethereum !== 'undefined' ?
-                        currentPage === 'market-detail-page' ?
-                            <MarketDetail
-                                marketName={currentMarketData.marketData.marketName}
-                                marketDescription={currentMarketData.marketData.marketDescription}
-                                validUntil={currentMarketData.marketData.validUntil}
-                                createdTimestamp={currentMarketData.marketData.createdTimestamp}
-                                contractAddress={currentMarketData.marketData.contractAddress}
-                                providerFee={currentMarketData.marketData.providerFee}
-                                marketVolume={currentMarketData.marketData.marketVolume}
-                                resolved={currentMarketData.marketData.resolved}
-                                pendingTx={pendingTx}
-                                user={userAddress.toString()}
-                                signMessage={signMessage}
-                                addPosition={addPosition}
-                                removePosition={removePosition}
-                                increaseVolume={increaseVolume}
-                                usdAmount={usdAmount}
-                            /> :
-                            currentPage === 'expired-market-detail-page' ?
-                                <ExpiredMarketDetail
+                        currentPage === 'wrong-network-page' ?
+                            <WrongNetwork/> :
+                            currentPage === 'market-detail-page' ?
+                                <MarketDetail
                                     marketName={currentMarketData.marketData.marketName}
                                     marketDescription={currentMarketData.marketData.marketDescription}
                                     validUntil={currentMarketData.marketData.validUntil}
                                     createdTimestamp={currentMarketData.marketData.createdTimestamp}
                                     contractAddress={currentMarketData.marketData.contractAddress}
+                                    providerFee={currentMarketData.marketData.providerFee}
+                                    marketVolume={currentMarketData.marketData.marketVolume}
                                     resolved={currentMarketData.marketData.resolved}
                                     pendingTx={pendingTx}
                                     user={userAddress.toString()}
                                     signMessage={signMessage}
-                                    isAdminLogged={isAdminLogged}
-                                /> : currentPage === 'wrong-network-page' ?
-                                <WrongNetwork/>  :
-                                <Switch>
-                                    <Route exact path='/'>
-                                        <AppBody displayMarketDetail={switchPageToMarketDetailPage} markets={markets}/>
-                                    </Route>
-                                    <Route exact path='/create-market'>
-                                        <CreateMarketPage pendingTx={pendingTx} signMessage={signMessage} logOut={logOut}
-                                                          isAdminLogged={isAdminLogged}/>
-                                    </Route>
-                                    <Route exact path='/expired-markets'>
-                                        <ExpiredMarketsPage displayMarketDetail={switchPageToExpiredMarketDetailPage}
-                                                            markets={markets}/>
-                                    </Route>
-                                    <Route exact path='/portfolio'>
-                                        <PortfolioPage userAddress={userAddress.toString()}
-                                                       displayMarketDetail={switchPageToMarketDetailPage}
-                                                       withdrawLiquidity={withdrawLiquidity}
-                                                       claimUsd={claimUsd}
-                                                       markets={portfolioMarkets}
-                                        />
-                                    </Route>
-                                    <Route path='/'>
-                                        <Page404 />
-                                    </Route>
-                                </Switch> :
+                                    addPosition={addPosition}
+                                    removePosition={removePosition}
+                                    increaseVolume={increaseVolume}
+                                    usdAmount={usdAmount}
+                                /> :
+                                currentPage === 'expired-market-detail-page' ?
+                                    <ExpiredMarketDetail
+                                        marketName={currentMarketData.marketData.marketName}
+                                        marketDescription={currentMarketData.marketData.marketDescription}
+                                        validUntil={currentMarketData.marketData.validUntil}
+                                        createdTimestamp={currentMarketData.marketData.createdTimestamp}
+                                        contractAddress={currentMarketData.marketData.contractAddress}
+                                        resolved={currentMarketData.marketData.resolved}
+                                        pendingTx={pendingTx}
+                                        user={userAddress.toString()}
+                                        signMessage={signMessage}
+                                        isAdminLogged={isAdminLogged}
+                                    /> :
+                                    <Switch>
+                                        <Route exact path='/'>
+                                            <AppBody displayMarketDetail={switchPageToMarketDetailPage}
+                                                     markets={markets}/>
+                                        </Route>
+                                        <Route exact path='/create-market'>
+                                            <CreateMarketPage pendingTx={pendingTx} signMessage={signMessage}
+                                                              logOut={logOut}
+                                                              isAdminLogged={isAdminLogged}/>
+                                        </Route>
+                                        <Route exact path='/expired-markets'>
+                                            <ExpiredMarketsPage
+                                                displayMarketDetail={switchPageToExpiredMarketDetailPage}
+                                                markets={markets}/>
+                                        </Route>
+                                        <Route exact path='/portfolio'>
+                                            <PortfolioPage userAddress={userAddress.toString()}
+                                                           displayMarketDetail={switchPageToMarketDetailPage}
+                                                           withdrawLiquidity={withdrawLiquidity}
+                                                           claimUsd={claimUsd}
+                                                           markets={portfolioMarkets}
+                                            />
+                                        </Route>
+                                        <Route path='/'>
+                                            <Page404 />
+                                        </Route>
+                                    </Switch> :
                                 <MetamaskMissing/>
                 }
                 <AppFooter/>

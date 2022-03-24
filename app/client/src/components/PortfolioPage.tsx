@@ -2,6 +2,7 @@ import React, {useState} from 'react';
 import MarketInPortfolioComp from "./MarketInPortfolioComp";
 import {ethers} from "ethers";
 import {useMoralis} from "react-moralis";
+import {toast} from "react-hot-toast";
 
 interface PropTypes {
     userAddress: string;
@@ -20,35 +21,47 @@ const PortfolioPage = (props: PropTypes) => {
         Moralis
     } = useMoralis()
 
+    window.ethereum.on('accountsChanged', async (accounts: any) => {
+        setMarkets(props.markets)
+    })
+
     React.useEffect(() => {
         setTimeout(async () => {
             if (props.markets.marketList.length >= 1) {
+                console.log('TED')
                 setMarkets(props.markets)
             } else {
-                const PositionMapping = Moralis.Object.extend("PositionMapping")
-                const positionMapping = new Moralis.Query(PositionMapping)
-                const addressResults = await positionMapping.find()
-                let userPositionsArray = []
-                const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
-
-                for (let i = 0; i < addressResults.length; i++) {
-                    const object = addressResults[i]
-                    if (object.get('userAddress').toString().toLowerCase() == accounts[0].toString().toLowerCase()) {
-                        userPositionsArray.push(object.get('marketAddress'))
-                    }
-                }
-
-                const MarketList = Moralis.Object.extend("MarketList")
-                const query = new Moralis.Query(MarketList)
-                query.containedIn("contractAddress", userPositionsArray)
-
-                const marketResults = await query.find()
-                setMarkets({
-                    marketList: JSON.parse(JSON.stringify(marketResults))
-                })
             }
         }, 1)
-    }, [])
+    }, [props.markets])
+
+    const pullPortfolio = async () => {
+        try {
+            const PositionMapping = Moralis.Object.extend("PositionMapping")
+            const positionMapping = new Moralis.Query(PositionMapping)
+            const addressResults = await positionMapping.find()
+            let userPositionsArray = []
+            const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+
+            for (let i = 0; i < addressResults.length; i++) {
+                const object = addressResults[i]
+                if (object.get('userAddress').toString().toLowerCase() == accounts[0].toString().toLowerCase()) {
+                    userPositionsArray.push(object.get('marketAddress'))
+                }
+            }
+
+            const MarketList = Moralis.Object.extend("MarketList")
+            const query = new Moralis.Query(MarketList)
+            query.containedIn("contractAddress", userPositionsArray)
+
+            const marketResults = await query.find()
+            setMarkets({
+                marketList: JSON.parse(JSON.stringify(marketResults))
+            })
+        } catch (e) {
+            toast.error('Something went wrong, try again later')
+        }
+    }
 
     const returnMarketDetail = (market: { objectId: string; marketName: string; marketDescription: string; validUntil: number; createdTimestamp: number; contractAddress: string; providerFee: number; marketVolume: number; isResolved: boolean; }) => {
         isThereLiveMarket = true

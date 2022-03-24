@@ -29,6 +29,7 @@ const MarketPortfolioComp = (props: PropTypes) => {
     const [isMarketLive, setIsMarketLive] = React.useState(false)
 
     const provider = new ethers.providers.Web3Provider((window as any).ethereum)
+    const signer = provider.getSigner()
     const marketContract = new ethers.Contract(props.contractAddress, predictionMarketABI, provider)
 
     const {
@@ -53,42 +54,19 @@ const MarketPortfolioComp = (props: PropTypes) => {
     })
 
     const pullHoldings = async () => {
-        marketContract.checkIfTheMarketIsClosed().then((r: any) => {
-        if (r) {
-            console.log('Market is closed')
-            marketContract.winningSide().then((r: any) => {
-                if (r === 'yes') {
-                    console.log('contract is resolved to yes')
-                    marketContract.yesSharesPerAddress(props.userAddress).then((r: any) => {
-                        console.log('yes ' + ethers.utils.formatEther(r))
-
-                        //setYesShares(Math.floor((Number(ethers.utils.formatEther(r)) + Number.EPSILON) * 100) / 100)
-                        //setYesCurrentValue(Math.floor((Number(ethers.utils.formatEther(r)) + Number.EPSILON) * 100) / 100)
-                    })
-                    marketContract.noSharesPerAddress(props.userAddress).then((r: any) => {
-                        console.log('no ' + ethers.utils.formatEther(r))
-
-                        //setNoShares(Math.floor((Number(ethers.utils.formatEther(r)) + Number.EPSILON) * 100) / 100)
-                        //setNoCurrentValue(Math.floor((Number(ethers.utils.formatEther(r)) + Number.EPSILON) * 100) / 100)
-                    })
-            }
-        })
-        }})
-
-
-        marketContract.getLiquidityProviders().then((r: any) => {
+        marketContract.connect(signer).getLiquidityProviders().then((r: any) => {
             for (let i = 0; i < r.length; i++) {
                 const provider = r[i]
                 if (provider.lpAddress.toLowerCase() === props.userAddress.toLowerCase()) setInitialLiquidity(Math.floor((Number(ethers.utils.formatEther(provider.providedLiquidity)) + Number.EPSILON) * 100) / 100)
             }
         })
-        marketContract.getCurrentLPValue().then((r: any) => {
+        marketContract.connect(signer).getCurrentLPValue().then((r: any) => {
             if (Number(ethers.utils.formatEther(r)) !== 0) setCurrentLiq(Math.floor((Number(ethers.utils.formatEther(r)) + Number.EPSILON) * 100) / 100)
         })
-        marketContract.checkIfTheMarketIsClosed().then((r: any) => {
+        marketContract.connect(signer).checkIfTheMarketIsClosed().then((r: any) => {
             if (r) {
                 console.log('Market is closed')
-                marketContract.winningSide().then((r: any) => {
+                marketContract.connect(signer).winningSide().then((r: any) => {
                     if (r === 'yes') {
                         console.log('contract is resolved to yes')
                         marketContract.yesSharesPerAddress(props.userAddress).then((r: any) => {
@@ -97,7 +75,7 @@ const MarketPortfolioComp = (props: PropTypes) => {
                         })
                     } else if (r == 'no') {
                         console.log('contract is resolved to no')
-                        marketContract.noSharesPerAddress(props.userAddress).then((r: any) => {
+                        marketContract.connect(signer).noSharesPerAddress(props.userAddress).then((r: any) => {
                             setNoShares(Math.floor((Number(ethers.utils.formatEther(r)) + Number.EPSILON) * 100) / 100)
                             setNoCurrentValue(Math.floor((Number(ethers.utils.formatEther(r)) + Number.EPSILON) * 100) / 100)
                         })
@@ -109,18 +87,17 @@ const MarketPortfolioComp = (props: PropTypes) => {
                 })
             } else {
                 console.log('Market is not closed yet')
-                marketContract.yesSharesPerAddress(props.userAddress).then((r: any) => {
+                marketContract.connect(signer).yesSharesPerAddress(props.userAddress).then((r: any) => {
                     setYesShares(Math.floor((Number(ethers.utils.formatEther(r)) + Number.EPSILON) * 100) / 100)
-                    marketContract.getCurrentValueOfShares(BigNumber.from(r), "yes").then((r: any) => {
+                    console.log(Number(ethers.utils.formatEther(r)))
+                    marketContract.connect(signer).getCurrentValueOfShares(BigNumber.from(r), "yes").then((r: any) => {
                         if (Number(ethers.utils.formatEther(r)) !== 0) setYesCurrentValue(Math.floor((Number(ethers.utils.formatEther(r)) + Number.EPSILON) * 100) / 100)
-                        //console.log(ethers.utils.formatEther(r) + ' yessharescurr')
                     })
                 })
-                marketContract.noSharesPerAddress(props.userAddress).then((r: any) => {
+                marketContract.connect(signer).noSharesPerAddress(props.userAddress).then((r: any) => {
                     setNoShares(Math.floor((Number(ethers.utils.formatEther(r)) + Number.EPSILON) * 100) / 100)
-                    marketContract.getCurrentValueOfShares(BigNumber.from(r), "no").then((r: any) => {
+                    marketContract.connect(signer).getCurrentValueOfShares(BigNumber.from(r), "no").then((r: any) => {
                         if (Number(ethers.utils.formatEther(r)) !== 0) setNoCurrentValue(Math.floor((Number(ethers.utils.formatEther(r)) + Number.EPSILON) * 100) / 100)
-                        //console.log(ethers.utils.formatEther(r) + ' nosharescurr')
                     })
                 })
             }

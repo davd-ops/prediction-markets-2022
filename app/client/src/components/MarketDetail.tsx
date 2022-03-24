@@ -55,7 +55,7 @@ const MarketDetail = (props: PropTypes) => {
         })
 
         marketContract.on("LiquidityWithdrawn", async (amount, providerAddress) => {
-            setLiquidity(Number(ethers.utils.formatEther(await marketContract.getCurrentLiquidity())))
+            setLiquidity(Number(ethers.utils.formatEther(await marketContract.connect(signer).getCurrentLiquidity())))
         })
 
         marketContract.on("SharesBought", async (amount, sender) => {
@@ -78,7 +78,7 @@ const MarketDetail = (props: PropTypes) => {
             const ratioVariables = await marketContract.calculateMarketRatio()
             calculatePercentageOfMarketShares(ratioVariables[1], ratioVariables[0])
             setApprovedAmount(Number(ethers.utils.formatEther(await usdContract.allowance(accounts[0], props.contractAddress))))
-            setLiquidity(Number(ethers.utils.formatEther(await marketContract.getCurrentLiquidity())))
+            setLiquidity(Number(ethers.utils.formatEther(await marketContract.connect(signer).getCurrentLiquidity())))
         })
 
     const pullHoldings = async () => {

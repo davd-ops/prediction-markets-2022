@@ -40,8 +40,9 @@ const ExpiredMarketsPage = (props: PropTypes) => {
                         resolved: boolean;
                     }) => (
                         Number(market.validUntil) < new Date(Date.now()).getTime() / 1000 ?
-                                displayMarket(market):
-                            null
+                            !market.isResolved ?
+                                displayMarket(market) :
+                                null : null
                     )) : null
                 }
                 <p className='subtitle'>

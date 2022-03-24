@@ -305,6 +305,14 @@ input:checked + .slider:after
   margin-bottom: 35px;
 }
 
+#resolved-detail-heading {
+  color: #808097;
+  font-size: 36px;
+  font-weight: 600;
+  margin-top: 85px;
+  margin-bottom: 35px;
+}
+
 #submit-outcome {
   margin-top: 35px;
   width: 70%;

@@ -20,7 +20,8 @@ interface PropTypes {
 }
 
 const ExpiredMarketDetail = (props: PropTypes) => {
-    const [pickedOutcome, setPickedOutcome] = React.useState('yes');
+    const [pickedOutcome, setPickedOutcome] = React.useState('yes')
+    const [resolved, setResolved] = React.useState(props.resolved)
 
     const provider = new ethers.providers.Web3Provider((window as any).ethereum)
     const signer = provider.getSigner()
@@ -29,6 +30,12 @@ const ExpiredMarketDetail = (props: PropTypes) => {
     const {
         Moralis,
     } = useMoralis()
+
+    provider.once("block", () => {
+        marketContract.on('WinningSideChosen', async () => {
+            setResolved(true)
+        })
+    })
 
     const pickOutcome = async (event: { preventDefault: () => void; }) => {
         event.preventDefault()
@@ -86,22 +93,25 @@ const ExpiredMarketDetail = (props: PropTypes) => {
                 createdTimestamp={props.createdTimestamp}
                 liquidity={0}
                 marketVolume={0}
-                resolved={props.resolved}
+                resolved={resolved}
             />
             <div className="market-main-body-section">
-                <h1 id="expired-detail-heading">Choose the market outcome</h1>
-                <form action="" onSubmit={pickOutcome}>
-                    <label className="switch">
-                        <input
-                            type="checkbox"
-                            id="togBtn"
-                            value={pickedOutcome}
-                            onChange={() => pickedOutcome == 'yes' ? setPickedOutcome('no') : setPickedOutcome('yes')}
-                        />
-                        <div className="slider round"/>
-                    </label>
-                    <input id='submit' type="submit" value="Choose outcome"/>
-                </form>
+                <h1 id={!resolved ? 'expired-detail-heading' : 'resolved-detail-heading'}>{!resolved ? 'Choose the market outcome' : 'Market already resolved'}</h1>
+                {
+                    !resolved ?
+                        <form action="" onSubmit={pickOutcome}>
+                            <label className="switch">
+                                <input
+                                    type="checkbox"
+                                    id="togBtn"
+                                    value={pickedOutcome}
+                                    onChange={() => pickedOutcome == 'yes' ? setPickedOutcome('no') : setPickedOutcome('yes')}
+                                />
+                                <div className="slider round"/>
+                            </label>
+                            <input id='submit' type="submit" value="Choose outcome"/>
+                        </form> : null
+                }
             </div>
             <MarketDetailFooter marketName={props.marketName} marketDescription={props.marketDescription}
                                 validUntil={props.validUntil} contractAddress={props.contractAddress}/>

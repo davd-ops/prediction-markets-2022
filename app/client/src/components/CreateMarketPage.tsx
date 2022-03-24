@@ -14,7 +14,7 @@ interface PropTypes {
 const CreateMarketPage = (props: PropTypes) => {
     const [marketTitle, setMarketTitle] = React.useState('')
     const [marketDescription, setMarketDescription] = React.useState('')
-    const [providerFee, setProviderFee] = React.useState(parseInt(''))
+    const [providerFee, setProviderFee] = React.useState(0)
     const [endingDate, setEndingDate] = React.useState(Date())
 
     const usdTokenAddress = '0x5FbDB2315678afecb367f032d93F642f64180aa3';
