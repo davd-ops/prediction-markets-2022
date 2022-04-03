@@ -104,7 +104,7 @@ const AppHeader = (props: PropTypes) => {
 
     const walletChanged = async () => {
         if (typeof adminAddress != "undefined"){
-            adminAddress === accounts[0] ? setIsAdminLogged(true) : setIsAdminLogged(false)
+            String(adminAddress).toLowerCase() === String(accounts[0]).toLowerCase() ? setIsAdminLogged(true) : setIsAdminLogged(false)
         }
         if (typeof accounts[0] != "undefined"){
             props.updateBalance()

@@ -1,4 +1,4 @@
-export const usdContractAddress = '0x5FbDB2315678afecb367f032d93F642f64180aa3'
+export const usdContractAddress = '0xFedD26F7527886d33552E2Df9f9a23B602DD2EF1'
 
 export const usdABI = [
     {

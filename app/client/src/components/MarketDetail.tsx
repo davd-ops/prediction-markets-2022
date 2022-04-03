@@ -59,14 +59,16 @@ const MarketDetail = (props: PropTypes) => {
         })
 
         marketContract.on("SharesBought", async (amount, sender) => {
-            const ratioVariables = await marketContract.calculateMarketRatio()
-            calculatePercentageOfMarketShares(ratioVariables[1], ratioVariables[0])
+            marketContract.calculateMarketRatio().then((r: any) => {
+                calculatePercentageOfMarketShares(r[1], r[0])
+            })
             pullHoldings()
         })
 
         marketContract.on("SharesSold", async (amount, sender) => {
-            const ratioVariables = await marketContract.calculateMarketRatio()
-            calculatePercentageOfMarketShares(ratioVariables[1], ratioVariables[0])
+            marketContract.calculateMarketRatio().then((r: any) => {
+                calculatePercentageOfMarketShares(r[1], r[0])
+            })
             pullHoldings()
         })
 
@@ -75,10 +77,15 @@ const MarketDetail = (props: PropTypes) => {
     window.ethereum
         .request({method: 'eth_requestAccounts'})
         .then(async (accounts: any) => {
-            const ratioVariables = await marketContract.calculateMarketRatio()
-            calculatePercentageOfMarketShares(ratioVariables[1], ratioVariables[0])
-            setApprovedAmount(Number(ethers.utils.formatEther(await usdContract.allowance(accounts[0], props.contractAddress))))
-            setLiquidity(Number(ethers.utils.formatEther(await marketContract.connect(signer).getCurrentLiquidity())))
+            marketContract.calculateMarketRatio().then((r: any) => {
+                calculatePercentageOfMarketShares(r[1], r[0])
+            })
+            usdContract.allowance(accounts[0], props.contractAddress).then((r: any) => {
+                setApprovedAmount(Number(ethers.utils.formatEther(r)))
+            })
+            marketContract.connect(signer).getCurrentLiquidity().then((r: any) => {
+                setLiquidity(Number(ethers.utils.formatEther(r)))
+            })
         })
 
     const pullHoldings = async () => {

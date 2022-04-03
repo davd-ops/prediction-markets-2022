@@ -4,31 +4,90 @@ import {predictionMarketABI} from "../otherContractProps/predictionMarketContrac
 import {useMoralis} from "react-moralis";
 
 interface PropTypes {
-    marketName: string;
-    marketDescription: string;
-    validUntil: number;
-    createdTimestamp: number;
-    contractAddress: string;
-    providerFee: number;
-    marketVolume: number;
-    displayMarketDetail: any;
     userAddress: string;
-    withdrawLiquidity: any;
-    claimUsd: any;
-    pullPortfolio: any;
+    usdAmount: number;
+    markets: any;
+    updateMarkets: any;
 }
 
-const MarketPortfolioComp = (props: PropTypes) => {
-    const [yesShares, setYesShares] = React.useState(0)
-    const [noShares, setNoShares] = React.useState(0)
-    const [initialLiquidity, setInitialLiquidity] = React.useState(0)
-    const [currentLiq, setCurrentLiq] = React.useState(0)
-    const [yesInitialValue, setYesInitialValue] = React.useState(0)
-    const [noInitialValue, setNoInitialValue] = React.useState(0)
-    const [yesCurrentValue, setYesCurrentValue] = React.useState(0)
-    const [noCurrentValue, setNoCurrentValue] = React.useState(0)
-    const [isMarketLive, setIsMarketLive] = React.useState(false)
+const PortfolioOverview = (props: PropTypes) => {
+    const [openPositions, setOpenPositions] = React.useState(0)
+    const provider = new ethers.providers.Web3Provider((window as any).ethereum)
+    const signer = provider.getSigner()
 
+    React.useEffect(() => {
+        setTimeout(async () => {
+            setOpenPositions(0)
+            await pullOpenPositions()
+        }, 1)
+    }, [props.markets])
+
+    const pullOpenPositions = async () => {
+        let tmp = 0
+        if (props.markets.marketList.length > 0) {
+            if (openPositions == 0) {
+                for (const r of props.markets.marketList) {
+                        tmp += await handleMarketData(r)
+                    }
+            }
+        }
+        setOpenPositions(tmp)
+    }
+
+    const handleMarketData = async (marketData: { contractAddress: string; }) => {
+        const marketContract = new ethers.Contract(marketData.contractAddress, predictionMarketABI, provider)
+        let tmp = 0
+
+        await marketContract.connect(signer).getCurrentLPValue().then((r: any) => {
+            if (Number(ethers.utils.formatEther(r)) !== 0) tmp = (Math.floor(((tmp + Number(ethers.utils.formatEther(r)))+ Number.EPSILON) * 100) / 100)
+        })
+        await marketContract.connect(signer).checkIfTheMarketIsClosed().then(async (r: any) => {
+            if (r) {
+                console.log('Market is closed')
+                await marketContract.connect(signer).winningSide().then(async (r: any) => {
+                    if (r === 'yes') {
+                        console.log('contract is resolved to yes')
+                        await marketContract.yesSharesPerAddress(props.userAddress).then((r: any) => {
+                            tmp = (Math.floor(((tmp + Number(ethers.utils.formatEther(r)))+ Number.EPSILON) * 100) / 100)
+                        })
+                    } else if (r == 'no') {
+                        console.log('contract is resolved to no')
+                        await marketContract.connect(signer).noSharesPerAddress(props.userAddress).then((r: any) => {
+                            tmp = (Math.floor(((tmp + Number(ethers.utils.formatEther(r)))+ Number.EPSILON) * 100) / 100)
+                        })
+                    }
+                })
+            } else {
+                console.log('Market is not closed yet')
+                await marketContract.connect(signer).yesSharesPerAddress(props.userAddress).then(async (r: any) => {
+                    if (Number(ethers.utils.formatEther(r)) > 0) {
+                        await marketContract.connect(signer).getCurrentValueOfShares(BigNumber.from(r), "yes").then((r: any) => {
+                            tmp = (Math.floor(((tmp + Number(ethers.utils.formatEther(r)))+ Number.EPSILON) * 100) / 100)
+                        })
+                    }
+                })
+                await marketContract.connect(signer).noSharesPerAddress(props.userAddress).then(async (r: any) => {
+                    if (Number(ethers.utils.formatEther(r)) > 0) {
+                        await marketContract.connect(signer).getCurrentValueOfShares(BigNumber.from(r), "no").then((r: any) => {
+                            tmp = (Math.floor(((tmp + Number(ethers.utils.formatEther(r)))+ Number.EPSILON) * 100) / 100)
+                        })
+                    }
+                })
+            }
+        })
+        return tmp
+    }
+
+    return (
+        <div className="PortfolioOverview">
+            <p className="portfolio-props"><span className='portfolio-less-visible'>Portfolio value</span><br/>${openPositions+props.usdAmount}</p>
+            <p className="portfolio-props"><span className='portfolio-less-visible'>Open positions</span><br/>${openPositions}</p>
+            <p className="portfolio-props"><span className='portfolio-less-visible'>USD</span><br/>${props.usdAmount}</p>
+        </div>
+    )
+}
+
+    /*
     const provider = new ethers.providers.Web3Provider((window as any).ethereum)
     const signer = provider.getSigner()
     const marketContract = new ethers.Contract(props.contractAddress, predictionMarketABI, provider)
@@ -41,20 +100,6 @@ const MarketPortfolioComp = (props: PropTypes) => {
         pullHoldings()
         if (Number(props.validUntil) > new Date(Date.now()).getTime() / 1000) setIsMarketLive(true)
     }, [])
-
-    provider.once("block", () => {
-        marketContract.on("LiquidityWithdrawn", async (amount, providerAddress) => {
-            setInitialLiquidity(0)
-            props.pullPortfolio()
-        })
-        marketContract.on('UsdClaimed', async (amount: ethers.BigNumberish, sender: string) => {
-            if (props.userAddress.toString().toLowerCase() === sender.toLowerCase()) {
-                setYesShares(0)
-                setNoShares(0)
-                props.pullPortfolio()
-            }
-        })
-    })
 
     const pullHoldings = async () => {
         marketContract.connect(signer).getLiquidityProviders().then((r: any) => {
@@ -92,6 +137,7 @@ const MarketPortfolioComp = (props: PropTypes) => {
                 console.log('Market is not closed yet')
                 marketContract.connect(signer).yesSharesPerAddress(props.userAddress).then((r: any) => {
                     setYesShares(Math.floor((Number(ethers.utils.formatEther(r)) + Number.EPSILON) * 100) / 100)
+                    console.log(Number(ethers.utils.formatEther(r)))
                     marketContract.connect(signer).getCurrentValueOfShares(BigNumber.from(r), "yes").then((r: any) => {
                         if (Number(ethers.utils.formatEther(r)) !== 0) setYesCurrentValue(Math.floor((Number(ethers.utils.formatEther(r)) + Number.EPSILON) * 100) / 100)
                     })
@@ -119,6 +165,8 @@ const MarketPortfolioComp = (props: PropTypes) => {
             }
         }
     }
+
+
 
     const returnLiquidityComponent = () => {
         return (
@@ -267,5 +315,8 @@ const MarketPortfolioComp = (props: PropTypes) => {
         return null
     }
 }
+*/
 
-export default MarketPortfolioComp;
+
+
+export default PortfolioOverview

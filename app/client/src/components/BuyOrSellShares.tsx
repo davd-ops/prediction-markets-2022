@@ -114,7 +114,6 @@ const BuyShares = (props: PropTypes) => {
     const buyShares = async () => {
 
         const userAddress = await props.signMessage()
-        console.log(userAddress)
 
         try {
             if (typeof userAddress !== "undefined") {
@@ -153,7 +152,6 @@ const BuyShares = (props: PropTypes) => {
 
                 await props.removePosition(userAddress, amount, option, props.contractAddress)
                 props.marketContract.connect(props.signer).getCurrentValueOfShares(BigNumber.from(ethers.utils.parseEther(amount.toString())), option).then((r: any) => {
-                    console.log('yes ' + Number(ethers.utils.formatEther(r)))
                     props.increaseVolume(Number(ethers.utils.formatEther(r)), props.contractAddress)
                 })
 

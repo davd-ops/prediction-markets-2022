@@ -3,9 +3,11 @@ import MarketInPortfolioComp from "./MarketInPortfolioComp";
 import {ethers} from "ethers";
 import {useMoralis} from "react-moralis";
 import {toast} from "react-hot-toast";
+import PortfolioOverview from "./PortfolioOverview";
 
 interface PropTypes {
     userAddress: string;
+    usdAmount: number;
     displayMarketDetail: any;
     withdrawLiquidity: any;
     claimUsd: any;
@@ -13,7 +15,6 @@ interface PropTypes {
 }
 
 const PortfolioPage = (props: PropTypes) => {
-    let isThereLiveMarket, isThereExpiredMarket = false
     const [markets, setMarkets] = React.useState({
         marketList: []
     } as any)
@@ -22,15 +23,13 @@ const PortfolioPage = (props: PropTypes) => {
     } = useMoralis()
 
     window.ethereum.on('accountsChanged', async (accounts: any) => {
-        setMarkets(props.markets)
+        updateMarkets()
     })
 
     React.useEffect(() => {
         setTimeout(async () => {
             if (props.markets.marketList.length >= 1) {
-                console.log('TED')
                 setMarkets(props.markets)
-            } else {
             }
         }, 1)
     }, [props.markets])
@@ -63,8 +62,17 @@ const PortfolioPage = (props: PropTypes) => {
         }
     }
 
+    const updateMarkets = () => {
+        setMarkets(props.markets)
+    }
+
     const returnMarketDetail = (market: { objectId: string; marketName: string; marketDescription: string; validUntil: number; createdTimestamp: number; contractAddress: string; providerFee: number; marketVolume: number; isResolved: boolean; }) => {
-        isThereLiveMarket = true
+        const element1 = document.getElementById('no-markets-heading')
+        if(element1) element1.setAttribute("style", "display:none")
+        const element2 = document.getElementById('no-markets-subtitle')
+        if(element2) element2.setAttribute("style", "display:none")
+        const element3 = document.getElementById('live-markets-heading')
+        if(element3) element3.setAttribute("style", "display:block")
 
         return <MarketInPortfolioComp key={market.objectId} marketName={market.marketName}
                                       marketDescription={market.marketDescription}
@@ -72,11 +80,16 @@ const PortfolioPage = (props: PropTypes) => {
                                       contractAddress={market.contractAddress} providerFee={market.providerFee}
                                       marketVolume={market.marketVolume} displayMarketDetail={props.displayMarketDetail}
                                       userAddress={props.userAddress} withdrawLiquidity={props.withdrawLiquidity}
-                                      claimUsd={props.claimUsd}/>
+                                      claimUsd={props.claimUsd} pullPortfolio={pullPortfolio} />
     }
 
     const returnExpiredMarketDetail = (market: { objectId: any; marketName: string; marketDescription: string; validUntil: number; createdTimestamp: number; contractAddress: string; providerFee: number; marketVolume: number; isResolved: boolean; }) => {
-        isThereExpiredMarket = true
+        const element1 = document.getElementById('no-markets-heading')
+        if(element1) element1.setAttribute("style", "display:none")
+        const element2 = document.getElementById('no-markets-subtitle')
+        if(element2) element2.setAttribute("style", "display:none")
+        const element3 = document.getElementById('expired-markets-heading')
+        if(element3) element3.setAttribute("style", "display:block")
 
         return <MarketInPortfolioComp key={market.objectId} marketName={market.marketName}
                                       marketDescription={market.marketDescription}
@@ -84,12 +97,15 @@ const PortfolioPage = (props: PropTypes) => {
                                       contractAddress={market.contractAddress} providerFee={market.providerFee}
                                       marketVolume={market.marketVolume} displayMarketDetail={props.displayMarketDetail}
                                       userAddress={props.userAddress} withdrawLiquidity={props.withdrawLiquidity}
-                                      claimUsd={props.claimUsd}/>
+                                      claimUsd={props.claimUsd} pullPortfolio={pullPortfolio} />
     }
 
     return (
         <div className="App-body">
-            <h1>Live markets</h1>
+            <PortfolioOverview userAddress={props.userAddress} usdAmount={props.usdAmount} markets={markets} updateMarkets={updateMarkets} />
+            <h1 id='no-markets-heading'>You don't have any shares in your portfolio!</h1>
+            <p className={'subtitle'} id='no-markets-subtitle'>Buy some on the markets page!</p>
+            <h1 id='live-markets-heading' style={{display: 'none'}}>Live markets</h1>
             <div className='portfolioMarketsContainer'>
                 {
                     markets.marketList.length > 0 ? markets.marketList.map((market: { objectId: any; marketName: string; marketDescription: string; validUntil: number; createdTimestamp: number; contractAddress: string; providerFee: number; marketVolume: number; isResolved: boolean; }) => (
@@ -97,13 +113,8 @@ const PortfolioPage = (props: PropTypes) => {
                             returnMarketDetail(market) : null
                     )) : null
                 }
-                <p className='subtitle'>
-                {
-                    !isThereLiveMarket ? "You don't have any live positions" : null
-                }
-                </p>
             </div>
-            <h1>Expired markets</h1>
+            <h1 id='expired-markets-heading' style={{display: 'none'}}>Expired markets</h1>
             <div className='portfolioMarketsContainer'>
                 {
                     markets.marketList.length > 0 ? markets.marketList.map((market: { objectId: any; marketName: string; marketDescription: string; validUntil: number; createdTimestamp: number; contractAddress: string; providerFee: number; marketVolume: number; isResolved: boolean; }) => (
@@ -112,14 +123,9 @@ const PortfolioPage = (props: PropTypes) => {
                             : null
                     )) : null
                 }
-                <p className='subtitle'>
-                {
-                    !isThereExpiredMarket ? "You don't have any expired positions" : null
-                }
-                </p>
             </div>
         </div>
     );
 };
 
-export default PortfolioPage;
+export default PortfolioPage

@@ -25,8 +25,11 @@ function App() {
         logout
     } = useMoralis()
 
-    const provider = new ethers.providers.Web3Provider((window as any).ethereum)
-    const signer = provider.getSigner()
+    let provider: any, signer: any
+    if (typeof window.ethereum !== "undefined") {
+        provider = new ethers.providers.Web3Provider((window as any).ethereum)
+        signer = provider.getSigner()
+    }
     const [usdAmount, setUsdAmount] = React.useState(0)
     const [userAddress, setUserAddress] = React.useState([])
     const [currentPage, setCurrentPage] = React.useState('markets-page')
@@ -42,11 +45,10 @@ function App() {
 
     window.addEventListener("load", function () {
         if (window.ethereum) {
-            // detect Network account change
             window.ethereum.on('chainChanged', async () => {
                 const provider = new ethers.providers.Web3Provider((window as any).ethereum)
                 const {chainId} = await provider.getNetwork()
-                if (chainId !== 31337) {
+                if (chainId !== 4) {
                     setCurrentPage('wrong-network-page')
                 } else {
                     window.location.reload()
@@ -74,13 +76,6 @@ function App() {
                 window.ethereum.off('accountsChanged', handleNewAccounts)
             }
         }
-    }, [])
-
-    React.useEffect(() => {
-        setTimeout(async () => {
-            checkAccessRights()
-            getMarkets()
-        }, 1)
     }, [])
 
     React.useEffect(() => {
@@ -137,7 +132,7 @@ function App() {
     const verifyChainId = async () => {
         const provider = new ethers.providers.Web3Provider((window as any).ethereum)
         const {chainId} = await provider.getNetwork()
-        if (chainId !== 31337) {
+        if (chainId !== 4) {
             setCurrentPage('wrong-network-page')
             return false
         } else {
@@ -373,7 +368,7 @@ function App() {
 
                 for (let i = 0; i < results.length; i++) {
                     const object = results[i]
-                    if (object.get('address') == userAddress) isAdminLogged = true
+                    if (String(object.get('address')).toLowerCase() == String(userAddress).toLowerCase()) isAdminLogged = true
                 }
             } else {
                 toast.error('You denied the message, please try again')
@@ -698,6 +693,7 @@ function App() {
                                         </Route>
                                         <Route exact path='/portfolio'>
                                             <PortfolioPage userAddress={userAddress.toString()}
+                                                           usdAmount={usdAmount}
                                                            displayMarketDetail={switchPageToMarketDetailPage}
                                                            withdrawLiquidity={withdrawLiquidity}
                                                            claimUsd={claimUsd}

@@ -3,6 +3,7 @@ import {ethers} from "ethers";
 import {predictionMarketABI, predictionMarketBytecode} from "../otherContractProps/predictionMarketContractProps";
 import {toast} from "react-hot-toast";
 import {useMoralis} from "react-moralis";
+import {usdContractAddress} from "../otherContractProps/usdContractProps";
 
 interface PropTypes {
     pendingTx: any;
@@ -17,7 +18,6 @@ const CreateMarketPage = (props: PropTypes) => {
     const [providerFee, setProviderFee] = React.useState(0)
     const [endingDate, setEndingDate] = React.useState(Date())
 
-    const usdTokenAddress = '0x5FbDB2315678afecb367f032d93F642f64180aa3';
     const provider = new ethers.providers.Web3Provider((window as any).ethereum)
     const signer = provider.getSigner()
 
@@ -32,8 +32,10 @@ const CreateMarketPage = (props: PropTypes) => {
 
         let isAdminLogged = await props.isAdminLogged()
 
-        if (!isAdminLogged) return
-
+        if (!isAdminLogged) {
+            toast.error("You don't have permission to do this action")
+            return
+        }
         if (
             marketTitle.length >= 10 &&
             marketDescription.length >= 20 &&
@@ -45,7 +47,7 @@ const CreateMarketPage = (props: PropTypes) => {
             let createdTimestamp = + new Date() / 1000;
 
             try {
-                const contract = await newMarketFactory.deploy(marketTitle, marketDescription, endingDateTimestamp, usdTokenAddress, 18, providerFee);
+                const contract = await newMarketFactory.deploy(marketTitle, marketDescription, endingDateTimestamp, usdContractAddress, 18, providerFee);
                 props.pendingTx(contract, '')
 
                 const MarketList = Moralis.Object.extend("MarketList")

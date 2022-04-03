@@ -16,6 +16,10 @@ a {
   color: white;
 }
 
+input {
+  user-select: auto;
+}
+
 .MarketsContainer {
   display: flex;
   flex-wrap: wrap;
@@ -214,6 +218,12 @@ a {
   -moz-box-sizing:content-box;
   -webkit-box-sizing:content-box;
   box-sizing:content-box;
+}
+
+@-moz-document url-prefix() {
+  #choose-option {
+    height: 46.3px;
+  }
 }
 
 #buy-button, #sell-button {
@@ -443,6 +453,32 @@ input:checked + .slider:after
   flex-direction: column;
   align-items: center;
   margin-bottom: 50px;
+}
+
+.PortfolioOverview {
+  transition: transform .2s;
+  padding: 0 40px;
+  border-radius: 10px;
+  width: 90%;
+  display: flex;
+  margin: auto;
+  align-items: center;
+  justify-content: space-evenly;
+}
+
+.portfolio-props {
+  font-size: 25px;
+  border: 1px solid #303245;
+  border-radius: 2px;
+  background: #303245;
+  padding: 10px 20px 10px 20px;
+  width: 29%;
+  height: 75px;
+}
+
+.portfolio-less-visible {
+  color: #b3b3b3;
+  font-size: 16px;
 }
 
 .form {
