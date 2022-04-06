@@ -1,31 +1,29 @@
 import React from 'react'
-import {BigNumber, ethers} from "ethers"
-import {toast} from "react-hot-toast";
+import {BigNumber} from "ethers"
+import {toast} from "react-hot-toast"
 
 interface PropTypes {
-    approvedAmount: number;
-    usdContract: any;
-    marketContract: any;
-    signer: any;
-    contractAddress: string;
-    pendingTx: any;
-    user: string;
-    signMessage: any;
-    addPosition: any;
-    usdAmount: number;
+    approvedAmount: number
+    usdContract: any
+    marketContract: any
+    signer: any
+    contractAddress: string
+    pendingTx: any
+    user: string
+    signMessage: any
+    addPosition: any
+    usdAmount: number
 }
 
 const LiquiditySection = (props: PropTypes) => {
     const [amount, setAmount] = React.useState(0)
     const bigNumberTenToPowerOf18Digits = BigNumber.from(10).pow(18)
 
-    const addLiquidity = async (event: { preventDefault: () => void; }) => {
+    const addLiquidity = async (event: { preventDefault: () => void }) => {
         event.preventDefault()
 
-        if (!isNaN(amount)){
-            amount > props.approvedAmount ?
-                 await approveTokens() :
-                    await provideLiquidity()
+        if (!isNaN(amount)) {
+            amount > props.approvedAmount ? await approveTokens() : await provideLiquidity()
         } else {
             isNaN(amount) ? toast.error('The input must be a number') : toast.error('Something went wrong')
         }
@@ -43,7 +41,6 @@ const LiquiditySection = (props: PropTypes) => {
             if (typeof userAddress !== "undefined") {
                 await props.marketContract.connect(props.signer).addLiquidity(BigNumber.from(amount).mul(bigNumberTenToPowerOf18Digits))
                 props.pendingTx(props.marketContract, props.user)
-
                 props.addPosition(userAddress, 0, "", props.contractAddress)
             } else {
                 toast.error('You denied the message, please try again')
@@ -58,11 +55,7 @@ const LiquiditySection = (props: PropTypes) => {
             <form autoComplete="off" className="share-interaction-form" onSubmit={addLiquidity}>
                 <div className="title">{'Add Liquidity'}</div>
                 <div className="input-container ic1">
-                    <div className={'cut cut-buy'}>
-                        {
-                            'Usd amount (' + props.usdAmount + ')'
-                        }
-                    </div>
+                    <div className={'cut cut-buy'}>{'Usd amount (' + props.usdAmount + ')'}</div>
                     <input
                         className='input'
                         id=''

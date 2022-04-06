@@ -1,15 +1,15 @@
-import React from 'react';
-import {ethers} from "ethers";
-import {predictionMarketABI, predictionMarketBytecode} from "../otherContractProps/predictionMarketContractProps";
-import {toast} from "react-hot-toast";
-import {useMoralis} from "react-moralis";
-import {usdContractAddress} from "../otherContractProps/usdContractProps";
+import React from 'react'
+import {ethers} from "ethers"
+import {predictionMarketABI, predictionMarketBytecode} from "../otherContractProps/predictionMarketContractProps"
+import {toast} from "react-hot-toast"
+import {useMoralis} from "react-moralis"
+import {usdContractAddress} from "../otherContractProps/usdContractProps"
 
 interface PropTypes {
-    pendingTx: any;
-    signMessage: any;
-    logOut: any;
-    isAdminLogged: any;
+    pendingTx: any
+    signMessage: any
+    logOut: any
+    isAdminLogged: any
 }
 
 const CreateMarketPage = (props: PropTypes) => {
@@ -21,13 +21,11 @@ const CreateMarketPage = (props: PropTypes) => {
     const provider = new ethers.providers.Web3Provider((window as any).ethereum)
     const signer = provider.getSigner()
 
-    const newMarketFactory = new ethers.ContractFactory(predictionMarketABI, predictionMarketBytecode, signer);
+    const newMarketFactory = new ethers.ContractFactory(predictionMarketABI, predictionMarketBytecode, signer)
 
-    const {
-        Moralis
-    } = useMoralis()
+    const {Moralis} = useMoralis()
 
-    const deployContract = async (event: { preventDefault: () => void; }) => {
+    const deployContract = async (event: { preventDefault: () => void }) => {
         event.preventDefault()
 
         let isAdminLogged = await props.isAdminLogged()
@@ -42,12 +40,12 @@ const CreateMarketPage = (props: PropTypes) => {
             providerFee >= 0 &&
             providerFee <= 100 &&
             new Date(endingDate) > new Date()
-        ){
-            let endingDateTimestamp = new Date(endingDate).getTime() / 1000;
-            let createdTimestamp = + new Date() / 1000;
+        ) {
+            let endingDateTimestamp = new Date(endingDate).getTime() / 1000
+            let createdTimestamp = +new Date() / 1000
 
             try {
-                const contract = await newMarketFactory.deploy(marketTitle, marketDescription, endingDateTimestamp, usdContractAddress, 18, providerFee);
+                const contract = await newMarketFactory.deploy(marketTitle, marketDescription, endingDateTimestamp, usdContractAddress, 18, providerFee)
                 props.pendingTx(contract, '')
 
                 const MarketList = Moralis.Object.extend("MarketList")
@@ -62,7 +60,7 @@ const CreateMarketPage = (props: PropTypes) => {
                 marketList.set("marketVolume", 0)
 
                 marketList.save()
-                    .then(() => {}, (error: { message: string; }) => {
+                    .then(() => {}, (error: { message: string }) => {
                         alert('Failed to create new object, with error code: ' + error.message)
                     })
             } catch (e) {
@@ -138,9 +136,7 @@ const CreateMarketPage = (props: PropTypes) => {
                             setEndingDate(e.target.value)
                             const input = document.getElementsByClassName('inputDate') as HTMLCollectionOf<HTMLElement>
 
-                            if (input.length != 0) {
-                                input[0].style.color = "white"
-                            }
+                            if (input.length !== 0) input[0].style.color = "white"
                         }}
                         required
                         minLength={8}
@@ -148,10 +144,10 @@ const CreateMarketPage = (props: PropTypes) => {
                     <div className="cut cut-short"></div>
                     <label htmlFor="endingDate" className="placeholder">Ending date</label>
                 </div>
-                <input id='submit' type="submit" value="Submit" />
+                <input id='submit' type="submit" value="Submit"/>
             </form>
         </div>
-    );
-};
+    )
+}
 
-export default CreateMarketPage;
+export default CreateMarketPage

@@ -1,14 +1,12 @@
-import React from 'react';
-import {logDOM} from "@testing-library/react";
-import {ethers} from "ethers";
+import React from 'react'
 
 interface PropTypes {
-    marketName: string;
-    validUntil: number;
-    createdTimestamp: number;
-    liquidity: number;
-    marketVolume: number;
-    resolved: boolean;
+    marketName: string
+    validUntil: number
+    createdTimestamp: number
+    liquidity: number
+    marketVolume: number
+    resolved: boolean
 }
 
 const MarketDetailTitle = (props: PropTypes) => {
@@ -18,16 +16,16 @@ const MarketDetailTitle = (props: PropTypes) => {
     const [expiredMarket, setExpiredMarket] = React.useState(true)
 
     React.useEffect(() => {
-        changeDateText();
-    }, []);
+        changeDateText()
+    }, [])
 
     const changeDateText = () => {
         if (props.validUntil > Date.now()/1000) {
-            setDateText('Market ends on');
-            setExpiredMarket(false);
+            setDateText('Market ends on')
+            setExpiredMarket(false)
         } else {
-            setDateText('Market ended on');
-            setExpiredMarket(true);
+            setDateText('Market ended on')
+            setExpiredMarket(true)
         }
     }
 
@@ -52,14 +50,7 @@ const MarketDetailTitle = (props: PropTypes) => {
                 }
             </div>
         </div>
-    );
-};
+    )
+}
 
-MarketDetailTitle.props = {
-    marketName: "",
-    validUntil: 0,
-    liquidity: 0,
-    marketVolume: 0,
-};
-
-export default MarketDetailTitle;
+export default MarketDetailTitle

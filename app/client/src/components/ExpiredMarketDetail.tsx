@@ -1,22 +1,21 @@
-import React from 'react';
-import MarketDetailTitle from "./MarketDetailTitle";
-import MarketDetailFooter from "./MarketDetailFooter";
-import {ethers} from "ethers";
-import {predictionMarketABI} from "../otherContractProps/predictionMarketContractProps";
-import {toast} from "react-hot-toast";
-import {useMoralis} from "react-moralis";
+import React from 'react'
+import MarketDetailTitle from "./MarketDetailTitle"
+import MarketDetailFooter from "./MarketDetailFooter"
+import {ethers} from "ethers"
+import {predictionMarketABI} from "../otherContractProps/predictionMarketContractProps"
+import {toast} from "react-hot-toast"
+import {useMoralis} from "react-moralis"
 
 interface PropTypes {
-    marketName: string;
-    marketDescription: string;
-    validUntil: number;
-    contractAddress: string;
-    resolved: boolean;
-    pendingTx: any;
-    user: string;
-    signMessage: any;
-    isAdminLogged: any;
-    createdTimestamp: number;
+    marketName: string
+    marketDescription: string
+    validUntil: number
+    contractAddress: string
+    resolved: boolean
+    pendingTx: any
+    signMessage: any
+    isAdminLogged: any
+    createdTimestamp: number
 }
 
 const ExpiredMarketDetail = (props: PropTypes) => {
@@ -27,9 +26,7 @@ const ExpiredMarketDetail = (props: PropTypes) => {
     const signer = provider.getSigner()
     const marketContract = new ethers.Contract(props.contractAddress, predictionMarketABI, provider)
 
-    const {
-        Moralis,
-    } = useMoralis()
+    const {Moralis} = useMoralis()
 
     provider.once("block", () => {
         marketContract.on('WinningSideChosen', async () => {
@@ -37,12 +34,12 @@ const ExpiredMarketDetail = (props: PropTypes) => {
         })
     })
 
-    const pickOutcome = async (event: { preventDefault: () => void; }) => {
+    const pickOutcome = async (event: { preventDefault: () => void }) => {
         event.preventDefault()
 
         let isAdminLogged = await props.isAdminLogged()
 
-        if (pickedOutcome === 'yes' && isAdminLogged || pickedOutcome === 'no' && isAdminLogged) {
+        if ((pickedOutcome === 'yes' && isAdminLogged) || (pickedOutcome === 'no' && isAdminLogged)) {
             try {
                 await submitOutcome()
             } catch (e: any) {
@@ -68,8 +65,7 @@ const ExpiredMarketDetail = (props: PropTypes) => {
                 const result = await query.first()
                 if (typeof result !== "undefined") {
                     result.set('isResolved', true)
-                    result.save()
-                        .then(() => {}, (error: { message: string; }) => {
+                    result.save().then(() => {}, (error: { message: string }) => {
                             toast.error('Failed to create new object, with error code: ' + error.message)
                         })
                 } else {
@@ -94,7 +90,7 @@ const ExpiredMarketDetail = (props: PropTypes) => {
                 resolved={resolved}
             />
             <div className="market-main-body-section">
-                <h1 id={!resolved ? 'expired-detail-heading' : 'resolved-detail-heading'}>{!resolved ? 'Choose the market outcome' : 'Market already resolved'}</h1>
+                <h1 id={!resolved ? 'expired-detail-heading' : 'resolved-detail-heading'}>{!resolved ? 'Choose the market outcome' : 'Market resolved'}</h1>
                 {
                     !resolved ?
                         <form action="" onSubmit={pickOutcome}>
@@ -103,7 +99,7 @@ const ExpiredMarketDetail = (props: PropTypes) => {
                                     type="checkbox"
                                     id="togBtn"
                                     value={pickedOutcome}
-                                    onChange={() => pickedOutcome == 'yes' ? setPickedOutcome('no') : setPickedOutcome('yes')}
+                                    onChange={() => pickedOutcome === 'yes' ? setPickedOutcome('no') : setPickedOutcome('yes')}
                                 />
                                 <div className="slider round"/>
                             </label>
@@ -111,8 +107,7 @@ const ExpiredMarketDetail = (props: PropTypes) => {
                         </form> : null
                 }
             </div>
-            <MarketDetailFooter marketName={props.marketName} marketDescription={props.marketDescription}
-                                validUntil={props.validUntil} contractAddress={props.contractAddress}/>
+            <MarketDetailFooter marketDescription={props.marketDescription}/>
         </div>
     )
 }

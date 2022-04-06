@@ -1,26 +1,25 @@
-import '../styles/AppHeader.css';
-import OnboardingButton from "./OnboardingButton";
-import React, {useState} from "react";
-import MetaMaskOnboarding from "@metamask/onboarding";
-import {useMoralis} from "react-moralis";
-import {Link} from 'react-router-dom';
+import '../styles/AppHeader.css'
+import OnboardingButton from "./OnboardingButton"
+import React, {useState} from "react"
+import MetaMaskOnboarding from "@metamask/onboarding"
+import {useMoralis} from "react-moralis"
+import {Link} from 'react-router-dom'
 
 
-const ONBOARD_TEXT = 'Install MetaMask!';
-const CONNECT_TEXT = 'Connect';
-const CONNECTED_TEXT = 'Connected';
+const ONBOARD_TEXT = 'Install MetaMask!'
+const CONNECT_TEXT = 'Connect'
 
 interface PropTypes {
-    marketsButton: any;
-    createMarketsButton: any;
-    expiredMarketsButton: any;
-    portfolioButton: any;
-    switchPageToMarkets: any;
-    switchPageToCreateMarket: any;
-    switchPageToExpiredMarkets: any;
-    switchPageToPortfolio: any;
-    usdAmount: number;
-    updateBalance: any;
+    marketsButton: any
+    createMarketsButton: any
+    expiredMarketsButton: any
+    portfolioButton: any
+    switchPageToMarkets: any
+    switchPageToCreateMarket: any
+    switchPageToExpiredMarkets: any
+    switchPageToPortfolio: any
+    usdAmount: number
+    updateBalance: any
 }
 
 const AppHeader = (props: PropTypes) => {
@@ -32,15 +31,13 @@ const AppHeader = (props: PropTypes) => {
     const onboarding = React.useRef<MetaMaskOnboarding>()
     const [isAdminLogged, setIsAdminLogged] = useState(false)
 
-    const {
-        Moralis,
-    } = useMoralis();
+    const {Moralis}  = useMoralis()
 
     React.useEffect(() => {
         if (!onboarding.current) {
             onboarding.current = new MetaMaskOnboarding()
         }
-    }, []);
+    }, [])
 
     React.useEffect( () => {
         if (MetaMaskOnboarding.isMetaMaskInstalled()) {
@@ -56,7 +53,7 @@ const AppHeader = (props: PropTypes) => {
                 setMetamaskButtonStyle('clickableButton')
             }
         }
-    }, [accounts]);
+    }, [accounts])
 
     React.useEffect(() => {
         function handleNewAccounts(newAccounts: React.SetStateAction<never[]>) {
@@ -87,8 +84,8 @@ const AppHeader = (props: PropTypes) => {
     }, [])
 
 
-    const checkIfAdminLogged = setInterval(function() {
-        walletChanged();
+    const checkIfAdminLogged = setInterval(() => {
+        walletChanged()
         clearInterval(checkIfAdminLogged)
     }, 1)
 
@@ -96,7 +93,7 @@ const AppHeader = (props: PropTypes) => {
         if (MetaMaskOnboarding.isMetaMaskInstalled()) {
             window.ethereum
                 .request({ method: 'eth_requestAccounts' })
-                .then((newAccounts: React.SetStateAction<never[]>) => setAccounts(newAccounts));
+                .then((newAccounts: React.SetStateAction<never[]>) => setAccounts(newAccounts))
         } else {
             onboarding?.current?.startOnboarding()
         }

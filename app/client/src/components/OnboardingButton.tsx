@@ -1,17 +1,25 @@
-import React from 'react';
+import React from 'react'
 
-const OnboardingButton = ({isDisabled, onClick, classNamed, text, walletChanged} :React.ComponentProps<any>) => {
+interface PropTypes {
+    isDisabled: boolean
+    onClick: any
+    classNamed: string
+    text: string
+    walletChanged: any
+}
+
+const OnboardingButton = (props: PropTypes) => {
 
     React.useEffect(() => {
-        walletChanged();
-    }, []);
+        props.walletChanged()
+    }, [])
 
 
     return (
-        <button disabled={isDisabled} onClick={onClick} className={classNamed}>
-            {text}
+        <button disabled={props.isDisabled} onClick={props.onClick} className={props.classNamed}>
+            {props.text}
         </button>
-    );
+    )
 }
 
-export default OnboardingButton;
+export default OnboardingButton

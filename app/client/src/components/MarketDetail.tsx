@@ -1,29 +1,28 @@
-import React from 'react';
-import MarketDetailTitle from "./MarketDetailTitle";
-import BuyOrSellShares from "./BuyOrSellShares";
-import MarketDetailFooter from "./MarketDetailFooter";
-import LiquiditySection from "./LiquiditySection";
-import {ethers} from "ethers";
-import {usdABI, usdContractAddress} from "../otherContractProps/usdContractProps";
-import {predictionMarketABI} from "../otherContractProps/predictionMarketContractProps";
-import {useMoralis} from "react-moralis";
+import React from 'react'
+import MarketDetailTitle from "./MarketDetailTitle"
+import BuyOrSellShares from "./BuyOrSellShares"
+import MarketDetailFooter from "./MarketDetailFooter"
+import LiquiditySection from "./LiquiditySection"
+import {ethers} from "ethers"
+import {usdABI, usdContractAddress} from "../otherContractProps/usdContractProps"
+import {predictionMarketABI} from "../otherContractProps/predictionMarketContractProps"
 
 interface PropTypes {
-    marketName: string;
-    marketDescription: string;
-    validUntil: number;
-    createdTimestamp: number;
-    contractAddress: string;
-    providerFee: number;
-    marketVolume: number;
-    resolved: boolean;
-    pendingTx: any;
-    user: string;
-    signMessage: any;
-    addPosition: any;
-    removePosition: any;
-    increaseVolume: any;
-    usdAmount: number;
+    marketName: string
+    marketDescription: string
+    validUntil: number
+    createdTimestamp: number
+    contractAddress: string
+    providerFee: number
+    marketVolume: number
+    resolved: boolean
+    pendingTx: any
+    user: string
+    signMessage: any
+    addPosition: any
+    removePosition: any
+    increaseVolume: any
+    usdAmount: number
 }
 
 const MarketDetail = (props: PropTypes) => {
@@ -45,27 +44,25 @@ const MarketDetail = (props: PropTypes) => {
 
     provider.once("block", () => {
         usdContract.on("Approval", (yourAddress, marketAddress, amount) => {
-            if (props.user.toLowerCase() === yourAddress.toLowerCase()) {
-                setApprovedAmount(Number(ethers.utils.formatEther(amount)))
-            }
+            if (props.user.toLowerCase() === yourAddress.toLowerCase()) setApprovedAmount(Number(ethers.utils.formatEther(amount)))
         })
 
-        marketContract.on("LiquidityProvided", async (amount, providerAddress) => {
+        marketContract.on("LiquidityProvided", async () => {
             setLiquidity(Number(ethers.utils.formatEther(await marketContract.getCurrentLiquidity())))
         })
 
-        marketContract.on("LiquidityWithdrawn", async (amount, providerAddress) => {
+        marketContract.on("LiquidityWithdrawn", async () => {
             setLiquidity(Number(ethers.utils.formatEther(await marketContract.connect(signer).getCurrentLiquidity())))
         })
 
-        marketContract.on("SharesBought", async (amount, sender) => {
+        marketContract.on("SharesBought", async () => {
             marketContract.calculateMarketRatio().then((r: any) => {
                 calculatePercentageOfMarketShares(r[1], r[0])
             })
             pullHoldings()
         })
 
-        marketContract.on("SharesSold", async (amount, sender) => {
+        marketContract.on("SharesSold", async () => {
             marketContract.calculateMarketRatio().then((r: any) => {
                 calculatePercentageOfMarketShares(r[1], r[0])
             })
@@ -145,16 +142,16 @@ const MarketDetail = (props: PropTypes) => {
                         <LiquiditySection approvedAmount={approvedAmount} usdContract={usdContract}
                                           marketContract={marketContract} signer={signer}
                                           contractAddress={props.contractAddress} pendingTx={props.pendingTx}
-                                          user={props.user} signMessage={props.signMessage} addPosition={props.addPosition}
+                                          user={props.user} signMessage={props.signMessage}
+                                          addPosition={props.addPosition}
                                           usdAmount={props.usdAmount}
                         />
                     </div>
                 </div>
             </div>
-            <MarketDetailFooter marketName={props.marketName} marketDescription={props.marketDescription}
-                                validUntil={props.validUntil} contractAddress={props.contractAddress}/>
+            <MarketDetailFooter marketDescription={props.marketDescription}/>
         </div>
-    );
-};
+    )
+}
 
-export default MarketDetail;
+export default MarketDetail

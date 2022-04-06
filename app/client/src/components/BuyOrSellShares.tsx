@@ -1,27 +1,26 @@
 import React from 'react'
 import {BigNumber, ethers} from "ethers"
 import {toast} from "react-hot-toast"
-import {predictionMarketABI} from "../otherContractProps/predictionMarketContractProps";
 
 interface PropTypes {
-    action: string;
-    yesRatio: number;
-    noRatio: number;
-    approvedAmount: number;
-    liquidity: number;
-    usdContract: any;
-    marketContract: any;
-    signer: any;
-    contractAddress: string;
-    pendingTx: any;
-    user: string;
-    signMessage: any;
-    addPosition: any;
-    removePosition: any;
-    increaseVolume: any;
-    yesSharesOwned: number;
-    noSharesOwned: number;
-    usdAmount: number;
+    action: string
+    yesRatio: number
+    noRatio: number
+    approvedAmount: number
+    liquidity: number
+    usdContract: any
+    marketContract: any
+    signer: any
+    contractAddress: string
+    pendingTx: any
+    user: string
+    signMessage: any
+    addPosition: any
+    removePosition: any
+    increaseVolume: any
+    yesSharesOwned: number
+    noSharesOwned: number
+    usdAmount: number
 }
 
 const BuyShares = (props: PropTypes) => {
@@ -35,7 +34,7 @@ const BuyShares = (props: PropTypes) => {
         clearInterval(getMaxShares)
     }, 1)
 
-    const submitAction = async (event: { preventDefault: () => void; }) => {
+    const submitAction = async (event: { preventDefault: () => void }) => {
         event.preventDefault()
 
         if (amount <= 0) {
@@ -45,44 +44,50 @@ const BuyShares = (props: PropTypes) => {
 
         if (props.action === "buy") {
             switch (option) {
-                case 'yes':
+                case 'yes': {
                     const yesSharesEmitted = ethers.utils.formatEther(await props.marketContract.yesSharesEmitted())
                     if (amount >= Number(yesSharesEmitted)) {
                         toast.error('Not enough liquidity')
                         return
                     }
-                    break;
+                    break
+                }
 
-                case 'no':
+                case 'no': {
                     const noSharesEmitted = ethers.utils.formatEther(await props.marketContract.noSharesEmitted())
                     if (amount >= Number(noSharesEmitted)) {
                         toast.error('Not enough liquidity')
                         return
                     }
-                    break;
-                default:
+                    break
+                }
+                default: {
                     toast.error('Something went wrong')
                     return
+                }
             }
         } else if (props.action === "sell") {
-            switch(option) {
-                case 'yes':
+            switch (option) {
+                case 'yes': {
                     const noSharesEmitted = ethers.utils.formatEther(await props.marketContract.noSharesEmitted())
-                    if (amount/2 >= Number(noSharesEmitted)) {
+                    if (amount / 2 >= Number(noSharesEmitted)) {
                         toast.error('Not enough liquidity')
                         return
                     }
-                    break;
-                case 'no':
+                }
+                    break
+                case 'no': {
                     const yesSharesEmitted = ethers.utils.formatEther(await props.marketContract.yesSharesEmitted())
-                    if (amount/2 >= Number(yesSharesEmitted)) {
+                    if (amount / 2 >= Number(yesSharesEmitted)) {
                         toast.error('Not enough liquidity')
                         return
                     }
-                    break;
-                default:
+                    break
+                }
+                default: {
                     toast.error('Something went wrong')
                     return
+                }
             }
         } else {
             toast.error('Something went wrong')
@@ -112,7 +117,6 @@ const BuyShares = (props: PropTypes) => {
     }
 
     const buyShares = async () => {
-
         const userAddress = await props.signMessage()
 
         try {
@@ -154,8 +158,6 @@ const BuyShares = (props: PropTypes) => {
                 props.marketContract.connect(props.signer).getCurrentValueOfShares(BigNumber.from(ethers.utils.parseEther(amount.toString())), option).then((r: any) => {
                     props.increaseVolume(Number(ethers.utils.formatEther(r)), props.contractAddress)
                 })
-
-
             } else {
                 toast.error('You denied the message, please try again')
             }

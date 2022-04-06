@@ -1,5 +1,5 @@
-import React from 'react';
-import '../styles/AppBody.css';
+import React from 'react'
+import '../styles/AppBody.css'
 
 const Page404 = () => {
     return (

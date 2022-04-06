@@ -1,14 +1,13 @@
-import React from "react";
-import {BigNumber, ethers} from "ethers";
-import {predictionMarketABI} from "../otherContractProps/predictionMarketContractProps";
-import {useMoralis} from "react-moralis";
-import {toast} from "react-hot-toast";
+import React from "react"
+import {BigNumber, ethers} from "ethers"
+import {predictionMarketABI} from "../otherContractProps/predictionMarketContractProps"
+import {useMoralis} from "react-moralis"
+import {toast} from "react-hot-toast"
 
 interface PropTypes {
-    userAddress: string;
-    usdAmount: number;
-    markets: any;
-    updateMarkets: any;
+    userAddress: string
+    usdAmount: number
+    markets: any
 }
 
 const PortfolioOverview = (props: PropTypes) => {
@@ -17,11 +16,35 @@ const PortfolioOverview = (props: PropTypes) => {
     const provider = new ethers.providers.Web3Provider((window as any).ethereum)
     const signer = provider.getSigner()
 
-    const {
-        Moralis
-    } = useMoralis()
+    const {Moralis}  = useMoralis()
 
     React.useEffect(() => {
+        const pullOpenPositions = async () => {
+            let tmp = 0
+            if (props.markets.marketList.length > 0) {
+                if (openPositions === 0) {
+                    for (const r of props.markets.marketList) {
+                        tmp += await handleMarketData(r)
+                    }
+                }
+            }
+            setOpenPositions(Math.floor((tmp + Number.EPSILON) * 100) / 100)
+        }
+
+        const pullInitialPositions = async () => {
+            try {
+                const PositionMapping = Moralis.Object.extend("PositionMapping")
+                const positionMapping = new Moralis.Query(PositionMapping)
+                const addressResults = await positionMapping.find()
+                let initialPositionsArray: any[] = []
+
+                addressResults.forEach(r => initialPositionsArray.push([r.get('shareType'), r.get('initialValue'), r.get('marketAddress')]))
+                setInitialPositions(initialPositionsArray)
+            } catch (e) {
+                toast.error('Something went wrong, try again later')
+            }
+        }
+
         setTimeout(async () => {
             setOpenPositions(0)
             await pullInitialPositions()
@@ -29,33 +52,7 @@ const PortfolioOverview = (props: PropTypes) => {
         }, 1)
     }, [props.markets])
 
-    const pullOpenPositions = async () => {
-        let tmp = 0
-        if (props.markets.marketList.length > 0) {
-            if (openPositions == 0) {
-                for (const r of props.markets.marketList) {
-                        tmp += await handleMarketData(r)
-                    }
-            }
-        }
-        setOpenPositions(Math.floor((tmp + Number.EPSILON) * 100) / 100)
-    }
-
-    const pullInitialPositions = async () => {
-        try {
-            const PositionMapping = Moralis.Object.extend("PositionMapping")
-            const positionMapping = new Moralis.Query(PositionMapping)
-            const addressResults = await positionMapping.find()
-            let initialPositionsArray: any[] = []
-
-            addressResults.forEach(r => initialPositionsArray.push([r.get('shareType'), r.get('initialValue'), r.get('marketAddress')]))
-            setInitialPositions(initialPositionsArray)
-        } catch (e) {
-            toast.error('Something went wrong, try again later')
-        }
-    }
-
-    const handleMarketData = async (marketData: { contractAddress: string; }) => {
+    const handleMarketData = async (marketData: { contractAddress: string }) => {
         const marketContract = new ethers.Contract(marketData.contractAddress, predictionMarketABI, provider)
         let isLiqProvider = false
         let isYesShareHolder = false
@@ -99,7 +96,7 @@ const PortfolioOverview = (props: PropTypes) => {
                             })
                         }
                         if (isLiqProvider) await getLiq()
-                    } else if (r == 'no') {
+                    } else if (r === 'no') {
                         //RESOLVED TO NO
                         if (isNoShareHolder) {
                             await marketContract.connect(signer).noSharesPerAddress(props.userAddress).then((r: any) => {

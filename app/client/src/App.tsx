@@ -1,23 +1,23 @@
-import './styles/App.css';
-import AppHeader from './components/AppHeader';
-import AppBody from "./components/AppBody";
-import AppFooter from "./components/AppFooter";
-import React, {useState} from "react";
-import CreateMarketPage from "./components/CreateMarketPage";
-import ExpiredMarketsPage from "./components/ExpiredMarketsPage";
-import PortfolioPage from "./components/PortfolioPage";
-import MarketDetail from "./components/MarketDetail";
-import ExpiredMarketDetail from "./components/ExpiredMarketDetail";
-import toast, {Toaster} from "react-hot-toast";
-import {ethers} from "ethers";
-import {usdABI, usdContractAddress} from "./otherContractProps/usdContractProps";
-import {useMoralis} from "react-moralis";
-import WrongNetwork from "./components/WrongNetwork";
-import {predictionMarketABI} from "./otherContractProps/predictionMarketContractProps";
-import {BrowserRouter, Route, Switch} from "react-router-dom";
-import MetamaskMissing from "./components/MetamaskMissing";
-import Page404 from "./components/Page404";
-import MetaMaskOnboarding from "@metamask/onboarding";
+import './styles/App.css'
+import AppHeader from './components/AppHeader'
+import AppBody from "./components/AppBody"
+import AppFooter from "./components/AppFooter"
+import React, {useState} from "react"
+import CreateMarketPage from "./components/CreateMarketPage"
+import ExpiredMarketsPage from "./components/ExpiredMarketsPage"
+import PortfolioPage from "./components/PortfolioPage"
+import MarketDetail from "./components/MarketDetail"
+import ExpiredMarketDetail from "./components/ExpiredMarketDetail"
+import toast, {Toaster} from "react-hot-toast"
+import {ethers} from "ethers"
+import {usdABI, usdContractAddress} from "./otherContractProps/usdContractProps"
+import {useMoralis} from "react-moralis"
+import WrongNetwork from "./components/WrongNetwork"
+import {predictionMarketABI} from "./otherContractProps/predictionMarketContractProps"
+import {BrowserRouter, Route, Switch} from "react-router-dom"
+import MetamaskMissing from "./components/MetamaskMissing"
+import Page404 from "./components/Page404"
+import MetaMaskOnboarding from "@metamask/onboarding"
 
 function App() {
     const {
@@ -26,10 +26,9 @@ function App() {
     } = useMoralis()
 
     let provider: any, signer: any
-    if (typeof window.ethereum !== "undefined") {
-        provider = new ethers.providers.Web3Provider((window as any).ethereum)
-        signer = provider.getSigner()
-    }
+    provider = new ethers.providers.Web3Provider((window as any)?.ethereum)
+    signer = provider.getSigner()
+
     const [usdAmount, setUsdAmount] = React.useState(0)
     const [userAddress, setUserAddress] = React.useState([])
     const [currentPage, setCurrentPage] = React.useState('markets-page')
@@ -48,11 +47,7 @@ function App() {
             window.ethereum.on('chainChanged', async () => {
                 const provider = new ethers.providers.Web3Provider((window as any).ethereum)
                 const {chainId} = await provider.getNetwork()
-                if (chainId !== 4) {
-                    setCurrentPage('wrong-network-page')
-                } else {
-                    window.location.reload()
-                }
+                chainId !== 4 ? setCurrentPage('wrong-network-page') : window.location.reload()
             })
         }
     })
@@ -67,14 +62,14 @@ function App() {
 
             setUserAddress(newAccounts)
         }
+
         if (MetaMaskOnboarding.isMetaMaskInstalled()) {
             window.ethereum
-                .request({ method: 'eth_requestAccounts' })
+                .request({method: 'eth_requestAccounts'})
                 .then(handleNewAccounts)
             window.ethereum.on('accountsChanged', handleNewAccounts)
-            return () => {
-                window.ethereum.off('accountsChanged', handleNewAccounts)
-            }
+
+            return () => window.ethereum.off('accountsChanged', handleNewAccounts)
         }
     }, [])
 
@@ -86,9 +81,7 @@ function App() {
     }, [userAddress])
 
     const checkAccessRights = async () => {
-        if (!await verifyChainId()) {
-            return
-        }
+        if (!await verifyChainId()) return
 
         const AdminList = Moralis.Object.extend("AdminList")
         const adminList = new Moralis.Query(AdminList)
@@ -98,25 +91,25 @@ function App() {
         switch (window.location.pathname) {
             case '/': {
                 switchPageToMarketsPage()
-                break;
+                break
             }
             case '/create-market': {
                 switchPageToCreateMarketPage()
-                    if (typeof result !== 'undefined' && accounts[0].toString().toLowerCase() !== result.get('address').toString().toLowerCase()) {
-                        window.location.pathname = '/'
-                    }
-                break;
+                if (accounts[0].toString().toLowerCase() !== result?.get('address').toString().toLowerCase()) {
+                    window.location.pathname = '/'
+                }
+                break
             }
             case '/expired-markets': {
                 switchPageToExpiredMarketsPage()
-                if (typeof result !== 'undefined' && accounts[0].toString().toLowerCase() !== result.get('address').toString().toLowerCase()) {
+                if (accounts[0].toString().toLowerCase() !== result?.get('address').toString().toLowerCase()) {
                     window.location.pathname = '/'
                 }
-                break;
+                break
             }
             case '/portfolio': {
                 switchPageToPortfolioPage()
-                break;
+                break
             }
         }
     }
@@ -124,6 +117,7 @@ function App() {
     const verifyChainId = async () => {
         const provider = new ethers.providers.Web3Provider((window as any).ethereum)
         const {chainId} = await provider.getNetwork()
+
         if (chainId !== 4) {
             setCurrentPage('wrong-network-page')
             return false
@@ -150,9 +144,7 @@ function App() {
 
         for (let i = 0; i < addressResults.length; i++) {
             const object = addressResults[i]
-            if (object.get('userAddress') == userAddress) {
-                userPositionsArray.push(object.get('marketAddress'))
-            }
+            if (object.get('userAddress') === userAddress) userPositionsArray.push(object.get('marketAddress'))
         }
 
         const MarketList = Moralis.Object.extend("MarketList")
@@ -173,7 +165,7 @@ function App() {
         try {
             if (!user) {
                 await Moralis.authenticate({signingMessage: "Confirm ownership of this address"})
-                    .then(function (user) {
+                    .then((user) => {
                         userAddress = user.get("ethAddress")
                     })
             } else {
@@ -203,7 +195,7 @@ function App() {
 
                 object.save()
                     .then(() => {
-                    }, (error: { message: string; }) => {
+                    }, (error: { message: string }) => {
                         toast.error('Failed to create new object, with error code: ' + error.message)
                     })
             }
@@ -218,7 +210,7 @@ function App() {
 
             newRecord.save()
                 .then(() => {
-                }, (error: { message: string; }) => {
+                }, (error: { message: string }) => {
                     toast.error('Failed to create new object, with error code: ' + error.message)
                 })
         }
@@ -235,19 +227,18 @@ function App() {
         query.equalTo("shareType", shareType)
         const result = await query.first()
 
-        if (typeof result !== "undefined") {
             if (shareType === 'yes' || shareType === 'no') {
                 valueOfShares = parseFloat(ethers.utils.formatEther(await marketContract.connect(signer).getCurrentValueOfShares(amount, shareType)))
             } else {
-                valueOfShares = result.get('amount')
+                valueOfShares = result?.get('amount')
             }
-            const resultAmount = result.get('amount')
+        const resultAmount = result?.get('amount')
             if (resultAmount - valueOfShares > 0) {
-                result.set('amount', resultAmount - valueOfShares)
+                result?.set('amount', resultAmount - valueOfShares)
 
-                result.save()
+                result?.save()
                     .then(() => {
-                    }, (error: { message: string; }) => {
+                    }, (error: { message: string }) => {
                         toast.error('Failed to create new object, with error code: ' + error.message)
                     })
             } else {
@@ -275,14 +266,13 @@ function App() {
                 }
 
                 if (destroy) {
-                    result.destroy()
+                    result?.destroy()
                         .then(() => {
-                        }, (error: { message: string; }) => {
+                        }, (error: { message: string }) => {
                             toast.error('Failed to create new object, with error code: ' + error.message)
                         })
                 }
             }
-        }
     }
 
     const increaseVolume = async (amount: number, contractAddress: string) => {
@@ -291,17 +281,15 @@ function App() {
         query.equalTo("contractAddress", contractAddress)
         const result = await query.first()
 
-        if (typeof result !== "undefined") {
-            const initVolume = result.get('marketVolume')
-            const newVolume = initVolume + amount
-            result.set('marketVolume', newVolume)
+        const initVolume = result?.get('marketVolume')
+        const newVolume = initVolume + amount
+        result?.set('marketVolume', newVolume)
 
-            result.save()
-                .then(() => {
-                }, (error: { message: string; }) => {
-                    toast.error('Failed to create new object, with error code: ' + error.message)
-                })
-        }
+        result?.save()
+            .then(() => {
+            }, (error: { message: string }) => {
+                toast.error('Failed to create new object, with error code: ' + error.message)
+            })
     }
 
     const withdrawLiquidity = async (contractAddress: string) => {
@@ -331,13 +319,11 @@ function App() {
             query.equalTo("shareType", shareType)
             const result = await query.first()
 
-            if (typeof result !== "undefined") {
-                result.destroy()
+            result?.destroy()
                     .then(() => {
-                    }, (error: { message: string; }) => {
+                    }, (error: { message: string }) => {
                         toast.error('Failed to create new object, with error code: ' + error.message)
                     })
-            }
         }
 
         const marketContract = new ethers.Contract(contractAddress, predictionMarketABI, provider)
@@ -375,7 +361,7 @@ function App() {
 
                 for (let i = 0; i < results.length; i++) {
                     const object = results[i]
-                    if (String(object.get('address')).toLowerCase() == String(userAddress).toLowerCase()) isAdminLogged = true
+                    if (String(object.get('address')).toLowerCase() === String(userAddress).toLowerCase()) isAdminLogged = true
                 }
             } else {
                 toast.error('You denied the message, please try again')
@@ -388,26 +374,23 @@ function App() {
     }
 
     const switchPageToMarketsPage = async () => {
-        if (!await verifyChainId()) {
-            return
-        }
+        if (!await verifyChainId()) return
+
         getMarkets()
         document.title = 'Markets'
         setCurrentPage('markets-page')
     }
 
     const switchPageToCreateMarketPage = async () => {
-        if (!await verifyChainId()) {
-            return
-        }
+        if (!await verifyChainId()) return
+
         document.title = 'Create market'
         setCurrentPage('create-market-page')
     }
 
     const switchPageToExpiredMarketsPage = async () => {
-        if (!await verifyChainId()) {
-            return
-        }
+        if (!await verifyChainId()) return
+
         getMarkets()
         document.title = 'Expired markets'
         setCurrentPage('expired-markets-page')
@@ -415,9 +398,7 @@ function App() {
 
     const switchPageToPortfolioPage = async () => {
         if (currentPage !== 'portfolio-page') {
-            if (!await verifyChainId()) {
-                return
-            }
+            if (!await verifyChainId()) return
             getPortfolio()
             document.title = 'Portfolio'
             setCurrentPage('portfolio-page')
@@ -434,9 +415,8 @@ function App() {
         marketVolume: number,
         isResolved: boolean
     ) => {
-        if (!await verifyChainId()) {
-            return
-        }
+        if (!await verifyChainId()) return
+
         setCurrentMarketData({
             marketData: {
                 marketName: marketName,
@@ -463,9 +443,8 @@ function App() {
         marketVolume: number,
         isResolved: boolean
     ) => {
-        if (!await verifyChainId()) {
-            return
-        }
+        if (!await verifyChainId()) return
+
         setCurrentMarketData({
             marketData: {
                 marketName: marketName,
@@ -492,7 +471,7 @@ function App() {
         let usdContract = new ethers.Contract(usdContractAddress, usdABI, provider)
 
         provider.once("block", () => {
-            marketContract.on('MarketCreated', (marketAddress: string) => {
+            marketContract.on('MarketCreated', () => {
                 toast.remove('PendingTx')
                 toast.success('New market was just added', {
                     id: 'MarketCreated',
@@ -500,7 +479,7 @@ function App() {
                 })
             })
 
-            usdContract.on('Approval', (yourAddress: string, marketAddress: any, amount: ethers.BigNumberish) => {
+            usdContract.on('Approval', (yourAddress: string) => {
                 if (user.toLowerCase() === yourAddress.toLowerCase()) {
                     toast.remove('PendingTx')
                     toast.success('You just approved your USD', {
@@ -518,7 +497,7 @@ function App() {
                         id: 'LiquidityProvided',
                         duration: duration,
                     })
-                    await updateBalance()
+                    await updateUsdBalance()
                 }
             })
 
@@ -530,7 +509,7 @@ function App() {
                         id: 'LiquidityWithdrawn',
                         duration: duration,
                     })
-                    await updateBalance()
+                    await updateUsdBalance()
                 }
             })
 
@@ -543,7 +522,7 @@ function App() {
                         id: 'SharesBought',
                         duration: duration,
                     })
-                    await updateBalance()
+                    await updateUsdBalance()
                     updateCurrentMarket(marketContract)
                 }
             })
@@ -558,7 +537,7 @@ function App() {
                         id: 'SharesSold',
                         duration: duration,
                     })
-                    await updateBalance()
+                    await updateUsdBalance()
                     updateCurrentMarket(marketContract)
                 }
             })
@@ -582,13 +561,13 @@ function App() {
                         id: 'UsdClaimed',
                         duration: duration,
                     })
-                    await updateBalance()
+                    await updateUsdBalance()
                 }
             })
         })
     }
 
-    const updateBalance = async () => {
+    const updateUsdBalance = async () => {
         if (typeof userAddress[0] !== "undefined") {
             const provider = new ethers.providers.Web3Provider((window as any).ethereum)
             let usdContract = new ethers.Contract(usdContractAddress, usdABI, provider)
@@ -598,7 +577,7 @@ function App() {
                 usdBalance.substring(usdBalance.indexOf(".") + 2) === "0" ||
                 usdBalance.substring(usdBalance.indexOf(".") + 2) === ""
             ) {
-                if  (
+                if (
                     usdBalance.substring(usdBalance.indexOf(".") + 1) === "0" ||
                     usdBalance.substring(usdBalance.indexOf(".") + 1) === ""
                 ) {
@@ -612,26 +591,24 @@ function App() {
         }
     }
 
-    const updateCurrentMarket = async (marketContract: { address: any; }) => {
+    const updateCurrentMarket = async (marketContract: { address: any }) => {
         try {
             const MarketList = Moralis.Object.extend("MarketList")
             const query = new Moralis.Query(MarketList)
             query.equalTo("contractAddress", marketContract.address)
             const result = await query.first()
-            if (typeof result !== "undefined") {
-                setCurrentMarketData({
-                    marketData: {
-                        marketName: result.get('marketName'),
-                        marketDescription: result.get('marketDescription'),
-                        validUntil: result.get('validUntil'),
-                        createdTimestamp: result.get('createdTimestamp'),
-                        contractAddress: result.get('contractAddress'),
-                        providerFee: result.get('providerFee'),
-                        marketVolume: result.get('marketVolume'),
-                        resolved: result.get('isResolved')
-                    }
+            setCurrentMarketData({
+                marketData: {
+                    marketName: result?.get('marketName'),
+                    marketDescription: result?.get('marketDescription'),
+                    validUntil: result?.get('validUntil'),
+                    createdTimestamp: result?.get('createdTimestamp'),
+                    contractAddress: result?.get('contractAddress'),
+                    providerFee: result?.get('providerFee'),
+                    marketVolume: result?.get('marketVolume'),
+                    resolved: result?.get('isResolved')
+                }
                 })
-            }
         } catch (e) {
             toast.error((e as Error).message)
         }
@@ -652,7 +629,7 @@ function App() {
                             switchPageToExpiredMarkets={switchPageToExpiredMarketsPage}
                             switchPageToPortfolio={switchPageToPortfolioPage}
                             usdAmount={usdAmount}
-                            updateBalance={updateBalance}
+                            updateBalance={updateUsdBalance}
                         /> : <header className="App-header" />
                 }
                 <Toaster/>
@@ -687,7 +664,6 @@ function App() {
                                         contractAddress={currentMarketData.marketData.contractAddress}
                                         resolved={currentMarketData.marketData.resolved}
                                         pendingTx={pendingTx}
-                                        user={userAddress.toString()}
                                         signMessage={signMessage}
                                         isAdminLogged={isAdminLogged}
                                     /> :

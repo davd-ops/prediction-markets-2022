@@ -1,21 +1,21 @@
-import React from "react";
-import {BigNumber, ethers} from "ethers";
-import {predictionMarketABI} from "../otherContractProps/predictionMarketContractProps";
-import {useMoralis} from "react-moralis";
+import React from "react"
+import {BigNumber, ethers} from "ethers"
+import {predictionMarketABI} from "../otherContractProps/predictionMarketContractProps"
+import {useMoralis} from "react-moralis"
 
 interface PropTypes {
-    marketName: string;
-    marketDescription: string;
-    validUntil: number;
-    createdTimestamp: number;
-    contractAddress: string;
-    providerFee: number;
-    marketVolume: number;
-    displayMarketDetail: any;
-    userAddress: string;
-    withdrawLiquidity: any;
-    claimUsd: any;
-    pullPortfolio: any;
+    marketName: string
+    marketDescription: string
+    validUntil: number
+    createdTimestamp: number
+    contractAddress: string
+    providerFee: number
+    marketVolume: number
+    displayMarketDetail: any
+    userAddress: string
+    withdrawLiquidity: any
+    claimUsd: any
+    pullPortfolio: any
 }
 
 const MarketPortfolioComp = (props: PropTypes) => {
@@ -33,9 +33,7 @@ const MarketPortfolioComp = (props: PropTypes) => {
     const signer = provider.getSigner()
     const marketContract = new ethers.Contract(props.contractAddress, predictionMarketABI, provider)
 
-    const {
-        Moralis,
-    } = useMoralis()
+    const {Moralis} = useMoralis()
 
     React.useEffect(() => {
         pullHoldings()
@@ -43,7 +41,7 @@ const MarketPortfolioComp = (props: PropTypes) => {
     }, [])
 
     provider.once("block", () => {
-        marketContract.on("LiquidityWithdrawn", async (amount, providerAddress) => {
+        marketContract.on("LiquidityWithdrawn", async () => {
             setInitialLiquidity(0)
             props.pullPortfolio()
         })
@@ -60,7 +58,8 @@ const MarketPortfolioComp = (props: PropTypes) => {
         marketContract.connect(signer).getLiquidityProviders().then((r: any) => {
             for (let i = 0; i < r.length; i++) {
                 const provider = r[i]
-                if (provider.lpAddress.toLowerCase() === props.userAddress.toLowerCase()) setInitialLiquidity(Math.floor((Number(ethers.utils.formatEther(provider.providedLiquidity)) + Number.EPSILON) * 100) / 100)
+                if (provider.lpAddress.toLowerCase() === props.userAddress.toLowerCase())
+                    setInitialLiquidity(Math.floor((Number(ethers.utils.formatEther(provider.providedLiquidity)) + Number.EPSILON) * 100) / 100)
             }
         })
         marketContract.connect(signer).getCurrentLPValue().then((r: any) => {
@@ -76,7 +75,7 @@ const MarketPortfolioComp = (props: PropTypes) => {
                             setYesShares(Math.floor((Number(ethers.utils.formatEther(r)) + Number.EPSILON) * 100) / 100)
                             setYesCurrentValue(Math.floor((Number(ethers.utils.formatEther(r)) + Number.EPSILON) * 100) / 100)
                         })
-                    } else if (r == 'no') {
+                    } else if (r === 'no') {
                         //RESOLVED TO NO
                         marketContract.connect(signer).noSharesPerAddress(props.userAddress).then((r: any) => {
                             setNoShares(Math.floor((Number(ethers.utils.formatEther(r)) + Number.EPSILON) * 100) / 100)
@@ -93,13 +92,15 @@ const MarketPortfolioComp = (props: PropTypes) => {
                 marketContract.connect(signer).yesSharesPerAddress(props.userAddress).then((r: any) => {
                     setYesShares(Math.floor((Number(ethers.utils.formatEther(r)) + Number.EPSILON) * 100) / 100)
                     marketContract.connect(signer).getCurrentValueOfShares(BigNumber.from(r), "yes").then((r: any) => {
-                        if (Number(ethers.utils.formatEther(r)) !== 0) setYesCurrentValue(Math.floor((Number(ethers.utils.formatEther(r)) + Number.EPSILON) * 100) / 100)
+                        if (Number(ethers.utils.formatEther(r)) !== 0)
+                            setYesCurrentValue(Math.floor((Number(ethers.utils.formatEther(r)) + Number.EPSILON) * 100) / 100)
                     })
                 })
                 marketContract.connect(signer).noSharesPerAddress(props.userAddress).then((r: any) => {
                     setNoShares(Math.floor((Number(ethers.utils.formatEther(r)) + Number.EPSILON) * 100) / 100)
                     marketContract.connect(signer).getCurrentValueOfShares(BigNumber.from(r), "no").then((r: any) => {
-                        if (Number(ethers.utils.formatEther(r)) !== 0) setNoCurrentValue(Math.floor((Number(ethers.utils.formatEther(r)) + Number.EPSILON) * 100) / 100)
+                        if (Number(ethers.utils.formatEther(r)) !== 0)
+                            setNoCurrentValue(Math.floor((Number(ethers.utils.formatEther(r)) + Number.EPSILON) * 100) / 100)
                     })
                 })
             }
@@ -112,7 +113,7 @@ const MarketPortfolioComp = (props: PropTypes) => {
         const results = await query.find()
         for (let i = 0; i < results.length; i++) {
             const object = results[i]
-            if (object.get('shareType') == 'yes') {
+            if (object.get('shareType') === 'yes') {
                 setYesInitialValue(object.get('initialValue'))
             } else {
                 setNoInitialValue(object.get('initialValue'))
@@ -126,12 +127,20 @@ const MarketPortfolioComp = (props: PropTypes) => {
                 {
                     initialLiquidity > 0 ? <div className="PortfolioMarketDiv">
                         <p className='MarketName'>{props.marketName}</p>
-                        <p className="MarketProps firstProp"><span className='LessVisibleText'>Position</span><br/>LP</p>
-                        <p className="MarketProps marketVolProp"><span className='LessVisibleText'>Market vol.</span><br/>{props.marketVolume > 0 ? ((props.marketVolume + Number.EPSILON) * 100) / 100 : 0}$</p>
-                        <p className="MarketProps thirdProp"><span className='LessVisibleText'>Initial Value</span><br/>{initialLiquidity}$</p>
-                        <p className="MarketProps fourthProp"><span className='LessVisibleText'>Current Value</span><br/>{currentLiq}$</p>
-                        <p className="MarketProps fifthProp"><button className='PortfolioDisplayMarketButton'
-                                                                     onClick={() => props.withdrawLiquidity(props.contractAddress) }>WITHDRAW LP</button></p>
+                        <p className="MarketProps firstProp"><span className='LessVisibleText'>Position</span><br/>LP
+                        </p>
+                        <p className="MarketProps marketVolProp"><span
+                            className='LessVisibleText'>Market vol.</span><br/>
+                            {props.marketVolume > 0 ? ((props.marketVolume + Number.EPSILON) * 100) / 100 : 0}$</p>
+                        <p className="MarketProps thirdProp"><span
+                            className='LessVisibleText'>Initial Value</span><br/>{initialLiquidity}$</p>
+                        <p className="MarketProps fourthProp"><span
+                            className='LessVisibleText'>Current Value</span><br/>{currentLiq}$</p>
+                        <p className="MarketProps fifthProp">
+                            <button className='PortfolioDisplayMarketButton'
+                                    onClick={() => props.withdrawLiquidity(props.contractAddress)}>WITHDRAW LP
+                            </button>
+                        </p>
                     </div> : null
                 }
             </>
@@ -249,18 +258,14 @@ const MarketPortfolioComp = (props: PropTypes) => {
                     <p className="MarketProps fifthProp"><button className='PortfolioDisplayMarketButton'
                                                                  onClick={() => props.claimUsd(props.contractAddress) }>CLAIM USD</button></p>
                 </div>
-                    {
-                        returnLiquidityComponent()
-                    }
+                    {returnLiquidityComponent()}
                     </>
             )
         }
     } else if (initialLiquidity > 0) {
         return (
             <>
-                {
-                    returnLiquidityComponent()
-                }
+                {returnLiquidityComponent()}
             </>
         )
     } else {
@@ -268,4 +273,4 @@ const MarketPortfolioComp = (props: PropTypes) => {
     }
 }
 
-export default MarketPortfolioComp;
+export default MarketPortfolioComp

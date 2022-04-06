@@ -50,8 +50,8 @@ const Market = (props: PropTypes) => {
 
 Market.defaultProps = {
     marketName: "Loading...",
-    yesRatio: "0%",
-    noRatio: "0%",
+    yesRatio: "100%",
+    noRatio: "100%",
 }
 
 export default Market;
