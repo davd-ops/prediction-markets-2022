@@ -102,22 +102,14 @@ function App() {
             }
             case '/create-market': {
                 switchPageToCreateMarketPage()
-                if (typeof result !== 'undefined') {
-                    if (accounts[0].toString().toLowerCase() !== result.get('address').toString().toLowerCase()) {
+                    if (typeof result !== 'undefined' && accounts[0].toString().toLowerCase() !== result.get('address').toString().toLowerCase()) {
                         window.location.pathname = '/'
                     }
-                } else {
-                    window.location.pathname = '/'
-                }
                 break;
             }
             case '/expired-markets': {
                 switchPageToExpiredMarketsPage()
-                if (typeof result !== 'undefined') {
-                    if (accounts[0].toString().toLowerCase() !== result.get('address').toString().toLowerCase()) {
-                        window.location.pathname = '/'
-                    }
-                } else {
+                if (typeof result !== 'undefined' && accounts[0].toString().toLowerCase() !== result.get('address').toString().toLowerCase()) {
                     window.location.pathname = '/'
                 }
                 break;
@@ -211,7 +203,6 @@ function App() {
 
                 object.save()
                     .then(() => {
-                        console.log('Position updated')
                     }, (error: { message: string; }) => {
                         toast.error('Failed to create new object, with error code: ' + error.message)
                     })
@@ -227,7 +218,6 @@ function App() {
 
             newRecord.save()
                 .then(() => {
-                    console.log('New position added')
                 }, (error: { message: string; }) => {
                     toast.error('Failed to create new object, with error code: ' + error.message)
                 })
@@ -257,20 +247,41 @@ function App() {
 
                 result.save()
                     .then(() => {
-                        console.log('Position updated')
                     }, (error: { message: string; }) => {
                         toast.error('Failed to create new object, with error code: ' + error.message)
                     })
             } else {
-                result.destroy()
-                    .then(() => {
-                        console.log('Position removed')
-                    }, (error: { message: string; }) => {
-                        toast.error('Failed to create new object, with error code: ' + error.message)
-                    })
+                let destroy: boolean = false
+
+                switch (shareType) {
+                    case 'yes': {
+                        await marketContract.yesSharesPerAddress(userAddress).then((r: any) => {
+                            if (Number(ethers.utils.formatEther(r)) < 1) destroy = true
+                        })
+                        break
+                    }
+                    case 'no': {
+                        await marketContract.noSharesPerAddress(userAddress).then((r: any) => {
+                            if (Number(ethers.utils.formatEther(r)) < 1) destroy = true
+                        })
+                        break
+                    }
+                    case '': {
+                        await marketContract.connect(signer).getCurrentLPValue().then((r: any) => {
+                            if (Number(ethers.utils.formatEther(r)) < 1) destroy = true
+                        })
+                        break
+                    }
+                }
+
+                if (destroy) {
+                    result.destroy()
+                        .then(() => {
+                        }, (error: { message: string; }) => {
+                            toast.error('Failed to create new object, with error code: ' + error.message)
+                        })
+                }
             }
-        } else {
-            console.log('Position probably already removed!')
         }
     }
 
@@ -287,7 +298,6 @@ function App() {
 
             result.save()
                 .then(() => {
-                    console.log('Volume updated')
                 }, (error: { message: string; }) => {
                     toast.error('Failed to create new object, with error code: ' + error.message)
                 })
@@ -324,12 +334,9 @@ function App() {
             if (typeof result !== "undefined") {
                 result.destroy()
                     .then(() => {
-                        console.log('Position removed')
                     }, (error: { message: string; }) => {
                         toast.error('Failed to create new object, with error code: ' + error.message)
                     })
-            } else {
-                console.log('Position probably already removed!')
             }
         }
 
@@ -385,6 +392,7 @@ function App() {
             return
         }
         getMarkets()
+        document.title = 'Markets'
         setCurrentPage('markets-page')
     }
 
@@ -392,6 +400,7 @@ function App() {
         if (!await verifyChainId()) {
             return
         }
+        document.title = 'Create market'
         setCurrentPage('create-market-page')
     }
 
@@ -400,15 +409,19 @@ function App() {
             return
         }
         getMarkets()
+        document.title = 'Expired markets'
         setCurrentPage('expired-markets-page')
     }
 
     const switchPageToPortfolioPage = async () => {
-        if (!await verifyChainId()) {
-            return
+        if (currentPage !== 'portfolio-page') {
+            if (!await verifyChainId()) {
+                return
+            }
+            getPortfolio()
+            document.title = 'Portfolio'
+            setCurrentPage('portfolio-page')
         }
-        getPortfolio()
-        setCurrentPage('portfolio-page')
     }
 
     const switchPageToExpiredMarketDetailPage = async (
@@ -436,6 +449,7 @@ function App() {
                 resolved: isResolved
             }
         })
+        document.title = marketName
         setCurrentPage('expired-market-detail-page')
     }
 
@@ -464,6 +478,7 @@ function App() {
                 resolved: isResolved
             }
         })
+        document.title = marketName
         setCurrentPage('market-detail-page')
     }
 

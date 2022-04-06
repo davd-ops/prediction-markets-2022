@@ -69,9 +69,7 @@ const ExpiredMarketDetail = (props: PropTypes) => {
                 if (typeof result !== "undefined") {
                     result.set('isResolved', true)
                     result.save()
-                        .then(() => {
-                            console.log('Outcome updated')
-                        }, (error: { message: string; }) => {
+                        .then(() => {}, (error: { message: string; }) => {
                             toast.error('Failed to create new object, with error code: ' + error.message)
                         })
                 } else {

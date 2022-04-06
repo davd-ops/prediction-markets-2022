@@ -3,7 +3,7 @@ import '../styles/AppFooter.css';
 const AppFooter = () => {
     return (
         <div className="App-footer">
-            Footer
+            © 2022 DAVID PŠENČÍK
         </div>
     );
 };

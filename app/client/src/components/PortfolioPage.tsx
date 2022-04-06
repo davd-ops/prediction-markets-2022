@@ -73,6 +73,8 @@ const PortfolioPage = (props: PropTypes) => {
         if(element2) element2.setAttribute("style", "display:none")
         const element3 = document.getElementById('live-markets-heading')
         if(element3) element3.setAttribute("style", "display:block")
+        const element4 = document.getElementById('first-container')
+        if(element4) element4.setAttribute("style", "display:block")
 
         return <MarketInPortfolioComp key={market.objectId} marketName={market.marketName}
                                       marketDescription={market.marketDescription}
@@ -90,6 +92,8 @@ const PortfolioPage = (props: PropTypes) => {
         if(element2) element2.setAttribute("style", "display:none")
         const element3 = document.getElementById('expired-markets-heading')
         if(element3) element3.setAttribute("style", "display:block")
+        const element4 = document.getElementById('second-container')
+        if(element4) element4.setAttribute("style", "display:block")
 
         return <MarketInPortfolioComp key={market.objectId} marketName={market.marketName}
                                       marketDescription={market.marketDescription}
@@ -106,7 +110,7 @@ const PortfolioPage = (props: PropTypes) => {
             <h1 id='no-markets-heading'>You don't have any shares in your portfolio!</h1>
             <p className={'subtitle'} id='no-markets-subtitle'>Buy some on the markets page!</p>
             <h1 id='live-markets-heading' style={{display: 'none'}}>Live markets</h1>
-            <div className='portfolioMarketsContainer'>
+            <div className='portfolioMarketsContainer' id='first-container' style={{display: 'none'}}>
                 {
                     markets.marketList.length > 0 ? markets.marketList.map((market: { objectId: any; marketName: string; marketDescription: string; validUntil: number; createdTimestamp: number; contractAddress: string; providerFee: number; marketVolume: number; isResolved: boolean; }) => (
                         Number(market.validUntil) > new Date(Date.now()).getTime() / 1000 ?
@@ -115,7 +119,7 @@ const PortfolioPage = (props: PropTypes) => {
                 }
             </div>
             <h1 id='expired-markets-heading' style={{display: 'none'}}>Expired markets</h1>
-            <div className='portfolioMarketsContainer'>
+            <div className='portfolioMarketsContainer' id='second-container' style={{display: 'none'}}>
                 {
                     markets.marketList.length > 0 ? markets.marketList.map((market: { objectId: any; marketName: string; marketDescription: string; validUntil: number; createdTimestamp: number; contractAddress: string; providerFee: number; marketVolume: number; isResolved: boolean; }) => (
                         Number(market.validUntil) < new Date(Date.now()).getTime() / 1000 ?

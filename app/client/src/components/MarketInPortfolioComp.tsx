@@ -68,28 +68,28 @@ const MarketPortfolioComp = (props: PropTypes) => {
         })
         marketContract.connect(signer).checkIfTheMarketIsClosed().then((r: any) => {
             if (r) {
-                console.log('Market is closed')
+                //CLOSED
                 marketContract.connect(signer).winningSide().then((r: any) => {
                     if (r === 'yes') {
-                        console.log('contract is resolved to yes')
+                        //RESOLVED TO YES
                         marketContract.yesSharesPerAddress(props.userAddress).then((r: any) => {
                             setYesShares(Math.floor((Number(ethers.utils.formatEther(r)) + Number.EPSILON) * 100) / 100)
                             setYesCurrentValue(Math.floor((Number(ethers.utils.formatEther(r)) + Number.EPSILON) * 100) / 100)
                         })
                     } else if (r == 'no') {
-                        console.log('contract is resolved to no')
+                        //RESOLVED TO NO
                         marketContract.connect(signer).noSharesPerAddress(props.userAddress).then((r: any) => {
                             setNoShares(Math.floor((Number(ethers.utils.formatEther(r)) + Number.EPSILON) * 100) / 100)
                             setNoCurrentValue(Math.floor((Number(ethers.utils.formatEther(r)) + Number.EPSILON) * 100) / 100)
                         })
                     } else {
-                        console.log('contract is not resolved yet')
+                        //NOT RESOLVED
                         setInitialLiquidity(0)
                         setCurrentLiq(0)
                     }
                 })
             } else {
-                console.log('Market is not closed yet')
+                //NOT CLOSED YET
                 marketContract.connect(signer).yesSharesPerAddress(props.userAddress).then((r: any) => {
                     setYesShares(Math.floor((Number(ethers.utils.formatEther(r)) + Number.EPSILON) * 100) / 100)
                     marketContract.connect(signer).getCurrentValueOfShares(BigNumber.from(r), "yes").then((r: any) => {

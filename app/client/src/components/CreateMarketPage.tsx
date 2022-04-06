@@ -62,9 +62,7 @@ const CreateMarketPage = (props: PropTypes) => {
                 marketList.set("marketVolume", 0)
 
                 marketList.save()
-                    .then(() => {
-                        console.log('New market added')
-                    }, (error: { message: string; }) => {
+                    .then(() => {}, (error: { message: string; }) => {
                         alert('Failed to create new object, with error code: ' + error.message)
                     })
             } catch (e) {

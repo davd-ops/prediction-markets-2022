@@ -29,7 +29,7 @@ input {
 
 .MarketDiv {
   transition: transform .2s;
-  border: solid 0.1px #374e62;
+  border: 2px solid #303245;
   padding: 40px;
   border-radius: 10px;
   width: 21%;
@@ -43,7 +43,6 @@ input {
 .MarketDiv:hover {
   transform: scale(1.05);
   cursor: pointer;
-  border: solid 0.1px #496883;
 }
 
 .percentageDiv {
@@ -371,7 +370,7 @@ input:checked + .slider:after
 
 .PortfolioMarketDiv {
   transition: transform .2s;
-  border: solid 0.1px #374e62;
+  border: 2px solid #303245;
   padding: 0 40px;
   border-radius: 10px;
   width: 90%;
@@ -740,4 +739,8 @@ input::-ms-input-placeholder {
 
 .input:focus ~ .share-action-placeholder {
   color: white;
+}
+
+#live-markets-heading, #expired-markets-heading {
+  margin-top: 25px;
 }

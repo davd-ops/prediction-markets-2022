@@ -2,6 +2,7 @@ import React from "react";
 import {BigNumber, ethers} from "ethers";
 import {predictionMarketABI} from "../otherContractProps/predictionMarketContractProps";
 import {useMoralis} from "react-moralis";
+import {toast} from "react-hot-toast";
 
 interface PropTypes {
     userAddress: string;
@@ -12,12 +13,18 @@ interface PropTypes {
 
 const PortfolioOverview = (props: PropTypes) => {
     const [openPositions, setOpenPositions] = React.useState(0)
+    const [initialPositions, setInitialPositions] = React.useState([] as any)
     const provider = new ethers.providers.Web3Provider((window as any).ethereum)
     const signer = provider.getSigner()
+
+    const {
+        Moralis
+    } = useMoralis()
 
     React.useEffect(() => {
         setTimeout(async () => {
             setOpenPositions(0)
+            await pullInitialPositions()
             await pullOpenPositions()
         }, 1)
     }, [props.markets])
@@ -31,48 +38,98 @@ const PortfolioOverview = (props: PropTypes) => {
                     }
             }
         }
-        setOpenPositions(tmp)
+        setOpenPositions(Math.floor((tmp + Number.EPSILON) * 100) / 100)
+    }
+
+    const pullInitialPositions = async () => {
+        try {
+            const PositionMapping = Moralis.Object.extend("PositionMapping")
+            const positionMapping = new Moralis.Query(PositionMapping)
+            const addressResults = await positionMapping.find()
+            let initialPositionsArray: any[] = []
+
+            addressResults.forEach(r => initialPositionsArray.push([r.get('shareType'), r.get('initialValue'), r.get('marketAddress')]))
+            setInitialPositions(initialPositionsArray)
+        } catch (e) {
+            toast.error('Something went wrong, try again later')
+        }
     }
 
     const handleMarketData = async (marketData: { contractAddress: string; }) => {
         const marketContract = new ethers.Contract(marketData.contractAddress, predictionMarketABI, provider)
+        let isLiqProvider = false
+        let isYesShareHolder = false
+        let isNoShareHolder = false
+
+        initialPositions.forEach((r: any) => {
+            if (r[2].toLowerCase() === marketData.contractAddress.toLowerCase()) {
+                switch (r[0]){
+                    case 'yes': {
+                        isYesShareHolder = true
+                        break
+                    }
+                    case 'no': {
+                        isNoShareHolder = true
+                        break
+                    }
+                    case '': {
+                        isLiqProvider = true
+                        break
+                    }
+                }
+
+            }
+        })
         let tmp = 0
 
-        await marketContract.connect(signer).getCurrentLPValue().then((r: any) => {
-            if (Number(ethers.utils.formatEther(r)) !== 0) tmp = (Math.floor(((tmp + Number(ethers.utils.formatEther(r)))+ Number.EPSILON) * 100) / 100)
-        })
+        const getLiq = async () => {
+            await marketContract.connect(signer).getCurrentLPValue().then((r: any) => {
+                if (Number(ethers.utils.formatEther(r)) !== 0) tmp = (Math.floor(((tmp + Number(ethers.utils.formatEther(r)))+ Number.EPSILON) * 100) / 100)
+            })
+        }
         await marketContract.connect(signer).checkIfTheMarketIsClosed().then(async (r: any) => {
             if (r) {
-                console.log('Market is closed')
+                //CLOSED
                 await marketContract.connect(signer).winningSide().then(async (r: any) => {
                     if (r === 'yes') {
-                        console.log('contract is resolved to yes')
-                        await marketContract.yesSharesPerAddress(props.userAddress).then((r: any) => {
-                            tmp = (Math.floor(((tmp + Number(ethers.utils.formatEther(r)))+ Number.EPSILON) * 100) / 100)
-                        })
+                        //RESOLVED TO YES
+                        if (isYesShareHolder) {
+                            await marketContract.yesSharesPerAddress(props.userAddress).then((r: any) => {
+                                tmp = (Math.floor(((tmp + Number(ethers.utils.formatEther(r)))+ Number.EPSILON) * 100) / 100)
+                            })
+                        }
+                        if (isLiqProvider) await getLiq()
                     } else if (r == 'no') {
-                        console.log('contract is resolved to no')
-                        await marketContract.connect(signer).noSharesPerAddress(props.userAddress).then((r: any) => {
-                            tmp = (Math.floor(((tmp + Number(ethers.utils.formatEther(r)))+ Number.EPSILON) * 100) / 100)
-                        })
+                        //RESOLVED TO NO
+                        if (isNoShareHolder) {
+                            await marketContract.connect(signer).noSharesPerAddress(props.userAddress).then((r: any) => {
+                                tmp = (Math.floor(((tmp + Number(ethers.utils.formatEther(r)))+ Number.EPSILON) * 100) / 100)
+                            })
+                        }
+                        if (isLiqProvider) await getLiq()
                     }
                 })
             } else {
-                console.log('Market is not closed yet')
-                await marketContract.connect(signer).yesSharesPerAddress(props.userAddress).then(async (r: any) => {
-                    if (Number(ethers.utils.formatEther(r)) > 0) {
-                        await marketContract.connect(signer).getCurrentValueOfShares(BigNumber.from(r), "yes").then((r: any) => {
-                            tmp = (Math.floor(((tmp + Number(ethers.utils.formatEther(r)))+ Number.EPSILON) * 100) / 100)
-                        })
-                    }
-                })
-                await marketContract.connect(signer).noSharesPerAddress(props.userAddress).then(async (r: any) => {
-                    if (Number(ethers.utils.formatEther(r)) > 0) {
-                        await marketContract.connect(signer).getCurrentValueOfShares(BigNumber.from(r), "no").then((r: any) => {
-                            tmp = (Math.floor(((tmp + Number(ethers.utils.formatEther(r)))+ Number.EPSILON) * 100) / 100)
-                        })
-                    }
-                })
+                //NOT CLOSED YET
+                if (isNoShareHolder) {
+                    await marketContract.connect(signer).yesSharesPerAddress(props.userAddress).then(async (r: any) => {
+                        if (Number(ethers.utils.formatEther(r)) > 0) {
+                            await marketContract.connect(signer).getCurrentValueOfShares(BigNumber.from(r), "yes").then((r: any) => {
+                                tmp = (Math.floor(((tmp + Number(ethers.utils.formatEther(r)))+ Number.EPSILON) * 100) / 100)
+                            })
+                        }
+                    })
+                }
+                if (isNoShareHolder) {
+                    await marketContract.connect(signer).noSharesPerAddress(props.userAddress).then(async (r: any) => {
+                        if (Number(ethers.utils.formatEther(r)) > 0) {
+                            await marketContract.connect(signer).getCurrentValueOfShares(BigNumber.from(r), "no").then((r: any) => {
+                                tmp = (Math.floor(((tmp + Number(ethers.utils.formatEther(r)))+ Number.EPSILON) * 100) / 100)
+                            })
+                        }
+                    })
+                }
+                if (isLiqProvider) await getLiq()
             }
         })
         return tmp
@@ -86,237 +143,5 @@ const PortfolioOverview = (props: PropTypes) => {
         </div>
     )
 }
-
-    /*
-    const provider = new ethers.providers.Web3Provider((window as any).ethereum)
-    const signer = provider.getSigner()
-    const marketContract = new ethers.Contract(props.contractAddress, predictionMarketABI, provider)
-
-    const {
-        Moralis,
-    } = useMoralis()
-
-    React.useEffect(() => {
-        pullHoldings()
-        if (Number(props.validUntil) > new Date(Date.now()).getTime() / 1000) setIsMarketLive(true)
-    }, [])
-
-    const pullHoldings = async () => {
-        marketContract.connect(signer).getLiquidityProviders().then((r: any) => {
-            for (let i = 0; i < r.length; i++) {
-                const provider = r[i]
-                if (provider.lpAddress.toLowerCase() === props.userAddress.toLowerCase()) setInitialLiquidity(Math.floor((Number(ethers.utils.formatEther(provider.providedLiquidity)) + Number.EPSILON) * 100) / 100)
-            }
-        })
-        marketContract.connect(signer).getCurrentLPValue().then((r: any) => {
-            if (Number(ethers.utils.formatEther(r)) !== 0) setCurrentLiq(Math.floor((Number(ethers.utils.formatEther(r)) + Number.EPSILON) * 100) / 100)
-        })
-        marketContract.connect(signer).checkIfTheMarketIsClosed().then((r: any) => {
-            if (r) {
-                console.log('Market is closed')
-                marketContract.connect(signer).winningSide().then((r: any) => {
-                    if (r === 'yes') {
-                        console.log('contract is resolved to yes')
-                        marketContract.yesSharesPerAddress(props.userAddress).then((r: any) => {
-                            setYesShares(Math.floor((Number(ethers.utils.formatEther(r)) + Number.EPSILON) * 100) / 100)
-                            setYesCurrentValue(Math.floor((Number(ethers.utils.formatEther(r)) + Number.EPSILON) * 100) / 100)
-                        })
-                    } else if (r == 'no') {
-                        console.log('contract is resolved to no')
-                        marketContract.connect(signer).noSharesPerAddress(props.userAddress).then((r: any) => {
-                            setNoShares(Math.floor((Number(ethers.utils.formatEther(r)) + Number.EPSILON) * 100) / 100)
-                            setNoCurrentValue(Math.floor((Number(ethers.utils.formatEther(r)) + Number.EPSILON) * 100) / 100)
-                        })
-                    } else {
-                        console.log('contract is not resolved yet')
-                        setInitialLiquidity(0)
-                        setCurrentLiq(0)
-                    }
-                })
-            } else {
-                console.log('Market is not closed yet')
-                marketContract.connect(signer).yesSharesPerAddress(props.userAddress).then((r: any) => {
-                    setYesShares(Math.floor((Number(ethers.utils.formatEther(r)) + Number.EPSILON) * 100) / 100)
-                    console.log(Number(ethers.utils.formatEther(r)))
-                    marketContract.connect(signer).getCurrentValueOfShares(BigNumber.from(r), "yes").then((r: any) => {
-                        if (Number(ethers.utils.formatEther(r)) !== 0) setYesCurrentValue(Math.floor((Number(ethers.utils.formatEther(r)) + Number.EPSILON) * 100) / 100)
-                    })
-                })
-                marketContract.connect(signer).noSharesPerAddress(props.userAddress).then((r: any) => {
-                    setNoShares(Math.floor((Number(ethers.utils.formatEther(r)) + Number.EPSILON) * 100) / 100)
-                    marketContract.connect(signer).getCurrentValueOfShares(BigNumber.from(r), "no").then((r: any) => {
-                        if (Number(ethers.utils.formatEther(r)) !== 0) setNoCurrentValue(Math.floor((Number(ethers.utils.formatEther(r)) + Number.EPSILON) * 100) / 100)
-                    })
-                })
-            }
-        })
-
-        const PositionMapping = Moralis.Object.extend("PositionMapping")
-        const query = new Moralis.Query(PositionMapping)
-        query.equalTo("userAddress", props.userAddress)
-        query.equalTo("marketAddress", props.contractAddress)
-        const results = await query.find()
-        for (let i = 0; i < results.length; i++) {
-            const object = results[i]
-            if (object.get('shareType') == 'yes') {
-                setYesInitialValue(object.get('initialValue'))
-            } else {
-                setNoInitialValue(object.get('initialValue'))
-            }
-        }
-    }
-
-
-
-    const returnLiquidityComponent = () => {
-        return (
-            <>
-                {
-                    initialLiquidity > 0 ? <div className="PortfolioMarketDiv">
-                        <p className='MarketName'>{props.marketName}</p>
-                        <p className="MarketProps firstProp"><span className='LessVisibleText'>Position</span><br/>LP</p>
-                        <p className="MarketProps marketVolProp"><span className='LessVisibleText'>Market vol.</span><br/>{props.marketVolume > 0 ? ((props.marketVolume + Number.EPSILON) * 100) / 100 : 0}$</p>
-                        <p className="MarketProps thirdProp"><span className='LessVisibleText'>Initial Value</span><br/>{initialLiquidity}$</p>
-                        <p className="MarketProps fourthProp"><span className='LessVisibleText'>Current Value</span><br/>{currentLiq}$</p>
-                        <p className="MarketProps fifthProp"><button className='PortfolioDisplayMarketButton'
-                                                                     onClick={() => props.withdrawLiquidity(props.contractAddress) }>WITHDRAW LP</button></p>
-                    </div> : null
-                }
-            </>
-        )
-    }
-
-    if (yesShares > 0 && noShares > 0) {
-        if (isMarketLive) {
-            return (
-                <>
-                    <div className="PortfolioMarketDiv">
-                        <p className='MarketName'>{props.marketName}</p>
-                        <p className="MarketProps firstProp"><span className='LessVisibleText'>Position</span><br/>Yes</p>
-                        <p className="MarketProps secondProp"><span className='LessVisibleText'>Amount</span><br/>{yesShares}</p>
-                        <p className="MarketProps thirdProp"><span className='LessVisibleText'>Initial Value</span><br/>{yesInitialValue}$</p>
-                        <p className="MarketProps fourthProp"><span className='LessVisibleText'>Current Value</span><br/>{yesCurrentValue}$</p>
-                        <p className="MarketProps fifthProp"><button className='PortfolioDisplayMarketButton'
-                                                                     onClick={() =>
-                                                                         props.displayMarketDetail(
-                                                                             props.marketName,
-                                                                             props.marketDescription,
-                                                                             props.validUntil,
-                                                                             props.createdTimestamp,
-                                                                             props.contractAddress,
-                                                                             props.providerFee,
-                                                                             props.marketVolume
-                                                                         )}>TRADE</button></p>
-                    </div>
-                    <div className="PortfolioMarketDiv">
-                        <p className='MarketName'>{props.marketName}</p>
-                        <p className="MarketProps firstProp"><span className='LessVisibleText'>Position</span><br/>No</p>
-                        <p className="MarketProps secondProp"><span className='LessVisibleText'>Amount</span><br/>{noShares}</p>
-                        <p className="MarketProps thirdProp"><span className='LessVisibleText'>Initial Value</span><br/>{noInitialValue}$</p>
-                        <p className="MarketProps fourthProp"><span className='LessVisibleText'>Current Value</span><br/>{noCurrentValue}$</p>
-                        <p className="MarketProps fifthProp"><button className='PortfolioDisplayMarketButton'
-                                                                     onClick={() =>
-                                                                         props.displayMarketDetail(
-                                                                             props.marketName,
-                                                                             props.marketDescription,
-                                                                             props.validUntil,
-                                                                             props.createdTimestamp,
-                                                                             props.contractAddress,
-                                                                             props.providerFee,
-                                                                             props.marketVolume
-                                                                         )}>TRADE</button></p>
-                    </div>
-                    {
-                        returnLiquidityComponent()
-                    }
-                </>
-            )
-        } else {
-            return (
-                <>
-                    <div className="PortfolioMarketDiv">
-                        <p className='MarketName'>{props.marketName}</p>
-                        <p className="MarketProps firstProp"><span className='LessVisibleText'>Position</span><br/>Yes</p>
-                        <p className="MarketProps secondProp"><span className='LessVisibleText'>Amount</span><br/>{yesShares}</p>
-                        <p className="MarketProps thirdProp"><span className='LessVisibleText'>Initial Value</span><br/>{yesInitialValue}$</p>
-                        <p className="MarketProps fourthProp"><span className='LessVisibleText'>Current Value</span><br/>{yesCurrentValue}$</p>
-                        <p className="MarketProps fifthProp"><button className='PortfolioDisplayMarketButton'
-                                                                     onClick={() => props.claimUsd(props.contractAddress) }>CLAIM USD</button></p>
-                    </div>
-                    <div className="PortfolioMarketDiv">
-                        <p className='MarketName'>{props.marketName}</p>
-                        <p className="MarketProps firstProp"><span className='LessVisibleText'>Position</span><br/>No</p>
-                        <p className="MarketProps secondProp"><span className='LessVisibleText'>Amount</span><br/>{noShares}</p>
-                        <p className="MarketProps thirdProp"><span className='LessVisibleText'>Initial Value</span><br/>{noInitialValue}$</p>
-                        <p className="MarketProps fourthProp"><span className='LessVisibleText'>Current Value</span><br/>{noCurrentValue}$</p>
-                        <p className="MarketProps fifthProp"><button className='PortfolioDisplayMarketButton'
-                                                                     onClick={() => props.claimUsd(props.contractAddress) }>CLAIM USD</button></p>
-                    </div>
-                    {
-                        returnLiquidityComponent()
-                    }
-                </>
-            )
-        }
-    } else if ((yesShares !== 0 || noShares !== 0)) {
-        if (isMarketLive) {
-            return (
-                <>
-                <div className="PortfolioMarketDiv">
-                    <p className='MarketName'>{props.marketName}</p>
-                    <p className="MarketProps firstProp"><span className='LessVisibleText'>Position</span><br/>{yesShares > 0 ? 'Yes' : 'No'}</p>
-                    <p className="MarketProps secondProp"><span className='LessVisibleText'>Amount</span><br/>{yesShares > 0 ? yesShares : noShares}</p>
-                    <p className="MarketProps thirdProp"><span className='LessVisibleText'>Initial Value</span><br/>{yesShares > 0 ? yesInitialValue : noInitialValue}$</p>
-                    <p className="MarketProps fourthProp"><span className='LessVisibleText'>Current Value</span><br/>{yesShares > 0 ? yesCurrentValue : noCurrentValue}$</p>
-                    <p className="MarketProps fifthProp"><button className='PortfolioDisplayMarketButton'
-                                                                 onClick={() =>
-                                                                     props.displayMarketDetail(
-                                                                         props.marketName,
-                                                                         props.marketDescription,
-                                                                         props.validUntil,
-                                                                         props.createdTimestamp,
-                                                                         props.contractAddress,
-                                                                         props.providerFee,
-                                                                         props.marketVolume
-                                                                     )}>TRADE</button></p>
-                </div>
-            {
-                returnLiquidityComponent()
-            }
-            </>
-            )
-        } else {
-            return (
-                <>
-                <div className="PortfolioMarketDiv">
-                    <p className='MarketName'>{props.marketName}</p>
-                    <p className="MarketProps firstProp"><span className='LessVisibleText'>Position</span><br/>{yesShares > 0 ? 'Yes' : 'No'}</p>
-                    <p className="MarketProps secondProp"><span className='LessVisibleText'>Amount</span><br/>{yesShares > 0 ? yesShares : noShares}</p>
-                    <p className="MarketProps thirdProp"><span className='LessVisibleText'>Initial Value</span><br/>{yesShares > 0 ? yesInitialValue : noInitialValue}$</p>
-                    <p className="MarketProps fourthProp"><span className='LessVisibleText'>Current Value</span><br/>{yesShares > 0 ? yesCurrentValue : noCurrentValue}$</p>
-                    <p className="MarketProps fifthProp"><button className='PortfolioDisplayMarketButton'
-                                                                 onClick={() => props.claimUsd(props.contractAddress) }>CLAIM USD</button></p>
-                </div>
-                    {
-                        returnLiquidityComponent()
-                    }
-                    </>
-            )
-        }
-    } else if (initialLiquidity > 0) {
-        return (
-            <>
-                {
-                    returnLiquidityComponent()
-                }
-            </>
-        )
-    } else {
-        return null
-    }
-}
-*/
-
-
 
 export default PortfolioOverview
