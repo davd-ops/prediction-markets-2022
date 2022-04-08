@@ -38,6 +38,7 @@ const PortfolioPage = (props: PropTypes) => {
     React.useEffect(() => {
         setTimeout(async () => {
             if (props.markets.marketList.length >= 1) setMarkets(props.markets)
+            console.log(props.markets.marketList.length)
         }, 1)
     }, [props.markets])
 

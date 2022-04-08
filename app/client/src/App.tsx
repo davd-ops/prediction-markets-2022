@@ -144,8 +144,10 @@ function App() {
 
         for (let i = 0; i < addressResults.length; i++) {
             const object = addressResults[i]
-            if (object.get('userAddress') === userAddress) userPositionsArray.push(object.get('marketAddress'))
+            if (object.get('userAddress').toLowerCase() === String(userAddress).toLowerCase()) userPositionsArray.push(object.get('marketAddress'))
         }
+
+        console.log(userPositionsArray)
 
         const MarketList = Moralis.Object.extend("MarketList")
         const query = new Moralis.Query(MarketList)
