@@ -25,7 +25,7 @@ interface PropTypes {
 const AppHeader = (props: PropTypes) => {
     const [buttonText, setButtonText] = React.useState(ONBOARD_TEXT)
     const [isDisabled, setDisabled] = React.useState(false)
-    const [metamaskButtonStyle, setMetamaskButtonStyle] = React.useState('clickableButton')
+    const [metamaskButtonStyle, setMetamaskButtonStyle] = React.useState('clickable-button')
     const [adminAddress, setAdminAddress] = React.useState()
     const [accounts, setAccounts] = React.useState([])
     const onboarding = React.useRef<MetaMaskOnboarding>()
@@ -44,13 +44,13 @@ const AppHeader = (props: PropTypes) => {
             if (accounts.length > 0) {
                 setButtonText(props.usdAmount + ' USD')
                 setDisabled(true)
-                setMetamaskButtonStyle('balanceButton')
+                setMetamaskButtonStyle('balance-button')
                 walletChanged()
                 onboarding?.current?.stopOnboarding()
             } else {
                 setButtonText(CONNECT_TEXT)
                 setDisabled(false)
-                setMetamaskButtonStyle('clickableButton')
+                setMetamaskButtonStyle('clickable-button')
             }
         }
     }, [accounts])
@@ -109,7 +109,7 @@ const AppHeader = (props: PropTypes) => {
         }
     }
         return (
-            <header className="App-header">
+            <header className="app-header">
                 <OnboardingButton isDisabled={isDisabled} onClick={onClick} classNamed={metamaskButtonStyle}
                                   text={buttonText} walletChanged={walletChanged}/>
                 <Link to='/' className={props.marketsButton} onClick={props.switchPageToMarkets}>Markets</Link>

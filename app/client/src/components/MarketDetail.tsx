@@ -105,7 +105,7 @@ const MarketDetail = (props: PropTypes) => {
     }
 
     return (
-        <div className="App-body">
+        <div className="app-body">
             <MarketDetailTitle
                 marketName={props.marketName}
                 validUntil={props.validUntil}

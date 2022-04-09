@@ -3,8 +3,8 @@ import '../styles/AppBody.css'
 
 const Page404 = () => {
     return (
-        <div className="App-body">
-            <p className='horizontallyCentered'>This page does not exist.</p>
+        <div className="app-body">
+            <p className='horizontally-centered'>This page does not exist.</p>
         </div>
     );
 };

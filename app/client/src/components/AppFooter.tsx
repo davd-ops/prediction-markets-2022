@@ -2,7 +2,7 @@ import '../styles/AppFooter.css'
 
 const AppFooter = () => {
     return (
-        <div className="App-footer">
+        <div className="app-footer">
             © 2022 DAVID PŠENČÍK
         </div>
     )

@@ -133,7 +133,7 @@ const PortfolioOverview = (props: PropTypes) => {
     }
 
     return (
-        <div className="PortfolioOverview">
+        <div className="portfolio-overview">
             <p className="portfolio-props"><span className='portfolio-less-visible'>Portfolio value</span><br/>${openPositions+props.usdAmount}</p>
             <p className="portfolio-props"><span className='portfolio-less-visible'>Open positions</span><br/>${openPositions}</p>
             <p className="portfolio-props"><span className='portfolio-less-visible'>USD</span><br/>${props.usdAmount}</p>

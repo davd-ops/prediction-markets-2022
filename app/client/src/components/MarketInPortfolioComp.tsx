@@ -125,19 +125,19 @@ const MarketPortfolioComp = (props: PropTypes) => {
         return (
             <>
                 {
-                    initialLiquidity > 0 ? <div className="PortfolioMarketDiv">
-                        <p className='MarketName'>{props.marketName}</p>
-                        <p className="MarketProps firstProp"><span className='LessVisibleText'>Position</span><br/>LP
+                    initialLiquidity > 0 ? <div className="portfolio-market-div">
+                        <p className='market-name'>{props.marketName}</p>
+                        <p className="market-props first-prop"><span className='less-visible-text'>Position</span><br/>LP
                         </p>
-                        <p className="MarketProps marketVolProp"><span
-                            className='LessVisibleText'>Market vol.</span><br/>
+                        <p className="market-props market-vol-prop"><span
+                            className='less-visible-text'>Market vol.</span><br/>
                             {props.marketVolume > 0 ? ((props.marketVolume + Number.EPSILON) * 100) / 100 : 0}$</p>
-                        <p className="MarketProps thirdProp"><span
-                            className='LessVisibleText'>Initial Value</span><br/>{initialLiquidity}$</p>
-                        <p className="MarketProps fourthProp"><span
-                            className='LessVisibleText'>Current Value</span><br/>{currentLiq}$</p>
-                        <p className="MarketProps fifthProp">
-                            <button className='PortfolioDisplayMarketButton'
+                        <p className="market-props third-prop"><span
+                            className='less-visible-text'>Initial Value</span><br/>{initialLiquidity}$</p>
+                        <p className="market-props fourth-prop"><span
+                            className='less-visible-text'>Current Value</span><br/>{currentLiq}$</p>
+                        <p className="market-props fifth-prop">
+                            <button className='portfolio-display-market-button'
                                     onClick={() => props.withdrawLiquidity(props.contractAddress)}>WITHDRAW LP
                             </button>
                         </p>
@@ -151,14 +151,14 @@ const MarketPortfolioComp = (props: PropTypes) => {
         if (isMarketLive) {
             return (
                 <>
-                    <div className="PortfolioMarketDiv">
-                        <p className='MarketName'>{props.marketName}</p>
-                        <p className="MarketProps firstProp"><span className='LessVisibleText'>Position</span><br/>Yes</p>
-                        <p className="MarketProps secondProp"><span className='LessVisibleText'>Amount</span><br/>{yesShares}</p>
-                        <p className="MarketProps thirdProp"><span className='LessVisibleText'>Initial Value</span><br/>{yesInitialValue}$</p>
-                        <p className="MarketProps fourthProp"><span className='LessVisibleText'>Current Value</span><br/>{yesCurrentValue}$</p>
-                        <p className="MarketProps fifthProp"><button className='PortfolioDisplayMarketButton'
-                                                                     onClick={() =>
+                    <div className="portfolio-market-div">
+                        <p className='market-name'>{props.marketName}</p>
+                        <p className="market-props first-prop"><span className='less-visible-text'>Position</span><br/>Yes</p>
+                        <p className="market-props second-prop"><span className='less-visible-text'>Amount</span><br/>{yesShares}</p>
+                        <p className="market-props third-prop"><span className='less-visible-text'>Initial Value</span><br/>{yesInitialValue}$</p>
+                        <p className="market-props fourth-prop"><span className='less-visible-text'>Current Value</span><br/>{yesCurrentValue}$</p>
+                        <p className="market-props fifth-prop"><button className='portfolio-display-market-button'
+                                                                       onClick={() =>
                                                                          props.displayMarketDetail(
                                                                              props.marketName,
                                                                              props.marketDescription,
@@ -169,14 +169,14 @@ const MarketPortfolioComp = (props: PropTypes) => {
                                                                              props.marketVolume
                                                                          )}>TRADE</button></p>
                     </div>
-                    <div className="PortfolioMarketDiv">
-                        <p className='MarketName'>{props.marketName}</p>
-                        <p className="MarketProps firstProp"><span className='LessVisibleText'>Position</span><br/>No</p>
-                        <p className="MarketProps secondProp"><span className='LessVisibleText'>Amount</span><br/>{noShares}</p>
-                        <p className="MarketProps thirdProp"><span className='LessVisibleText'>Initial Value</span><br/>{noInitialValue}$</p>
-                        <p className="MarketProps fourthProp"><span className='LessVisibleText'>Current Value</span><br/>{noCurrentValue}$</p>
-                        <p className="MarketProps fifthProp"><button className='PortfolioDisplayMarketButton'
-                                                                     onClick={() =>
+                    <div className="portfolio-market-div">
+                        <p className='market-name'>{props.marketName}</p>
+                        <p className="market-props first-prop"><span className='less-visible-text'>Position</span><br/>No</p>
+                        <p className="market-props second-prop"><span className='less-visible-text'>Amount</span><br/>{noShares}</p>
+                        <p className="market-props third-prop"><span className='less-visible-text'>Initial Value</span><br/>{noInitialValue}$</p>
+                        <p className="market-props fourth-prop"><span className='less-visible-text'>Current Value</span><br/>{noCurrentValue}$</p>
+                        <p className="market-props fifth-prop"><button className='portfolio-display-market-button'
+                                                                       onClick={() =>
                                                                          props.displayMarketDetail(
                                                                              props.marketName,
                                                                              props.marketDescription,
@@ -195,23 +195,23 @@ const MarketPortfolioComp = (props: PropTypes) => {
         } else {
             return (
                 <>
-                    <div className="PortfolioMarketDiv">
-                        <p className='MarketName'>{props.marketName}</p>
-                        <p className="MarketProps firstProp"><span className='LessVisibleText'>Position</span><br/>Yes</p>
-                        <p className="MarketProps secondProp"><span className='LessVisibleText'>Amount</span><br/>{yesShares}</p>
-                        <p className="MarketProps thirdProp"><span className='LessVisibleText'>Initial Value</span><br/>{yesInitialValue}$</p>
-                        <p className="MarketProps fourthProp"><span className='LessVisibleText'>Current Value</span><br/>{yesCurrentValue}$</p>
-                        <p className="MarketProps fifthProp"><button className='PortfolioDisplayMarketButton'
-                                                                     onClick={() => props.claimUsd(props.contractAddress) }>CLAIM USD</button></p>
+                    <div className="portfolio-market-div">
+                        <p className='market-name'>{props.marketName}</p>
+                        <p className="market-props first-prop"><span className='less-visible-text'>Position</span><br/>Yes</p>
+                        <p className="market-props second-prop"><span className='less-visible-text'>Amount</span><br/>{yesShares}</p>
+                        <p className="market-props third-prop"><span className='less-visible-text'>Initial Value</span><br/>{yesInitialValue}$</p>
+                        <p className="market-props fourth-prop"><span className='less-visible-text'>Current Value</span><br/>{yesCurrentValue}$</p>
+                        <p className="market-props fifth-prop"><button className='portfolio-display-market-button'
+                                                                       onClick={() => props.claimUsd(props.contractAddress) }>CLAIM USD</button></p>
                     </div>
-                    <div className="PortfolioMarketDiv">
-                        <p className='MarketName'>{props.marketName}</p>
-                        <p className="MarketProps firstProp"><span className='LessVisibleText'>Position</span><br/>No</p>
-                        <p className="MarketProps secondProp"><span className='LessVisibleText'>Amount</span><br/>{noShares}</p>
-                        <p className="MarketProps thirdProp"><span className='LessVisibleText'>Initial Value</span><br/>{noInitialValue}$</p>
-                        <p className="MarketProps fourthProp"><span className='LessVisibleText'>Current Value</span><br/>{noCurrentValue}$</p>
-                        <p className="MarketProps fifthProp"><button className='PortfolioDisplayMarketButton'
-                                                                     onClick={() => props.claimUsd(props.contractAddress) }>CLAIM USD</button></p>
+                    <div className="portfolio-market-div">
+                        <p className='market-name'>{props.marketName}</p>
+                        <p className="market-props first-prop"><span className='less-visible-text'>Position</span><br/>No</p>
+                        <p className="market-props second-prop"><span className='less-visible-text'>Amount</span><br/>{noShares}</p>
+                        <p className="market-props third-prop"><span className='less-visible-text'>Initial Value</span><br/>{noInitialValue}$</p>
+                        <p className="market-props fourth-prop"><span className='less-visible-text'>Current Value</span><br/>{noCurrentValue}$</p>
+                        <p className="market-props fifth-prop"><button className='portfolio-display-market-button'
+                                                                       onClick={() => props.claimUsd(props.contractAddress) }>CLAIM USD</button></p>
                     </div>
                     {
                         returnLiquidityComponent()
@@ -223,14 +223,14 @@ const MarketPortfolioComp = (props: PropTypes) => {
         if (isMarketLive) {
             return (
                 <>
-                <div className="PortfolioMarketDiv">
-                    <p className='MarketName'>{props.marketName}</p>
-                    <p className="MarketProps firstProp"><span className='LessVisibleText'>Position</span><br/>{yesShares > 0 ? 'Yes' : 'No'}</p>
-                    <p className="MarketProps secondProp"><span className='LessVisibleText'>Amount</span><br/>{yesShares > 0 ? yesShares : noShares}</p>
-                    <p className="MarketProps thirdProp"><span className='LessVisibleText'>Initial Value</span><br/>{yesShares > 0 ? yesInitialValue : noInitialValue}$</p>
-                    <p className="MarketProps fourthProp"><span className='LessVisibleText'>Current Value</span><br/>{yesShares > 0 ? yesCurrentValue : noCurrentValue}$</p>
-                    <p className="MarketProps fifthProp"><button className='PortfolioDisplayMarketButton'
-                                                                 onClick={() =>
+                <div className="portfolio-market-div">
+                    <p className='market-name'>{props.marketName}</p>
+                    <p className="market-props first-prop"><span className='less-visible-text'>Position</span><br/>{yesShares > 0 ? 'Yes' : 'No'}</p>
+                    <p className="market-props second-prop"><span className='less-visible-text'>Amount</span><br/>{yesShares > 0 ? yesShares : noShares}</p>
+                    <p className="market-props third-prop"><span className='less-visible-text'>Initial Value</span><br/>{yesShares > 0 ? yesInitialValue : noInitialValue}$</p>
+                    <p className="market-props fourth-prop"><span className='less-visible-text'>Current Value</span><br/>{yesShares > 0 ? yesCurrentValue : noCurrentValue}$</p>
+                    <p className="market-props fifth-prop"><button className='portfolio-display-market-button'
+                                                                   onClick={() =>
                                                                      props.displayMarketDetail(
                                                                          props.marketName,
                                                                          props.marketDescription,
@@ -249,14 +249,14 @@ const MarketPortfolioComp = (props: PropTypes) => {
         } else {
             return (
                 <>
-                <div className="PortfolioMarketDiv">
-                    <p className='MarketName'>{props.marketName}</p>
-                    <p className="MarketProps firstProp"><span className='LessVisibleText'>Position</span><br/>{yesShares > 0 ? 'Yes' : 'No'}</p>
-                    <p className="MarketProps secondProp"><span className='LessVisibleText'>Amount</span><br/>{yesShares > 0 ? yesShares : noShares}</p>
-                    <p className="MarketProps thirdProp"><span className='LessVisibleText'>Initial Value</span><br/>{yesShares > 0 ? yesInitialValue : noInitialValue}$</p>
-                    <p className="MarketProps fourthProp"><span className='LessVisibleText'>Current Value</span><br/>{yesShares > 0 ? yesCurrentValue : noCurrentValue}$</p>
-                    <p className="MarketProps fifthProp"><button className='PortfolioDisplayMarketButton'
-                                                                 onClick={() => props.claimUsd(props.contractAddress) }>CLAIM USD</button></p>
+                <div className="portfolio-market-div">
+                    <p className='market-name'>{props.marketName}</p>
+                    <p className="market-props first-prop"><span className='less-visible-text'>Position</span><br/>{yesShares > 0 ? 'Yes' : 'No'}</p>
+                    <p className="market-props second-prop"><span className='less-visible-text'>Amount</span><br/>{yesShares > 0 ? yesShares : noShares}</p>
+                    <p className="market-props third-prop"><span className='less-visible-text'>Initial Value</span><br/>{yesShares > 0 ? yesInitialValue : noInitialValue}$</p>
+                    <p className="market-props fourth-prop"><span className='less-visible-text'>Current Value</span><br/>{yesShares > 0 ? yesCurrentValue : noCurrentValue}$</p>
+                    <p className="market-props fifth-prop"><button className='portfolio-display-market-button'
+                                                                   onClick={() => props.claimUsd(props.contractAddress) }>CLAIM USD</button></p>
                 </div>
                     {returnLiquidityComponent()}
                     </>

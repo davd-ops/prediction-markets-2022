@@ -47,9 +47,9 @@ const ExpiredMarketsPage = (props: PropTypes) => {
     }
 
     return (
-        <div className="App-body">
+        <div className="app-body">
             <h1 >Expired markets</h1>
-            <div className="MarketsContainer">
+            <div className="markets-container">
                 {
                     props.markets.marketList.length > 0 ? props.markets.marketList.map((market: {
                         validUntil: number,

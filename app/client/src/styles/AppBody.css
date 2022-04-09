@@ -1,4 +1,4 @@
-.App-body {
+.app-body {
   background-color: #15172b;
   min-height: 79.8vh;
   display: flow-root;
@@ -20,14 +20,14 @@ input {
   user-select: auto;
 }
 
-.MarketsContainer {
+.markets-container {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
   margin: 0 10% 60px;
 }
 
-.MarketDiv {
+.market-div {
   transition: transform .2s;
   border: 2px solid #303245;
   padding: 40px;
@@ -40,12 +40,12 @@ input {
   justify-content: center;
 }
 
-.MarketDiv:hover {
+.market-div:hover {
   transform: scale(1.05);
   cursor: pointer;
 }
 
-.percentageDiv {
+.percentage-div {
   display: flex;
   justify-content: space-evenly;
 }
@@ -60,7 +60,7 @@ input {
   font-size: 22px;
 }
 
-#marketName {
+#market-name {
   margin-left: 115px;
 }
 
@@ -72,7 +72,7 @@ input {
   margin-top: 30px;
 }
 
-.horizontallyCentered {
+.horizontally-centered {
   margin: auto;
   line-height: 80.9vh;
 }
@@ -168,21 +168,7 @@ input {
   width: 100%;
 }
 
-#amount {
-  width: 58%;
-  position: absolute;
-  left: 0;
-  margin: 0;
-  text-align: right;
-  background-color: #303245;
-  border-radius: 12px 0 0 12px;
-  border: 0;
-  font-size: 18px;
-  outline: 0;
-  padding: 0 20px 0;
-}
-
-#liq-amount {
+#amount, #liq-amount {
   width: 58%;
   position: absolute;
   left: 0;
@@ -329,7 +315,7 @@ input:checked + .slider:after
 
 .market-detail-footer {
   max-width: 90%;
-  min-height: 20vh;
+  min-height: 18.35vh;
   margin-left: 5%;
   margin-top: 30px;
   margin-bottom: 30px;
@@ -339,7 +325,7 @@ input:checked + .slider:after
 }
 
 .market-detail-footer h4 {
-  margin: 40px 30px 20px 70px;
+  margin: 35px 30px 20px 70px;
   text-align: left;
 }
 
@@ -347,7 +333,7 @@ input:checked + .slider:after
   font-size: 20px;
   text-align: left;
   padding: 0 100px 0 90px;
-  margin: 0 0 5vh;
+  margin: 0 0 40px;
 }
 
 .market-footer-props {
@@ -368,7 +354,7 @@ input:checked + .slider:after
   flex-direction: column;
 }
 
-.PortfolioMarketDiv {
+.portfolio-market-div {
   transition: transform .2s;
   border: 2px solid #303245;
   padding: 0 40px;
@@ -378,7 +364,7 @@ input:checked + .slider:after
   margin: 10px 18px;
 }
 
-.PortfolioDisplayMarketButton {
+.portfolio-display-market-button {
   cursor: pointer;
   position: relative;
   top: -8px;
@@ -392,11 +378,11 @@ input:checked + .slider:after
   transition: transform 200ms, color 200ms;
 }
 
-.PortfolioDisplayMarketButton:hover {
+.portfolio-display-market-button:hover {
   color: white;
 }
 
-.MarketName {
+.market-name {
   text-align: left;
   margin-left: 50px;
   font-size: 25px;
@@ -404,57 +390,57 @@ input:checked + .slider:after
   margin-bottom: 10px;
 }
 
-.MarketProps {
+.market-props {
   padding: 0;
   display: inline-block;
   margin: 0 6%;
   font-size: 25px;
 }
 
-.firstProp {
+.first-prop {
   position: absolute;
   left: 5%;
 }
 
-.secondProp {
+.second-prop {
   position: absolute;
   left: 22%;
 }
 
-.thirdProp {
+.third-prop {
   position: absolute;
   left: 39%;
 }
 
-.fourthProp {
+.fourth-prop {
   position: absolute;
   left: 56%;
 }
 
-.fifthProp {
+.fifth-prop {
   position: absolute;
   margin-top: 33px;
   left: 73%;
 }
 
-.marketVolProp {
+.market-vol-prop {
   position: absolute;
   left: 21.5%;
 }
 
-.LessVisibleText {
+.less-visible-text {
   color: #b3b3b3;
   font-size: 14px;
 }
 
-.portfolioMarketsContainer {
+.portfolio-markets-container {
   display: flex;
   flex-direction: column;
   align-items: center;
   margin-bottom: 50px;
 }
 
-.PortfolioOverview {
+.portfolio-overview {
   transition: transform .2s;
   padding: 0 40px;
   border-radius: 10px;
@@ -526,7 +512,7 @@ input:checked + .slider:after
   width: 100%;
 }
 
-.inputDate {
+.input-date {
   background-color: #303245;
   border-radius: 12px;
   border: 0;

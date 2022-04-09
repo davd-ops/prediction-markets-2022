@@ -45,9 +45,9 @@ const AppBody = (props: PropTypes) => {
     }
 
     return (
-        <div className="App-body">
+        <div className="app-body">
             <h1>Markets</h1>
-            <div className="MarketsContainer">
+            <div className="markets-container">
                 {
                     props.markets.marketList.length > 0 ? props.markets.marketList.map((market: {
                         objectId: React.Key,

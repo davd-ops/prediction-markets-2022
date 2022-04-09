@@ -1,4 +1,4 @@
-.App-header {
+.app-header {
   border-bottom: solid 0.1px #374e62;
   background-color: #15172b;
   min-height: 10vh;
@@ -11,7 +11,7 @@
   color: white;
 }
 
-.clickableButton {
+.clickable-button {
   text-transform: uppercase;
   border: none;
   padding: 10px;
@@ -26,7 +26,7 @@
 }
 
 
-.nonClickableButton {
+.non-clickable-button {
   text-transform: uppercase;
   background: #d9dae1;
   transition: transform .2s;
@@ -42,7 +42,7 @@
   cursor: default;
 }
 
-.balanceButton {
+.balance-button {
   background: transparent;
   transition: transform .2s;
   border: solid 0.1px #374e62;
@@ -56,7 +56,7 @@
   left: 3%;
 }
 
-.clickableButton:hover {
+.clickable-button:hover {
   background: #b4b4b426;
   color: white;
   cursor: pointer;

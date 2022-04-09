@@ -38,9 +38,9 @@ const Market = (props: PropTypes) => {
     }
 
     return (
-        <div className="MarketDiv" onClick={() => props.displayMarketDetail(props.marketName, props.marketDescription, props.validUntil, props.createdTimestamp, props.contractAddress, props.providerFee, props.marketVolume, props.resolved)}>
+        <div className="market-div" onClick={() => props.displayMarketDetail(props.marketName, props.marketDescription, props.validUntil, props.createdTimestamp, props.contractAddress, props.providerFee, props.marketVolume, props.resolved)}>
             <p>{props.marketName}</p>
-            <div className='percentageDiv'>
+            <div className='percentage-div'>
                 <p className="yes">Yes: {yesRatio}%</p>
                 <p className="no">No: {noRatio}%</p>
             </div>

@@ -133,12 +133,12 @@ const PortfolioPage = (props: PropTypes) => {
     }
 
     return (
-        <div className="App-body">
+        <div className="app-body">
             <PortfolioOverview userAddress={props.userAddress} usdAmount={props.usdAmount} markets={markets}/>
             <h1 id='no-markets-heading'>You don't have any shares in your portfolio!</h1>
             <p className={'subtitle'} id='no-markets-subtitle'>Buy some on the markets page!</p>
             <h1 id='live-markets-heading' style={{display: 'none'}}>Live markets</h1>
-            <div className='portfolioMarketsContainer' id='first-container' style={{display: 'none'}}>
+            <div className='portfolio-markets-container' id='first-container' style={{display: 'none'}}>
                 {
                     markets.marketList.length > 0 ? markets.marketList.map((
                         market: {
@@ -158,7 +158,7 @@ const PortfolioPage = (props: PropTypes) => {
                 }
             </div>
             <h1 id='expired-markets-heading' style={{display: 'none'}}>Expired markets</h1>
-            <div className='portfolioMarketsContainer' id='second-container' style={{display: 'none'}}>
+            <div className='portfolio-markets-container' id='second-container' style={{display: 'none'}}>
                 {
                     markets.marketList.length > 0 ? markets.marketList.map((market: {
                         objectId: any,

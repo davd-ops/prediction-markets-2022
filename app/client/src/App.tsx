@@ -616,21 +616,21 @@ function App() {
 
     return (
         <BrowserRouter>
-            <div className="App">
+            <div className="app">
                 {
                     typeof window.ethereum !== 'undefined' ?
                         <AppHeader
-                            marketsButton={currentPage === 'markets-page' ? 'nonClickableButton' : 'clickableButton'}
-                            createMarketsButton={currentPage === 'create-market-page' ? 'nonClickableButton' : 'clickableButton'}
-                            expiredMarketsButton={currentPage === 'expired-markets-page' ? 'nonClickableButton' : 'clickableButton'}
-                            portfolioButton={currentPage === 'portfolio-page' ? 'nonClickableButton' : 'clickableButton'}
+                            marketsButton={currentPage === 'markets-page' ? 'non-clickable-button' : 'clickable-button'}
+                            createMarketsButton={currentPage === 'create-market-page' ? 'non-clickable-button' : 'clickable-button'}
+                            expiredMarketsButton={currentPage === 'expired-markets-page' ? 'non-clickable-button' : 'clickable-button'}
+                            portfolioButton={currentPage === 'portfolio-page' ? 'non-clickable-button' : 'clickable-button'}
                             switchPageToMarkets={switchPageToMarketsPage}
                             switchPageToCreateMarket={switchPageToCreateMarketPage}
                             switchPageToExpiredMarkets={switchPageToExpiredMarketsPage}
                             switchPageToPortfolio={switchPageToPortfolioPage}
                             usdAmount={usdAmount}
                             updateBalance={updateUsdBalance}
-                        /> : <header className="App-header" />
+                        /> : <header className="app-header" />
                 }
                 <Toaster/>
                 {

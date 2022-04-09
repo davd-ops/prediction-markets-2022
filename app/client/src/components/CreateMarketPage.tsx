@@ -77,7 +77,7 @@ const CreateMarketPage = (props: PropTypes) => {
     }
 
     return (
-        <div className="App-body">
+        <div className="app-body">
             <form autoComplete="off" className="form" onSubmit={deployContract}>
                 <div className="title">Create new market</div>
                 <div className="input-container ic1">
@@ -126,7 +126,7 @@ const CreateMarketPage = (props: PropTypes) => {
                 </div>
                 <div className="input-container ic1">
                     <input
-                        className='inputDate'
+                        className='input-date'
                         id='endingDate'
                         type='date'
                         name='endingDate'
@@ -134,7 +134,7 @@ const CreateMarketPage = (props: PropTypes) => {
                         value={endingDate}
                         onChange={e => {
                             setEndingDate(e.target.value)
-                            const input = document.getElementsByClassName('inputDate') as HTMLCollectionOf<HTMLElement>
+                            const input = document.getElementsByClassName('input-date') as HTMLCollectionOf<HTMLElement>
 
                             if (input.length !== 0) input[0].style.color = "white"
                         }}
