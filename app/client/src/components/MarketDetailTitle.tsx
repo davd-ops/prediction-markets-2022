@@ -3,6 +3,7 @@ import React from 'react'
 interface PropTypes {
     marketName: string
     validUntil: number
+    providerFee: number
     createdTimestamp: number
     liquidity: number
     marketVolume: number
@@ -44,6 +45,9 @@ const MarketDetailTitle = (props: PropTypes) => {
                 }
                 {
                     !expiredMarket ? <p>Market volume <span className="highlighted-value">${Math.floor((Number(props.marketVolume) + Number.EPSILON) * 100) / 100}</span></p> : null
+                }
+                {
+                    !expiredMarket ? <p>Provider fee <span className="highlighted-value">{Math.floor((Number(props.providerFee) + Number.EPSILON) * 100) / 100} %</span></p> : null
                 }
                 {
                     expiredMarket ? <p>{props.resolved ? 'Resolved' : 'Not resolved'} <span className="highlighted-value"></span></p> : null

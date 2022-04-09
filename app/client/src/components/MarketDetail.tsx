@@ -110,6 +110,7 @@ const MarketDetail = (props: PropTypes) => {
                 marketName={props.marketName}
                 validUntil={props.validUntil}
                 createdTimestamp={0}
+                providerFee={props.providerFee}
                 liquidity={liquidity}
                 marketVolume={props.marketVolume}
                 resolved={props.resolved}

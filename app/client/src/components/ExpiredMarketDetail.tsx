@@ -10,6 +10,7 @@ interface PropTypes {
     marketName: string
     marketDescription: string
     validUntil: number
+    providerFee: number
     contractAddress: string
     resolved: boolean
     pendingTx: any
@@ -88,6 +89,7 @@ const ExpiredMarketDetail = (props: PropTypes) => {
                 liquidity={0}
                 marketVolume={0}
                 resolved={resolved}
+                providerFee = {props.providerFee}
             />
             <div className="market-main-body-section">
                 <h1 id={!resolved ? 'expired-detail-heading' : 'resolved-detail-heading'}>{!resolved ? 'Choose the market outcome' : 'Market resolved'}</h1>

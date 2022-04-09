@@ -147,8 +147,6 @@ function App() {
             if (object.get('userAddress').toLowerCase() === String(userAddress).toLowerCase()) userPositionsArray.push(object.get('marketAddress'))
         }
 
-        console.log(userPositionsArray)
-
         const MarketList = Moralis.Object.extend("MarketList")
         const query = new Moralis.Query(MarketList)
         query.containedIn("contractAddress", userPositionsArray)
@@ -662,6 +660,7 @@ function App() {
                                         marketName={currentMarketData.marketData.marketName}
                                         marketDescription={currentMarketData.marketData.marketDescription}
                                         validUntil={currentMarketData.marketData.validUntil}
+                                        providerFee={currentMarketData.marketData.providerFee}
                                         createdTimestamp={currentMarketData.marketData.createdTimestamp}
                                         contractAddress={currentMarketData.marketData.contractAddress}
                                         resolved={currentMarketData.marketData.resolved}
