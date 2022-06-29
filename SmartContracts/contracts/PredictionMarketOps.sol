@@ -8,26 +8,9 @@ import "./PredictionMarketFactory.sol";
 /// @notice You can use this contract to interact with Prediction market
 contract PredictionMarketOps is PredictionMarketFactory {
 
-    /// @notice Constructor of this contract, called on deployment
-    /// @param _name string, the name of the market
-    /// @param _description string, the name of the market
-    /// @param _endingBlock The unix timestamp in seconds of the ending date and time 
-    /// @param _erc20TokenAddress Address of ERC-20 which we are using as native currency for our market
-    /// @param _erc20TokenDigits The number of digits of the ERC-20 token
-    /// @param _providerFee The number that express the percentage which is given to liquidity providers
-    constructor(string memory _name, string memory _description, uint _endingBlock, address _erc20TokenAddress,  uint _erc20TokenDigits, uint _providerFee) {
-        startingBlock = block.timestamp;
-        endingBlockTimestamp = _endingBlock;
-        require(startingBlock < _endingBlock, "The market has to end in the future");
-        marketName = _name;
-        marketDescription = _description;
-        providerFee = _providerFee; //must be in %
-        usd = IERC20(address(_erc20TokenAddress)); //should be a stablecoin
-        erc20TokenDigits = _erc20TokenDigits;
-        tenToPowerOfTokenDigits = 10 ** _erc20TokenDigits;
-        require(_erc20TokenDigits >= 6, "The token must have more than 6 decimals.");
-        emit MarketCreated(address(this));
-    }
+    /// @notice Constructor of this contract, called on deployment, passing parameters to parent contract
+    constructor(string memory _name, string memory _description, uint _endingBlock, address _erc20TokenAddress,  uint8 _erc20TokenDigits, uint8 _providerFee)
+        PredictionMarketFactory(_name, _description, _endingBlock, _erc20TokenAddress, _erc20TokenDigits, _providerFee) {}
 
     /// @notice Distribute provider fee to liquidity providers
     /// @param _providerFee The provider fee set by deployer of this market
@@ -211,9 +194,9 @@ contract PredictionMarketOps is PredictionMarketFactory {
             noSharesEmitted = noSharesEmitted+_amount;
         }
         
-        int A = int(1*tenToPowerOfTokenDigits);
+        int A = int64(1*tenToPowerOfTokenDigits);
         int B = -int(yesSharesEmitted+noSharesEmitted);
-        int C = ((int(yesSharesEmitted*noSharesEmitted)/int(tenToPowerOfTokenDigits))-((originalNumberOfYesShares*originalNumberOfNoShares)/int(tenToPowerOfTokenDigits)));
+        int C = ((int(yesSharesEmitted*noSharesEmitted)/int64(tenToPowerOfTokenDigits))-((originalNumberOfYesShares*originalNumberOfNoShares)/int64(tenToPowerOfTokenDigits)));
 
         uint usdToBeReturned = uint(calculateQuadraticEquationAndReturnLowerResult(A, B, C));
 

@@ -46,16 +46,16 @@ contract PredictionMarketFactory is Ownable {
 
     string public marketName;
     string public marketDescription;
+    string public winningSide;
+    uint8 public immutable providerFee;
+    uint8 public immutable erc20TokenDigits;
+    uint64 immutable internal tenToPowerOfTokenDigits;
+    IERC20 internal immutable usd; 
     uint public startingBlock;
     uint public endingBlockTimestamp;
     uint public yesSharesEmitted = 0; //18 decimals, might want to change it later
     uint public noSharesEmitted = 0; //18 decimals, might want to change it later
-    uint providerFee;
-    address public erc20TokenAddress;
-    string public winningSide;
-    IERC20 internal usd; 
-    uint public erc20TokenDigits;
-    uint internal tenToPowerOfTokenDigits;
+    
     
     liquidityProvider[] public liquidityProviders;
 
@@ -88,6 +88,29 @@ contract PredictionMarketFactory is Ownable {
         _;
     }
 
+    /// @notice Constructor of this contract, called on deployment
+    /// @param _name string, the name of the market
+    /// @param _description string, the name of the market
+    /// @param _endingBlock The unix timestamp in seconds of the ending date and time 
+    /// @param _erc20TokenAddress Address of ERC-20 which we are using as native currency for our market
+    /// @param _erc20TokenDigits The number of digits of the ERC-20 token
+    /// @param _providerFee The number that express the percentage which is given to liquidity providers
+    constructor(string memory _name, string memory _description, uint _endingBlock, address _erc20TokenAddress,  uint8 _erc20TokenDigits, uint8 _providerFee) {
+        require(block.timestamp < _endingBlock, "The market has to end in the future");
+        require(_erc20TokenDigits >= 6, "The token must have more than 6 decimals.");
+        require(_erc20TokenDigits <= 18, "The token must have less than 18 decimals.");
+        require(_providerFee <= 100, "The provider fee can't be more than 100%.");
+        startingBlock = block.timestamp;
+        endingBlockTimestamp = _endingBlock;
+        marketName = _name;
+        marketDescription = _description;
+        providerFee = _providerFee; //must be in %
+        usd = IERC20(address(_erc20TokenAddress)); //should be a stablecoin
+        erc20TokenDigits = _erc20TokenDigits;
+        tenToPowerOfTokenDigits = uint64(10 ** _erc20TokenDigits);
+        emit MarketCreated(address(this));
+    }
+
     /// @notice Check if the market is resolved
     /// @return true if the market is resolved, false if is not
     function checkIfMarketIsResolved() internal view isClosed returns(bool) {
@@ -108,7 +131,7 @@ contract PredictionMarketFactory is Ownable {
         int Y = 0;
         int discriminant = 0;
 
-		discriminant = (_B**2)/int(tenToPowerOfTokenDigits) - (4*_A*_C)/int(tenToPowerOfTokenDigits);
+		discriminant = (_B**2)/int64(tenToPowerOfTokenDigits) - (4*_A*_C)/int64(tenToPowerOfTokenDigits);
         require(discriminant >= 0, 'Equation without solution');
         
         if (discriminant == 0){
@@ -117,7 +140,7 @@ contract PredictionMarketFactory is Ownable {
 		} else {
             int z = 0;
             z = discriminant;
-            int x = discriminant / 2 + 1*int(tenToPowerOfTokenDigits);
+            int x = discriminant / 2 + 1*int64(tenToPowerOfTokenDigits);
             while (x < z) {
                 z = x;
                 x = (discriminant / x + x) / 2;
@@ -126,8 +149,8 @@ contract PredictionMarketFactory is Ownable {
                 }
             }
             int D = z*int(10**(erc20TokenDigits/2));
-		    X = (-_B +D) * int(tenToPowerOfTokenDigits) / (2 * _A);
-		    Y = (-_B -D) * int(tenToPowerOfTokenDigits) / (2 * _A);
+		    X = (-_B +D) * int64(tenToPowerOfTokenDigits) / (2 * _A);
+		    Y = (-_B -D) * int64(tenToPowerOfTokenDigits) / (2 * _A);
 
             if (X < Y) return X; 
             else return Y;
@@ -200,9 +223,9 @@ contract PredictionMarketFactory is Ownable {
             tmpNoSharesEmitted = noSharesEmitted+_amount;
         }
         
-        int A = int(1*tenToPowerOfTokenDigits);
+        int A = int64(1*tenToPowerOfTokenDigits);
         int B = -int(tmpYesSharesEmitted+tmpNoSharesEmitted);
-        int C = ((int(tmpYesSharesEmitted*tmpNoSharesEmitted)/int(tenToPowerOfTokenDigits))-((int(yesSharesEmitted)*int(noSharesEmitted))/int(tenToPowerOfTokenDigits)));
+        int C = ((int(tmpYesSharesEmitted*tmpNoSharesEmitted)/int64(tenToPowerOfTokenDigits))-((int(yesSharesEmitted)*int(noSharesEmitted))/int64(tenToPowerOfTokenDigits)));
 
         uint usdToBeReturned = uint(calculateQuadraticEquationAndReturnLowerResult(A, B, C));
 
