@@ -1,13 +1,9 @@
 //SPDX-License-Identifier: Unlicense
 pragma solidity >=0.8.0;
 
-//import "./PredictionMarketOps.sol";
 import "./Ownable.sol";
-import "./SafeMath.sol";
 import "hardhat/console.sol";
 
-/// @title Interface for ERC-20 tokens
-/// @author David Psencik
 /// @notice This allows you to use tokens that use ERC-20 standart in this contract
 interface IERC20 {
     function totalSupply() external view returns (uint256);
@@ -39,8 +35,6 @@ interface IERC20 {
 /// @author David Psencik
 /// @notice You can use this contract for information about Prediction markets
 contract PredictionMarketFactory is Ownable {
-    using SafeMath for uint;
-    using SafeMath for uint128;
 
     event MarketCreated(address marketAddress);
     event LiquidityProvided(uint amount, address provider);
@@ -94,16 +88,6 @@ contract PredictionMarketFactory is Ownable {
         _;
     }
 
-    /// @notice Check if the market is closed or live
-    /// @return true if the market is live, false if is closed
-    function checkIfTheMarketIsClosed() public view returns(bool) {
-        if(endingBlockTimestamp >= block.timestamp){
-            return false;
-        } else {
-            return true;
-        }
-    }
-
     /// @notice Check if the market is resolved
     /// @return true if the market is resolved, false if is not
     function checkIfMarketIsResolved() internal view isClosed returns(bool) {
@@ -119,7 +103,7 @@ contract PredictionMarketFactory is Ownable {
     /// @param _B The number that represents B in quadratic equation
     /// @param _C The number that represents C in quadratic equation
     /// @return number that represents the lower one of possible results of this quadratic equation
-    function calculateQuadraticEquationAndReturnLowerResult(int _A, int _B, int _C) public view returns (int256){ 
+    function calculateQuadraticEquationAndReturnLowerResult(int _A, int _B, int _C) internal view returns (int256){ 
         int X = 0;
         int Y = 0;
         int discriminant = 0;
@@ -150,16 +134,13 @@ contract PredictionMarketFactory is Ownable {
 		}
 	} 
 
-    /// @notice Distribute provider fee to liquidity providers
-    /// @param _providerFee The provider fee set by deployer of this market
-    function distributeProviderFeeToLiquidityProviders(uint _providerFee) internal {
-        uint liquidity = getCurrentLiquidity();
-
-        for (uint i = 0; i < liquidityProviders.length; i++) {
-            if(liquidityProviders[i].providedLiquidity != 0) {
-                uint percentageOfLiquidityProviders = liquidity.mul(tenToPowerOfTokenDigits).div(liquidityProviders[i].providedLiquidity);
-                liquidityProviders[i].earnedProvision = uint128(liquidityProviders[i].earnedProvision.add(_providerFee.mul(tenToPowerOfTokenDigits).div(percentageOfLiquidityProviders)));
-            }
+    /// @notice Check if the market is closed or live
+    /// @return true if the market is live, false if is closed
+    function checkIfTheMarketIsClosed() public view returns(bool) {
+        if(endingBlockTimestamp >= block.timestamp){
+            return false;
+        } else {
+            return true;
         }
     }
 
@@ -169,13 +150,13 @@ contract PredictionMarketFactory is Ownable {
     function calculateMarketRatio() public view returns(uint, string memory) {
         if (yesSharesEmitted != 0 && noSharesEmitted != 0){
             if (yesSharesEmitted > noSharesEmitted){
-                uint marketRatio = yesSharesEmitted.mul(tenToPowerOfTokenDigits).div(noSharesEmitted);
+                uint marketRatio = yesSharesEmitted*tenToPowerOfTokenDigits/noSharesEmitted;
                 return (marketRatio, "yes");
         } else if (yesSharesEmitted < noSharesEmitted) {
-                uint marketRatio = noSharesEmitted.mul(tenToPowerOfTokenDigits).div(yesSharesEmitted);
+                uint marketRatio = noSharesEmitted*tenToPowerOfTokenDigits/yesSharesEmitted;
                 return (marketRatio, "no");
         } else {
-                uint marketRatio = yesSharesEmitted.mul(tenToPowerOfTokenDigits).div(noSharesEmitted);
+                uint marketRatio = yesSharesEmitted*tenToPowerOfTokenDigits/noSharesEmitted;
                 return (marketRatio, "yes");
         }
         } else {
@@ -193,7 +174,7 @@ contract PredictionMarketFactory is Ownable {
         uint liquidity;
 
         for (uint i = 0; i < liquidityProviders.length; i++) {
-            liquidity = liquidity.add(liquidityProviders[i].providedLiquidity);
+            liquidity = liquidity+liquidityProviders[i].providedLiquidity;
         }
 
         return liquidity;
@@ -209,14 +190,14 @@ contract PredictionMarketFactory is Ownable {
 
         if (keccak256(abi.encodePacked(_choice)) == keccak256(abi.encodePacked("yes"))){
             require(_amount <= yesSharesPerAddress[msg.sender], "You don't have enough shares to sell.");
-            require(_amount.div(2) <= noSharesEmitted, "There is not enough liquidity in this smartcontract. Wait until it's increased or until the end of the market.");
-            tmpYesSharesEmitted = yesSharesEmitted.add(_amount);
+            require(_amount/2 <= noSharesEmitted, "There is not enough liquidity in this smartcontract. Wait until it's increased or until the end of the market.");
+            tmpYesSharesEmitted = yesSharesEmitted+_amount;
             tmpNoSharesEmitted = noSharesEmitted;
         } else {
             require(_amount <= noSharesPerAddress[msg.sender], "You don't have enough shares to sell.");
-            require(_amount.div(2) <= yesSharesEmitted, "There is not enough liquidity in this smartcontract. Wait until it's increased or until the end of the market.");
+            require(_amount/2 <= yesSharesEmitted, "There is not enough liquidity in this smartcontract. Wait until it's increased or until the end of the market.");
             tmpYesSharesEmitted = yesSharesEmitted;
-            tmpNoSharesEmitted = noSharesEmitted.add(_amount);
+            tmpNoSharesEmitted = noSharesEmitted+_amount;
         }
         
         int A = int(1*tenToPowerOfTokenDigits);
@@ -225,21 +206,9 @@ contract PredictionMarketFactory is Ownable {
 
         uint usdToBeReturned = uint(calculateQuadraticEquationAndReturnLowerResult(A, B, C));
 
-        uint distributedProviderFee = usdToBeReturned.div(100).mul(providerFee);
-        return usdToBeReturned.sub(distributedProviderFee);
+        uint distributedProviderFee = usdToBeReturned/100*providerFee;
+        return usdToBeReturned-distributedProviderFee;
     }
-
-/*
-    /// @notice Calculate how much you can claim
-    /// @return number that represents claimable USD amount
-    function calculateClaimableUSD() external isResolved view returns (uint) {        
-        if (keccak256(abi.encodePacked(winningSide)) == keccak256(abi.encodePacked("yes"))){
-            return yesSharesPerAddress[msg.sender];
-        } else {
-            return yesSharesPerAddress[msg.sender];
-        }
-    }
-    */
 
     /// @notice Calculate current value of your LP
     /// @return number that value of your LP
@@ -256,19 +225,19 @@ contract PredictionMarketFactory is Ownable {
                 usersLiquidity = liquidityProviders[i].providedLiquidity;
 
                 for (uint j = 0; j < liquidityProviders.length; j++) {
-                    liquidity = liquidity.add(liquidityProviders[j].providedLiquidity);
+                    liquidity = liquidity+liquidityProviders[j].providedLiquidity;
                 }
 
-                percentageOfLPs = usersLiquidity.div(liquidity.div(100));
+                percentageOfLPs = usersLiquidity/liquidity/100;
                 
                 (marketRatio, inferiorShare) = calculateMarketRatio();
   
                 if(keccak256(abi.encodePacked(inferiorShare)) == keccak256(abi.encodePacked("yes"))) {
-                    userWillGet = noSharesEmitted.div(100).mul(percentageOfLPs);
-                    return (userWillGet.add(liquidityProviders[i].earnedProvision));
+                    userWillGet = noSharesEmitted/100*percentageOfLPs;
+                    return (userWillGet+liquidityProviders[i].earnedProvision);
                 } else {
-                    userWillGet = yesSharesEmitted.div(100).mul(percentageOfLPs);
-                    return (userWillGet.add(liquidityProviders[i].earnedProvision));
+                    userWillGet = yesSharesEmitted/100*percentageOfLPs;
+                    return (userWillGet+liquidityProviders[i].earnedProvision);
                 }
             }
         }

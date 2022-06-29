@@ -38,7 +38,6 @@ const PortfolioPage = (props: PropTypes) => {
     React.useEffect(() => {
         setTimeout(async () => {
             if (props.markets.marketList.length >= 1) setMarkets(props.markets)
-            console.log(props.markets.marketList.length)
         }, 1)
     }, [props.markets])
 
@@ -134,7 +133,7 @@ const PortfolioPage = (props: PropTypes) => {
 
     return (
         <div className="app-body">
-            <PortfolioOverview userAddress={props.userAddress} usdAmount={props.usdAmount} markets={markets}/>
+            <PortfolioOverview userAddress={props.userAddress} usdAmount={props.usdAmount} markets={markets} />
             <h1 id='no-markets-heading'>You don't have any shares in your portfolio!</h1>
             <p className={'subtitle'} id='no-markets-subtitle'>Buy some on the markets page!</p>
             <h1 id='live-markets-heading' style={{display: 'none'}}>Live markets</h1>

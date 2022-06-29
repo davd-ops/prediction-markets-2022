@@ -1,5 +1,9 @@
-import React from 'react'
+import '../styles/AppBody.css'
+import React from "react"
 import Market from "./Market"
+import toast from "react-hot-toast";
+import {ethers} from "ethers";
+
 
 interface PropTypes {
     displayMarketDetail: any
@@ -13,14 +17,13 @@ interface PropTypes {
             contractAddress: string,
             providerFee: number,
             marketVolume: number,
-            isResolved: boolean,
             resolved: boolean
         }[]
     }
 }
 
-const ExpiredMarketsPage = (props: PropTypes) => {
-    let isThereExpiredMarket = false
+const MarketsPage = (props: PropTypes) => {
+    let isThereLiveMarket = false
 
     const filterMarketsAndDisplayResults = () => {
         if (props.markets.marketList.length) {
@@ -35,9 +38,8 @@ const ExpiredMarketsPage = (props: PropTypes) => {
                 marketVolume: number,
                 resolved: boolean
             }) => {
-
-                if (Number(market.validUntil) < new Date(Date.now()).getTime() / 1000) {
-                    isThereExpiredMarket = true
+                if (Number(market.validUntil) > new Date(Date.now()).getTime() / 1000) {
+                    isThereLiveMarket = true
                     return <Market key={market.objectId} marketName={market.marketName}
                                    marketDescription={market.marketDescription}
                                    validUntil={market.validUntil} createdTimestamp={market.createdTimestamp}
@@ -47,19 +49,20 @@ const ExpiredMarketsPage = (props: PropTypes) => {
                 }
             })
         }
+
     }
 
     return (
         <div className="app-body">
-            <h1 >Expired markets</h1>
+            <h1>Markets</h1>
             <div className="markets-container">
                 {
                     filterMarketsAndDisplayResults()
                 }
-                <p className='subtitle'>{!isThereExpiredMarket ? 'No expired markets' : null}</p>
+                <p className='subtitle'>{!isThereLiveMarket ? 'No markets live' : null}</p>
             </div>
         </div>
     )
 }
 
-export default ExpiredMarketsPage
+export default MarketsPage

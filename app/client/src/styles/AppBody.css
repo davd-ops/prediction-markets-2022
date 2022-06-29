@@ -30,7 +30,7 @@ input {
 .market-div {
   transition: transform .2s;
   border: 2px solid #303245;
-  padding: 40px;
+  padding: 20px 40px;
   border-radius: 10px;
   width: 21%;
   min-height: 155px;
@@ -38,6 +38,10 @@ input {
   display: flex;
   flex-direction: column;
   justify-content: center;
+}
+
+.market-div p{
+  font-size: calc(2px + 2vmin);
 }
 
 .market-div:hover {
@@ -90,6 +94,7 @@ input {
 
 #market-heading {
   width: 50%;
+  margin: 0 2.5%;
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -101,7 +106,7 @@ input {
 }
 
 #market-heading-flex-rows {
-  width: 50%;
+  width: 45%;
   display: flex;
   justify-content: space-evenly;
   align-items: center;

@@ -1,6 +1,6 @@
 import './styles/App.css'
 import AppHeader from './components/AppHeader'
-import AppBody from "./components/AppBody"
+import MarketsPage from "./components/MarketsPage"
 import AppFooter from "./components/AppFooter"
 import React, {useState} from "react"
 import CreateMarketPage from "./components/CreateMarketPage"
@@ -477,6 +477,9 @@ function App() {
                     id: 'MarketCreated',
                     duration: duration,
                 })
+                if (currentPage === 'markets-page') {
+                    switchPageToMarketsPage()
+                }
             })
 
             usdContract.on('Approval', (yourAddress: string) => {
@@ -670,8 +673,8 @@ function App() {
                                     /> :
                                     <Switch>
                                         <Route exact path='/'>
-                                            <AppBody displayMarketDetail={switchPageToMarketDetailPage}
-                                                     markets={markets}/>
+                                            <MarketsPage displayMarketDetail={switchPageToMarketDetailPage}
+                                                         markets={markets}/>
                                         </Route>
                                         <Route exact path='/create-market'>
                                             <CreateMarketPage pendingTx={pendingTx} signMessage={signMessage}

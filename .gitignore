@@ -350,6 +350,8 @@ MigrationBackup/
 .ionide/
 
 node_modules
+theory
+PredictionMarkets.zip
 
 #Hardhat files
 cache
