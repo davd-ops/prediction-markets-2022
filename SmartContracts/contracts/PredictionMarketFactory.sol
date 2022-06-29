@@ -49,10 +49,10 @@ contract PredictionMarketFactory is Ownable {
     string public winningSide;
     uint8 public immutable providerFee;
     uint8 public immutable erc20TokenDigits;
-    uint64 immutable internal tenToPowerOfTokenDigits;
+    uint64 internal immutable tenToPowerOfTokenDigits;
     IERC20 internal immutable usd; 
-    uint public startingBlock;
-    uint public endingBlockTimestamp;
+    uint public immutable startingBlock;
+    uint public immutable endingBlockTimestamp;
     uint public yesSharesEmitted = 0; //18 decimals, might want to change it later
     uint public noSharesEmitted = 0; //18 decimals, might want to change it later
     
@@ -68,7 +68,7 @@ contract PredictionMarketFactory is Ownable {
         address lpAddress;
     }
 
-    modifier onlyIfIsCorrectChoice(string memory _choice) {
+    modifier onlyIfIsCorrectChoice(string calldata _choice) {
         require(keccak256(abi.encodePacked(_choice)) == keccak256(abi.encodePacked("yes")) || keccak256(abi.encodePacked(_choice)) == keccak256(abi.encodePacked("no")), "Incorrect choice. Insert yes/no.");
         _;
     }
@@ -95,7 +95,7 @@ contract PredictionMarketFactory is Ownable {
     /// @param _erc20TokenAddress Address of ERC-20 which we are using as native currency for our market
     /// @param _erc20TokenDigits The number of digits of the ERC-20 token
     /// @param _providerFee The number that express the percentage which is given to liquidity providers
-    constructor(string memory _name, string memory _description, uint _endingBlock, address _erc20TokenAddress,  uint8 _erc20TokenDigits, uint8 _providerFee) {
+    constructor(string memory _name, string memory _description, uint _endingBlock, address _erc20TokenAddress,  uint8 _erc20TokenDigits, uint8 _providerFee) payable {
         require(block.timestamp < _endingBlock, "The market has to end in the future");
         require(_erc20TokenDigits >= 6, "The token must have more than 6 decimals.");
         require(_erc20TokenDigits <= 18, "The token must have less than 18 decimals.");
@@ -196,8 +196,9 @@ contract PredictionMarketFactory is Ownable {
     function getCurrentLiquidity() public view returns (uint) {
         uint liquidity;
 
-        for (uint i = 0; i < liquidityProviders.length; i++) {
+        for (uint i = 0; i < liquidityProviders.length; ) {
             liquidity = liquidity+liquidityProviders[i].providedLiquidity;
+            unchecked { ++i; }   
         }
 
         return liquidity;
@@ -207,7 +208,7 @@ contract PredictionMarketFactory is Ownable {
     /// @param _amount The amount of shares you want to know value of
     /// @param _choice The type of shares you want to want value of
     /// @return number that represents value for selected shares
-    function getCurrentValueOfShares(uint _amount, string memory _choice) public view isLive returns (uint) {
+    function getCurrentValueOfShares(uint _amount, string calldata _choice) public view isLive returns (uint) {
         uint tmpYesSharesEmitted;
         uint tmpNoSharesEmitted;
 
@@ -236,7 +237,7 @@ contract PredictionMarketFactory is Ownable {
     /// @notice Calculate current value of your LP
     /// @return number that value of your LP
     function getCurrentLPValue() public view returns (uint) {
-        for (uint i = 0; i < liquidityProviders.length; i++) {
+        for (uint i = 0; i < liquidityProviders.length; ) {
             if(liquidityProviders[i].lpAddress == msg.sender) {
                 uint liquidity;
                 uint usersLiquidity;
@@ -247,8 +248,9 @@ contract PredictionMarketFactory is Ownable {
 
                 usersLiquidity = liquidityProviders[i].providedLiquidity;
 
-                for (uint j = 0; j < liquidityProviders.length; j++) {
+                for (uint j = 0; j < liquidityProviders.length;) {
                     liquidity = liquidity+liquidityProviders[j].providedLiquidity;
+                    unchecked { ++j; }  
                 }
 
                 percentageOfLPs = usersLiquidity/liquidity/100;
@@ -263,6 +265,7 @@ contract PredictionMarketFactory is Ownable {
                     return (userWillGet+liquidityProviders[i].earnedProvision);
                 }
             }
+            unchecked { ++i; }  
         }
         return 0;
     }

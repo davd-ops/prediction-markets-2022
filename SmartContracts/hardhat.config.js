@@ -1,4 +1,5 @@
 require("@nomiclabs/hardhat-waffle");
+require("hardhat-gas-reporter");
 
 // This is a sample Hardhat task. To learn how to create your own go to
 // https://hardhat.org/guides/create-task.html
@@ -18,4 +19,9 @@ task("accounts", "Prints the list of accounts", async (taskArgs, hre) => {
  */
 module.exports = {
   solidity: "0.8.4",
+  gasReporter: {
+    currency: 'USD',
+    gasPrice: 50,
+    coinmarketcap: 'fcddfc03-5e54-46ef-9982-d97d460b89ec'
+  },
 };

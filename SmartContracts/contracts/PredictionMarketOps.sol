@@ -10,7 +10,7 @@ contract PredictionMarketOps is PredictionMarketFactory {
 
     /// @notice Constructor of this contract, called on deployment, passing parameters to parent contract
     constructor(string memory _name, string memory _description, uint _endingBlock, address _erc20TokenAddress,  uint8 _erc20TokenDigits, uint8 _providerFee)
-        PredictionMarketFactory(_name, _description, _endingBlock, _erc20TokenAddress, _erc20TokenDigits, _providerFee) {}
+        PredictionMarketFactory(_name, _description, _endingBlock, _erc20TokenAddress, _erc20TokenDigits, _providerFee) payable {}
 
     /// @notice Distribute provider fee to liquidity providers
     /// @param _providerFee The provider fee set by deployer of this market
@@ -113,7 +113,7 @@ contract PredictionMarketOps is PredictionMarketFactory {
 
     /// @notice Choose the result of the `marketName` market 
     /// @param _choice String, the market will result
-    function chooseWinningSide(string memory _choice) external onlyOwner isClosed onlyIfIsCorrectChoice(_choice) {
+    function chooseWinningSide(string calldata _choice) external onlyOwner isClosed onlyIfIsCorrectChoice(_choice) {
         winningSide = _choice;
         emit WinningSideChosen(winningSide, msg.sender);
     }
@@ -139,7 +139,7 @@ contract PredictionMarketOps is PredictionMarketFactory {
     /// @notice Buy shares
     /// @param _choice String, the shares you want to buy
     /// @param _amount The number of USD you want to spend
-    function buyShares(string memory _choice, uint _amount) external onlyIfIsCorrectChoice(_choice) isLive {
+    function buyShares(string calldata _choice, uint _amount) external onlyIfIsCorrectChoice(_choice) isLive {
         if (keccak256(abi.encodePacked(_choice)) == keccak256(abi.encodePacked("yes"))){
             require(_amount <= yesSharesEmitted, "There is not enough liquidity in this market.");
             require(yesSharesPerAddress[msg.sender]+_amount <= uint(1000000000000000000)*tenToPowerOfTokenDigits, "You cannot bid more than 1000000000000000000 USD");
@@ -178,7 +178,7 @@ contract PredictionMarketOps is PredictionMarketFactory {
     /// @notice Sell shares
     /// @param _choice String, the shares you want to sell
     /// @param _amount The number of shares you want to sell
-    function sellShares(string memory _choice, uint _amount) external onlyIfIsCorrectChoice(_choice) isLive {
+    function sellShares(string calldata _choice, uint _amount) external onlyIfIsCorrectChoice(_choice) isLive {
         int originalNumberOfYesShares = int(yesSharesEmitted);
         int originalNumberOfNoShares = int(noSharesEmitted);
         
