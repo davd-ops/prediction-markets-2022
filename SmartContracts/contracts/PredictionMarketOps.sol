@@ -17,11 +17,12 @@ contract PredictionMarketOps is PredictionMarketFactory {
     function distributeProviderFeeToLiquidityProviders(uint _providerFee) internal {
         uint liquidity = getCurrentLiquidity();
 
-        for (uint i = 0; i < liquidityProviders.length; i++) {
+        for (uint i = 0; i < liquidityProviders.length; ) {
             if(liquidityProviders[i].providedLiquidity != 0) {
                 uint percentageOfLiquidityProviders = liquidity*tenToPowerOfTokenDigits/liquidityProviders[i].providedLiquidity;
                 liquidityProviders[i].earnedProvision = uint128(liquidityProviders[i].earnedProvision+_providerFee*tenToPowerOfTokenDigits/percentageOfLiquidityProviders);
             }
+            unchecked { ++i; }  
         }
     }
 
@@ -49,11 +50,12 @@ contract PredictionMarketOps is PredictionMarketFactory {
             }
         }
 
-        for (uint i = 0; i < liquidityProviders.length; i++) {
+        for (uint i = 0; i < liquidityProviders.length; ) {
             if (liquidityProviders[i].lpAddress == msg.sender) {
                 thisUserExists = true;
                 liquidityProviders[i].providedLiquidity = uint128(liquidityProviders[i].providedLiquidity+_amount);
             }
+            unchecked { ++i; }
         }
 
         if (!thisUserExists) {
@@ -69,7 +71,7 @@ contract PredictionMarketOps is PredictionMarketFactory {
     /// @notice Withdraw your whole liquidity positon from the `marketName` market
     function withdrawLiquidity() external {
         bool exists = false;
-        for (uint i = 0; i < liquidityProviders.length; i++) {
+        for (uint i = 0; i < liquidityProviders.length; ) {
             if(liquidityProviders[i].lpAddress == msg.sender) {
                 uint liquidity;
                 uint usersLiquidity;
@@ -82,8 +84,9 @@ contract PredictionMarketOps is PredictionMarketFactory {
 
                 usersLiquidity = liquidityProviders[i].providedLiquidity;
 
-                for (uint j = 0; j < liquidityProviders.length; j++) {
+                for (uint j = 0; j < liquidityProviders.length; ) {
                     liquidity = liquidity+liquidityProviders[j].providedLiquidity;
+                    unchecked { ++j; }  
                 }
 
                 percentageOfLPs = usersLiquidity/liquidity/100;
@@ -94,19 +97,23 @@ contract PredictionMarketOps is PredictionMarketFactory {
                     userWillGet = noSharesEmitted/100*percentageOfLPs;
                     noSharesEmitted = noSharesEmitted-userWillGet;
                     yesSharesEmitted = yesSharesEmitted-userWillGet;
-                    usd.transfer(msg.sender, userWillGet+liquidityProviders[i].earnedProvision);
-                    emit LiquidityWithdrawn(userWillGet+liquidityProviders[i].earnedProvision, msg.sender);
+                    uint reward = liquidityProviders[i].earnedProvision;
                     delete liquidityProviders[i];
+                    usd.transfer(msg.sender, userWillGet+reward);
+                    emit LiquidityWithdrawn(userWillGet+reward, msg.sender);
+                    
                 } else {
                     userWillGet = yesSharesEmitted/100*percentageOfLPs;
                     yesSharesEmitted = yesSharesEmitted-userWillGet;
                     noSharesEmitted = noSharesEmitted-userWillGet;
-                    usd.transfer(msg.sender, userWillGet+liquidityProviders[i].earnedProvision);
-                    emit LiquidityWithdrawn(userWillGet+liquidityProviders[i].earnedProvision, msg.sender);
+                    uint reward = liquidityProviders[i].earnedProvision;
                     delete liquidityProviders[i];
-                    }
+                    usd.transfer(msg.sender, userWillGet+reward);
+                    emit LiquidityWithdrawn(userWillGet+reward, msg.sender);
+                }
                 break; 
             }
+            unchecked { ++i; }  
         }
         require(exists, "You are not a liquidity provider.");
     }
@@ -121,19 +128,20 @@ contract PredictionMarketOps is PredictionMarketFactory {
     /// @notice Claim your winnings
     function claimUsd() external isResolved {
         bool claimed = false;
-        
+
+        yesSharesPerAddress[msg.sender] = 0;
+        noSharesPerAddress[msg.sender] = 0;
+
         if (keccak256(abi.encodePacked(winningSide)) == keccak256(abi.encodePacked("yes"))){
             usd.transfer(msg.sender, yesSharesPerAddress[msg.sender]);
             emit UsdClaimed(yesSharesPerAddress[msg.sender], msg.sender);
             claimed = true;
-        } else if(keccak256(abi.encodePacked(winningSide)) == keccak256(abi.encodePacked("no"))) {
+        } else {
             usd.transfer(msg.sender, noSharesPerAddress[msg.sender]);
             emit UsdClaimed(noSharesPerAddress[msg.sender], msg.sender);
             claimed = true;
         }
         require(claimed, "Error have occured, please try again later.");
-        yesSharesPerAddress[msg.sender] = 0;
-        noSharesPerAddress[msg.sender] = 0;
     }
 
     /// @notice Buy shares
@@ -206,20 +214,21 @@ contract PredictionMarketOps is PredictionMarketFactory {
         if (keccak256(abi.encodePacked(_choice)) == keccak256(abi.encodePacked("yes"))){  
             uint newShares = yesSharesPerAddress[msg.sender]-_amount;
             uint distributedProviderFee = usdToBeReturned/100*providerFee;
-
-            usd.transfer(msg.sender, usdToBeReturned-distributedProviderFee);
-            distributeProviderFeeToLiquidityProviders(distributedProviderFee);
-
+            
             yesSharesPerAddress[msg.sender] = newShares;
+
+            distributeProviderFeeToLiquidityProviders(distributedProviderFee);
+            usd.transfer(msg.sender, usdToBeReturned-distributedProviderFee);
             emit SharesSold(usdToBeReturned, msg.sender);
         } else {
             uint newShares = noSharesPerAddress[msg.sender]-_amount;
             uint distributedProviderFee = usdToBeReturned/100*providerFee;
 
+            noSharesPerAddress[msg.sender] = newShares;
+
             usd.transfer(msg.sender, usdToBeReturned-distributedProviderFee);
             distributeProviderFeeToLiquidityProviders(distributedProviderFee);
 
-            noSharesPerAddress[msg.sender] = newShares;
             emit SharesSold(usdToBeReturned, msg.sender);
         }
     }
