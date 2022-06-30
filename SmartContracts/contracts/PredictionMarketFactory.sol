@@ -69,22 +69,22 @@ contract PredictionMarketFactory is Ownable {
     }
 
     modifier onlyIfIsCorrectChoice(string calldata _choice) {
-        require(keccak256(abi.encodePacked(_choice)) == keccak256(abi.encodePacked("yes")) || keccak256(abi.encodePacked(_choice)) == keccak256(abi.encodePacked("no")), "Incorrect choice. Insert yes/no.");
+        require(keccak256(abi.encodePacked(_choice)) == keccak256(abi.encodePacked("yes")) || keccak256(abi.encodePacked(_choice)) == keccak256(abi.encodePacked("no")), "Incorrect. Insert yes/no.");
         _;
     }
     
     modifier isLive() {
-        require(!checkIfTheMarketIsClosed(), "This market is already closed.");
+        require(!checkIfTheMarketIsClosed(), "Market already closed.");
         _;
     }
 
     modifier isClosed() {
-        require(checkIfTheMarketIsClosed(), "This market is not closed yet.");
+        require(checkIfTheMarketIsClosed(), "Market not closed yet.");
         _;
     }
 
     modifier isResolved() {
-        require(checkIfMarketIsResolved(), "This market is not resolved yet.");
+        require(checkIfMarketIsResolved(), "Market not resolved yet.");
         _;
     }
 
@@ -96,10 +96,10 @@ contract PredictionMarketFactory is Ownable {
     /// @param _erc20TokenDigits The number of digits of the ERC-20 token
     /// @param _providerFee The number that express the percentage which is given to liquidity providers
     constructor(string memory _name, string memory _description, uint _endingBlock, address _erc20TokenAddress,  uint8 _erc20TokenDigits, uint8 _providerFee) payable {
-        require(block.timestamp < _endingBlock, "The market has to end in the future");
-        require(_erc20TokenDigits >= 6, "The token must have more than 6 decimals.");
-        require(_erc20TokenDigits <= 18, "The token must have less than 18 decimals.");
-        require(_providerFee <= 100, "The provider fee can't be more than 100%.");
+        require(block.timestamp < _endingBlock, "Market has to end in the future");
+        require(_erc20TokenDigits >= 6, "Token must have more than 6 decimals.");
+        require(_erc20TokenDigits <= 18, "Token must have less than 18 decimals.");
+        require(_providerFee <= 100, "Provider fee can't be more than 100%.");
         startingBlock = block.timestamp;
         endingBlockTimestamp = _endingBlock;
         marketName = _name;
@@ -213,13 +213,13 @@ contract PredictionMarketFactory is Ownable {
         uint tmpNoSharesEmitted;
 
         if (keccak256(abi.encodePacked(_choice)) == keccak256(abi.encodePacked("yes"))){
-            require(_amount <= yesSharesPerAddress[msg.sender], "You don't have enough shares to sell.");
-            require(_amount/2 <= noSharesEmitted, "There is not enough liquidity in this smartcontract. Wait until it's increased or until the end of the market.");
+            require(_amount <= yesSharesPerAddress[msg.sender], "You don't have enough shares.");
+            require(_amount/2 <= noSharesEmitted, "Not enough liquidity. Wait until it's increased or until the end of the market.");
             tmpYesSharesEmitted = yesSharesEmitted+_amount;
             tmpNoSharesEmitted = noSharesEmitted;
         } else {
             require(_amount <= noSharesPerAddress[msg.sender], "You don't have enough shares to sell.");
-            require(_amount/2 <= yesSharesEmitted, "There is not enough liquidity in this smartcontract. Wait until it's increased or until the end of the market.");
+            require(_amount/2 <= yesSharesEmitted, "Not enough liquidity. Wait until it's increased or until the end of the market.");
             tmpYesSharesEmitted = yesSharesEmitted;
             tmpNoSharesEmitted = noSharesEmitted+_amount;
         }
