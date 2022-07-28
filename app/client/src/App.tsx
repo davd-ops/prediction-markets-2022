@@ -42,7 +42,8 @@ function App() {
         marketData: []
     } as any)
 
-    window.addEventListener("load", function () {
+    React.useEffect(() => {
+        window.addEventListener("load", function () {
         if (window.ethereum) {
             window.ethereum.on('chainChanged', async () => {
                 const provider = new ethers.providers.Web3Provider((window as any).ethereum)
@@ -51,6 +52,9 @@ function App() {
             })
         }
     })
+    }, [])
+
+
 
     React.useEffect(() => {
         function handleNewAccounts(newAccounts: React.SetStateAction<never[]>) {
