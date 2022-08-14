@@ -29,8 +29,6 @@ contract PredictionMarketOps is PredictionMarketFactory {
     /// @notice Provide liquidity into `marketName` market contract
     /// @param _amount The number of tokens that will be provided
     function addLiquidity(uint _amount) external isLive {
-        require(_amount >= uint256(10)*tenToPowerOfTokenDigits, "Provide more than 10 USD.");
-
         bool thisUserExists = false;
         
         usd.transferFrom(msg.sender, address(this), _amount);
@@ -115,7 +113,7 @@ contract PredictionMarketOps is PredictionMarketFactory {
             }
             unchecked { ++i; }  
         }
-        require(exists, "You are not a liquidity provider.");
+        if (!exists) revert NotALiquidityProvider();
     }
 
     /// @notice Choose the result of the `marketName` market 
@@ -141,7 +139,7 @@ contract PredictionMarketOps is PredictionMarketFactory {
             emit UsdClaimed(noSharesPerAddress[msg.sender], msg.sender);
             claimed = true;
         }
-        require(claimed, "Error has occured.");
+        if (!claimed) revert ErrorHasOcurred();
     }
 
     /// @notice Buy shares
@@ -149,11 +147,9 @@ contract PredictionMarketOps is PredictionMarketFactory {
     /// @param _amount The number of USD you want to spend
     function buyShares(string calldata _choice, uint _amount) external onlyIfIsCorrectChoice(_choice) isLive {
         if (keccak256(abi.encodePacked(_choice)) == keccak256(abi.encodePacked("yes"))){
-            require(_amount <= yesSharesEmitted, "Not enough liquidity.");
-            require(yesSharesPerAddress[msg.sender]+_amount <= uint(1000000000000000000)*tenToPowerOfTokenDigits, "You can't bid more than 1000000000000000000 USD.");
+            if (_amount > yesSharesEmitted) revert NotEnoughLiquidity();
         } else {
-            require(_amount <= noSharesEmitted, "Not enough liquidity.");
-            require(noSharesPerAddress[msg.sender]+_amount <= uint(1000000000000000000)*tenToPowerOfTokenDigits, "You can't bid more than 1000000000000000000 USD.");
+            if (_amount > noSharesEmitted) revert NotEnoughLiquidity();
         }
         
         uint originalNumberOfYesShares = yesSharesEmitted;
@@ -191,13 +187,13 @@ contract PredictionMarketOps is PredictionMarketFactory {
         int originalNumberOfNoShares = int(noSharesEmitted);
         
         if (keccak256(abi.encodePacked(_choice)) == keccak256(abi.encodePacked("yes"))){
-            require(_amount <= yesSharesPerAddress[msg.sender], "You don't have enough shares.");
-            require(_amount/2 <= noSharesEmitted, "Not enough liquidity. Wait until it's increased or until the end of the market.");
+            if (_amount > yesSharesPerAddress[msg.sender]) revert NotEnoughShares();
+            if ((_amount/2) > noSharesEmitted) revert NotEnoughLiquidity();
             yesSharesEmitted = yesSharesEmitted+_amount;
             noSharesEmitted = noSharesEmitted;
         } else {
-            require(_amount <= noSharesPerAddress[msg.sender], "You don't have enough shares.");
-            require(_amount/2 <= yesSharesEmitted, "Not enough liquidity. Wait until it's increased or until the end of the market.");
+            if (_amount > noSharesPerAddress[msg.sender]) revert NotEnoughShares();
+            if ((_amount/2) > yesSharesEmitted) revert NotEnoughLiquidity();
             yesSharesEmitted = yesSharesEmitted;
             noSharesEmitted = noSharesEmitted+_amount;
         }

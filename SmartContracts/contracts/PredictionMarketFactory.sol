@@ -36,6 +36,19 @@ interface IERC20 {
 /// @notice You can use this contract for information about Prediction markets
 contract PredictionMarketFactory is Ownable {
 
+    error IncorrectInput();
+    error MarketClosed();
+    error MarketNotClosed();
+    error MarketNotResolved();
+    error InvalidEndingTime();
+    error InvalidTokenDigits();
+    error InvalidTradingFees();
+    error InvalidEquation();
+    error NotEnoughShares();
+    error NotEnoughLiquidity();
+    error NotALiquidityProvider();
+    error ErrorHasOcurred();
+
     event MarketCreated(address marketAddress);
     event LiquidityProvided(uint amount, address provider);
     event LiquidityWithdrawn(uint amount, address provider);
@@ -69,22 +82,22 @@ contract PredictionMarketFactory is Ownable {
     }
 
     modifier onlyIfIsCorrectChoice(string calldata _choice) {
-        require(keccak256(abi.encodePacked(_choice)) == keccak256(abi.encodePacked("yes")) || keccak256(abi.encodePacked(_choice)) == keccak256(abi.encodePacked("no")), "Incorrect. Insert yes/no.");
+        if (keccak256(abi.encodePacked(_choice)) != keccak256(abi.encodePacked("yes")) && keccak256(abi.encodePacked(_choice)) != keccak256(abi.encodePacked("no"))) revert IncorrectInput();
         _;
     }
     
     modifier isLive() {
-        require(!checkIfTheMarketIsClosed(), "Market already closed.");
+        if (checkIfTheMarketIsClosed()) revert MarketClosed();
         _;
     }
 
     modifier isClosed() {
-        require(checkIfTheMarketIsClosed(), "Market not closed yet.");
+        if (!checkIfTheMarketIsClosed()) revert MarketNotClosed();
         _;
     }
 
     modifier isResolved() {
-        require(checkIfMarketIsResolved(), "Market not resolved yet.");
+        if (!checkIfMarketIsResolved()) revert MarketNotResolved();
         _;
     }
 
@@ -96,10 +109,10 @@ contract PredictionMarketFactory is Ownable {
     /// @param _erc20TokenDigits The number of digits of the ERC-20 token
     /// @param _providerFee The number that express the percentage which is given to liquidity providers
     constructor(string memory _name, string memory _description, uint _endingBlock, address _erc20TokenAddress,  uint8 _erc20TokenDigits, uint8 _providerFee) payable {
-        require(block.timestamp < _endingBlock, "Market has to end in the future");
-        require(_erc20TokenDigits >= 6, "Token must have more than 6 decimals.");
-        require(_erc20TokenDigits <= 18, "Token must have less than 18 decimals.");
-        require(_providerFee <= 100, "Provider fee can't be more than 100%.");
+        if (block.timestamp > _endingBlock) revert InvalidEndingTime();
+        if (_erc20TokenDigits < 6) revert InvalidTokenDigits();
+        if (_erc20TokenDigits > 18) revert InvalidTokenDigits();
+        if (_providerFee > 100) revert InvalidTradingFees();
         startingBlock = block.timestamp;
         endingBlockTimestamp = _endingBlock;
         marketName = _name;
@@ -132,7 +145,7 @@ contract PredictionMarketFactory is Ownable {
         int discriminant = 0;
 
 		discriminant = (_B**2)/int64(tenToPowerOfTokenDigits) - (4*_A*_C)/int64(tenToPowerOfTokenDigits);
-        require(discriminant >= 0, 'Equation without solution');
+        if (discriminant < 0) revert InvalidEquation();
         
         if (discriminant == 0){
 			X = -_B / 2 * _A;
@@ -158,7 +171,7 @@ contract PredictionMarketFactory is Ownable {
 	} 
 
     /// @notice Check if the market is closed or live
-    /// @return true if the market is live, false if is closed
+    /// @return true if the market is closed, false if is live
     function checkIfTheMarketIsClosed() public view returns(bool) {
         if(endingBlockTimestamp >= block.timestamp){
             return false;
@@ -213,13 +226,13 @@ contract PredictionMarketFactory is Ownable {
         uint tmpNoSharesEmitted;
 
         if (keccak256(abi.encodePacked(_choice)) == keccak256(abi.encodePacked("yes"))){
-            require(_amount <= yesSharesPerAddress[msg.sender], "You don't have enough shares.");
-            require(_amount/2 <= noSharesEmitted, "Not enough liquidity. Wait until it's increased or until the end of the market.");
+            if (_amount > yesSharesPerAddress[msg.sender]) revert NotEnoughShares();
+            if ((_amount/2) > noSharesEmitted) revert NotEnoughLiquidity();
             tmpYesSharesEmitted = yesSharesEmitted+_amount;
             tmpNoSharesEmitted = noSharesEmitted;
         } else {
-            require(_amount <= noSharesPerAddress[msg.sender], "You don't have enough shares to sell.");
-            require(_amount/2 <= yesSharesEmitted, "Not enough liquidity. Wait until it's increased or until the end of the market.");
+            if (_amount > noSharesPerAddress[msg.sender]) revert NotEnoughShares();
+            if ((_amount/2) > yesSharesEmitted) revert NotEnoughLiquidity();
             tmpYesSharesEmitted = yesSharesEmitted;
             tmpNoSharesEmitted = noSharesEmitted+_amount;
         }
